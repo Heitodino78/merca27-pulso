@@ -3,9 +3,10 @@
  * operação segue três gravações: intenção PENDENTE -> dado -> evento CONFIRMADA.
  * Se algo falhar no meio, a repetição com a mesma requisição conclui o que faltou.
  */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.operacoes = (function () {
+function pulsoCriarOperacoes() {
   const LOG = 'OPERACOES_LOG';
 
   function traduzirExcecao(excecao) {
@@ -132,6 +133,7 @@ PULSO.operacoes = (function () {
    * def: { tipo, normalizar(request), assinatura(dados), verificar(estado, dados),
    *        construir(dados, operacaoId, agora), responder(estado, operacao, situacao) }
    */
+  /** @returns {RespostaOperacao} */
   function executar(ctx, def, request) {
     return comLock(ctx, function () {
       const v = PULSO.validacao;
@@ -198,4 +200,5 @@ PULSO.operacoes = (function () {
   }
 
   return { executar: executar, reconciliar: reconciliar, consultar: consultar };
-})();
+}
+PULSO.operacoes = pulsoCriarOperacoes();

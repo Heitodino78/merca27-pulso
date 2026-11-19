@@ -4,9 +4,10 @@
  *   armazenamento.anexar(tabela, linha)
  * A porta não oferece editar nem apagar: o histórico não pode ser reescrito pelo fluxo normal.
  */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.repositorio = (function () {
+function pulsoCriarRepositorio() {
   function inconsistente(mensagem) {
     return PULSO.erros.criarExcecao('DADOS_INCONSISTENTES', 'Dados inconsistentes: ' + mensagem + '.');
   }
@@ -75,6 +76,9 @@ PULSO.repositorio = (function () {
       if (normalizado.ok) reconstruida = PULSO.movimento.construirEntrada(normalizado.dados, linha.movimento_id, evento.operacao_id, linha.registrado_em);
     }
     const chave = PULSO.esquema.TABELAS[payload.tabela].chave;
+    if (!normalizado || !('dados' in normalizado)) {
+      throw inconsistente('operação ' + evento.operacao_id + ' com intenção inválida');
+    }
     if (!reconstruida || evento.tentativas !== 1 || evento.erro_cod !== null ||
         evento.referencia_id !== linha[chave] ||
         evento.assinatura !== JSON.stringify(normalizado.dados) ||
@@ -162,6 +166,7 @@ PULSO.repositorio = (function () {
     });
   }
 
+  /** @param {ArmazenamentoPulso} armazenamento */
   function criar(armazenamento) {
     function carregarEstado() {
       const dobra = dobrarOperacoes(lerTabela(armazenamento, 'OPERACOES_LOG'));
@@ -212,4 +217,5 @@ PULSO.repositorio = (function () {
   }
 
   return { criar: criar };
-})();
+}
+PULSO.repositorio = pulsoCriarRepositorio();

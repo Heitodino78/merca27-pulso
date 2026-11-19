@@ -5,9 +5,11 @@
  *   relogio:       () => instante ISO 8601 em UTC
  *   gerarId:       (prefixo) => identificador único
  */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.criar = function (portas) {
+/** @param {PortasPulso} portas */
+function pulsoCriar(portas) {
   const ctx = {
     repositorio: PULSO.repositorio.criar(portas.armazenamento),
     lock: portas.lock,
@@ -15,10 +17,11 @@ PULSO.criar = function (portas) {
     gerarId: portas.gerarId,
   };
   return {
-    cadastrarProduto: function (request) { return PULSO.casosDeUso.cadastrarProduto(ctx, request); },
-    registrarEntrada: function (request) { return PULSO.casosDeUso.registrarEntrada(ctx, request); },
+    cadastrarProduto: /** @param {PedidoCadastro} request */ function (request) { return PULSO.casosDeUso.cadastrarProduto(ctx, request); },
+    registrarEntrada: /** @param {PedidoEntrada} request */ function (request) { return PULSO.casosDeUso.registrarEntrada(ctx, request); },
     consultarEstoque: function (request) { return PULSO.casosDeUso.consultarEstoque(ctx, request); },
     listarProdutos: function () { return PULSO.casosDeUso.listarProdutos(ctx); },
     reconciliarPendencias: function () { return PULSO.operacoes.reconciliar(ctx); },
   };
-};
+}
+PULSO.criar = pulsoCriar;

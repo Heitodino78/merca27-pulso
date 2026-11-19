@@ -1,12 +1,12 @@
 # Melhorias planejadas — PULSO
 
-**Status: aprovadas pelo proprietário em 18/11/2026. Nenhuma foi implementada.** Marque cada item como concluído somente depois de implementar, testar e registrar a evidência em `docs/TESTES.md`.
+**Status: aprovadas pelo proprietário em 18/11/2026; execução da Fase 01 em andamento.** Os itens concluídos têm evidência em `docs/TESTES.md`.
 
 ## Ordem de execução
 
 | Ordem | ID | Melhoria | Momento | Situação |
 |---|---|---|---|---|
-| 1 | M-07 | Checagem de tipos | Início da próxima execução | [ ] Pendente |
+| 1 | M-07 | Checagem de tipos | Bloco 2 da Fase 01 | [x] Concluída |
 | 2 | M-01 | Custo unitário na entrada | Início da Fase 1 | [ ] Pendente |
 | 3 | M-02 | Alteração e desativação de produto | Início da Fase 1 | [ ] Pendente |
 | 4 | M-04 | Reconciliação automática | Início da Fase 1 | [ ] Pendente |

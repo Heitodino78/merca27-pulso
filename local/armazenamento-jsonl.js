@@ -7,6 +7,7 @@ function excecao(codigo, mensagem) {
   return Object.assign(new Error(mensagem), { codigo });
 }
 
+/** @param {string} diretorio @returns {ArmazenamentoPulso} */
 function criarArmazenamentoJsonl(diretorio) {
   fs.mkdirSync(diretorio, { recursive: true });
   const arquivo = (tabela) => path.join(diretorio, `${tabela}.jsonl`);

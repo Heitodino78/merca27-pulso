@@ -64,3 +64,7 @@ A demonstração passou a usar asserções e recálculo independente do JSONL. N
 ## Decisões ainda abertas
 
 T-01 (sidebar ou formulário), T-03 (método de custo), T-04 (tipo de lock no Apps Script), T-06 (implantação e teste no Google) e T-07 (proteção da planilha).
+
+## Fase 01
+
+- **D-027 — M-07:** contratos JSDoc e declarações em `tipos/`; fábricas nomeadas resolvem a inferência circular de `PULSO` sem API do Node em `src/`. TypeScript 5.9.3 e tipos Node 22.20.5 são dependências de desenvolvimento, com lockfile. `src` usa lib ES2020 e `types: []`; a configuração local usa NodeNext e ES2022 (para `Object.hasOwn`). `moduleDetection: legacy` preserva os scripts globais. As duas checagens passam. `strict` foi avaliado e produziu 126 erros adicionais no núcleo, sobretudo parâmetros implícitos em callbacks e registros dinâmicos. Nesta etapa mantém-se `strict: false`, sem `@ts-ignore` ou `@ts-nocheck`; as regras de runtime permanecem obrigatórias. A evolução para strict exige tipar todo o executor e suas respostas discriminadas, sem atalhos por `any` global.

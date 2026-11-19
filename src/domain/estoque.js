@@ -1,13 +1,16 @@
 /* Regras puras de saldo: o saldo é sempre derivado dos movimentos recebidos. */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.estoque = (function () {
+function pulsoCriarEstoque() {
+  /** @param {LinhaMovimento[]} movimentos @param {string} sku @returns {number} */
   function calcularSaldo(movimentos, sku) {
     return movimentos.reduce(function (saldo, movimento) {
       return movimento.sku === sku ? saldo + movimento.delta_unidades : saldo;
     }, 0);
   }
 
+  /** @param {LinhaMovimento[]} movimentos @param {string} sku */
   function historicoComSaldo(movimentos, sku) {
     let saldo = 0;
     return movimentos
@@ -29,4 +32,5 @@ PULSO.estoque = (function () {
   }
 
   return { calcularSaldo: calcularSaldo, historicoComSaldo: historicoComSaldo };
-})();
+}
+PULSO.estoque = pulsoCriarEstoque();

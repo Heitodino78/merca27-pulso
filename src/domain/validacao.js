@@ -1,7 +1,8 @@
 /* Validações puras reutilizadas pelos modelos. Retornam texto do problema ou null. */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.validacao = (function () {
+function pulsoCriarValidacao() {
   const PADRAO_SKU = /^MER-\d{3,6}$/;
   const PADRAO_REQUISICAO = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$/;
   const CONTROLE = /[\u0000-\u001F\u007F]/;
@@ -59,4 +60,5 @@ PULSO.validacao = (function () {
     camposDesconhecidos: camposDesconhecidos,
     eObjeto: eObjeto,
   };
-})();
+}
+PULSO.validacao = pulsoCriarValidacao();

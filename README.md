@@ -6,7 +6,9 @@
 
 ## Requisitos
 
-- Node.js 22 ou superior (revisão testada na versão 22.23.5; entrega anterior na 24.22.3). Não há dependências externas, então `npm install` não é necessário.
+- Node.js 22 ou superior (revisão testada na versão 22.23.5; entrega anterior na 24.22.3).
+- Dependências somente de desenvolvimento: `typescript@5.9.3` e `@types/node@22.20.5`. Execute `npm ci` para instalá-las e `npm run typecheck` para conferir `src/` e `local/`, sem build. A operação por CLI não exige essas dependências.
+- `.npmrc` define `bin-links=false` para o volume vfat; o compilador é chamado diretamente por Node. Nenhuma instalação global é necessária.
 
 Nesta máquina, Node/npm não estão no PATH padrão. A revisão usou um runtime oficial temporário em `/tmp/merca27-runtime/node-v22.23.5-linux-x64`, com SHA-256 conferido. Enquanto essa pasta existir, execute `export PATH=/tmp/merca27-runtime/node-v22.23.5-linux-x64/bin:$PATH` antes dos comandos abaixo. Isso não é uma instalação permanente.
 

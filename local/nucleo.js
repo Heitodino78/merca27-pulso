@@ -14,6 +14,7 @@ function listarFontes(diretorio = RAIZ_SRC) {
   }).sort();
 }
 
+/** @returns {PulsoNucleo} */
 function carregarNucleo({ inverterOrdem = false } = {}) {
   const contexto = vm.createContext({});
   const fontes = listarFontes();

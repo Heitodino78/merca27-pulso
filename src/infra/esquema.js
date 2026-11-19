@@ -1,7 +1,8 @@
 /* Esquema das tabelas (futuras abas da planilha), com colunas em ordem fixa. */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.esquema = (function () {
+function pulsoCriarEsquema() {
   const INSTANTE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
   const TABELAS = {
@@ -62,4 +63,5 @@ PULSO.esquema = (function () {
   }
 
   return { TABELAS: TABELAS, problemaLinha: problemaLinha, canonica: canonica };
-})();
+}
+PULSO.esquema = pulsoCriarEsquema();

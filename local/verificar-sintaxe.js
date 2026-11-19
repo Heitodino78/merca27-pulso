@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const raiz = path.join(__dirname, '..');
 const arquivos = ['src', 'local', 'tests'].flatMap((pasta) =>
-  fs.readdirSync(path.join(raiz, pasta), { recursive: true })
+  fs.readdirSync(path.join(raiz, pasta), { recursive: true, encoding: 'utf8' })
     .filter((nome) => nome.endsWith('.js'))
     .map((nome) => path.join(raiz, pasta, nome)));
 

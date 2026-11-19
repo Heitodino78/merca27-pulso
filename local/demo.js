@@ -36,7 +36,7 @@ try {
   passo('Entrada de -5 unidades', pulso.registrarEntrada({ requisicaoId: 'DEMO-2', sku: 'MER-001', quantidade: -5 }), 'QTD_INVALIDA');
   passo('Entrada de 2,5 unidades', pulso.registrarEntrada({ requisicaoId: 'DEMO-3', sku: 'MER-001', quantidade: 2.5 }), 'QTD_INVALIDA');
   passo('Entrada em SKU inexistente', pulso.registrarEntrada({ requisicaoId: 'DEMO-4', sku: 'MER-999', quantidade: 1 }), 'SKU_INEXISTENTE');
-  const lerTabela = (nome) => fs.readFileSync(path.join(pasta, `${nome}.jsonl`), 'utf8').trim().split('\n').map(JSON.parse);
+  const lerTabela = (nome) => fs.readFileSync(path.join(pasta, `${nome}.jsonl`), 'utf8').trim().split('\n').map((linha) => JSON.parse(linha));
   const confirmadas = new Set(lerTabela('OPERACOES_LOG').filter((e) => e.estado === 'CONFIRMADA').map((e) => e.operacao_id));
   const movimentos = lerTabela('MOVIMENTOS_ESTOQUE').filter((m) => m.sku === 'MER-001' && confirmadas.has(m.operacao_id));
   const soma = movimentos.reduce((total, m) => total + m.delta_unidades, 0);

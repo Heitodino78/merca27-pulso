@@ -1,12 +1,14 @@
 /* Modelo de Movimento de estoque. Nesta fase apenas ENTRADA é emitida. */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.movimento = (function () {
+function pulsoCriarMovimento() {
   const TIPOS = ['SALDO_INICIAL', 'ENTRADA', 'VENDA', 'PERDA', 'AJUSTE', 'ESTORNO'];
   const OPERADOR_PADRAO = 'OPERADOR-DEMO';
   const PADRAO_OPERADOR = /^[A-Z0-9][A-Z0-9-]{2,39}$/;
   const CAMPOS = ['requisicaoId', 'sku', 'quantidade', 'referenciaFornecedor', 'motivo', 'operadorSimulado'];
 
+  /** @param {PedidoEntrada} request */
   function normalizarEntrada(request) {
     const v = PULSO.validacao;
     const falha = PULSO.erros.falha;
@@ -43,6 +45,7 @@ PULSO.movimento = (function () {
     };
   }
 
+  /** @param {PedidoEntrada} dados @param {string} movimentoId @param {string} operacaoId @param {string} agora @returns {LinhaMovimento} */
   function construirEntrada(dados, movimentoId, operacaoId, agora) {
     return {
       movimento_id: movimentoId,
@@ -58,4 +61,5 @@ PULSO.movimento = (function () {
   }
 
   return { TIPOS: TIPOS, normalizarEntrada: normalizarEntrada, construirEntrada: construirEntrada };
-})();
+}
+PULSO.movimento = pulsoCriarMovimento();

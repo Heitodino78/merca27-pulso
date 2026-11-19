@@ -5,13 +5,20 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "commonjs",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "node --test \"tests/*.test.js\"",
     "check": "node local/verificar-sintaxe.js",
     "fixtures": "node local/gerar-fixtures.js",
     "demo": "node local/demo.js",
     "pulso": "node local/cli.js",
-    "mutacao": "node local/mutacao.js"
+    "mutacao": "node local/mutacao.js",
+    "typecheck": "node node_modules/typescript/lib/tsc.js -p tsconfig.src.json && node node_modules/typescript/lib/tsc.js -p tsconfig.local.json"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
   }
 }

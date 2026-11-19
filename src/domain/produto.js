@@ -1,7 +1,8 @@
 /* Modelo de Produto: validação do cadastro e construção do registro. */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.produto = (function () {
+function pulsoCriarProduto() {
   const CATEGORIAS = ['BEBIDAS', 'MERCEARIA', 'LATICINIOS', 'SNACKS', 'HIGIENE', 'LIMPEZA'];
   const UNIDADES = ['UN'];
   const PADRAO_FORNECEDOR = /^FOR-\d{3}$/;
@@ -14,6 +15,7 @@ PULSO.produto = (function () {
     return PULSO.erros.falha('DADOS_INVALIDOS', mensagem);
   }
 
+  /** @param {PedidoCadastro} request */
   function normalizarCadastro(request) {
     const v = PULSO.validacao;
     const extras = v.camposDesconhecidos(request, CAMPOS);
@@ -65,6 +67,7 @@ PULSO.produto = (function () {
     };
   }
 
+  /** @param {PedidoCadastro} dados @param {string} operacaoId @param {string} agora @returns {LinhaProduto} */
   function construirLinha(dados, operacaoId, agora) {
     return {
       sku: dados.sku,
@@ -84,4 +87,5 @@ PULSO.produto = (function () {
   }
 
   return { CATEGORIAS: CATEGORIAS, normalizarCadastro: normalizarCadastro, construirLinha: construirLinha };
-})();
+}
+PULSO.produto = pulsoCriarProduto();

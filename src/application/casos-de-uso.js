@@ -1,7 +1,8 @@
 /* Casos de uso da Fase 00: cadastro, entrada, consulta e reconciliação. */
-var PULSO = PULSO || {};
+/** @type {PulsoNucleo} */
+var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
-PULSO.casosDeUso = (function () {
+function pulsoCriarCasosDeUso() {
   const LIMITE_HISTORICO_PADRAO = 20;
 
   function cadastrarProduto(ctx, request) {
@@ -128,4 +129,5 @@ PULSO.casosDeUso = (function () {
     consultarEstoque: consultarEstoque,
     listarProdutos: listarProdutos,
   };
-})();
+}
+PULSO.casosDeUso = pulsoCriarCasosDeUso();
