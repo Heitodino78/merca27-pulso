@@ -1,6 +1,6 @@
 # Progresso do A-002 — MERCA 27 / PULSO
 
-Última atualização: 19/11/2026. M-03 concluída localmente na branch `m03-operacoes`; M-06 continua sem verificação em navegador real.
+Última atualização: 19/11/2026. Funcionalidades da Fase 2 na branch `fase-02-vendas`; M-06 continua sem verificação em navegador real. Relatório atual: [RELATORIO_FASE_02.md](RELATORIO_FASE_02.md).
 
 ## Implementado e testado localmente
 
@@ -11,6 +11,9 @@
 - [x] Alteração, desativação, reativação e histórico de versões de produto.
 - [x] Saldo inicial, perda por categoria e ajuste por contagem com saldos anterior e novo.
 - [x] Reposição sugerida para produtos ativos com saldo menor ou igual ao mínimo.
+- [x] Vendas de 1–50 itens, validação integral, valores históricos e baixa idempotente.
+- [x] Histórico/detalhe de venda e estorno total único com movimentos compensatórios.
+- [x] CLI e interface Angular para vendas, revisão, confirmação e estorno.
 - [x] CLI para todos os fluxos, sem regras de negócio na interface.
 - [x] Saldo derivado dos movimentos confirmados.
 - [x] Idempotência por `requisicaoId` e rejeição de requisição conflitante.
@@ -23,8 +26,8 @@
 - [x] Verificação do estado final da reconciliação e tratamento de retorno ambíguo.
 - [x] Escrita parcial de bytes tratada no adaptador JSONL.
 - [x] Demonstração com asserções e recálculo independente; guia da seed em `fixtures/SEED_README.md`.
-- [x] 343 testes aprovados, checagem de tipos e sintaxe válida em 35 arquivos.
-- [x] Executor de 108 mutações reproduzíveis em cópias temporárias, cobrindo também as regras da Fase 01.
+- [x] 507 testes do núcleo e 51 da interface aprovados, checagem de tipos e sintaxe válida em 45 arquivos.
+- [x] Executores de mutação em cópias: 163 alvos no núcleo e 26 na interface. Resultados concluídos em TESTES.md.
 - [x] Medição local de 90 dias sintéticos e testes de leitores concorrentes com gravações.
 
 ## Melhorias aprovadas
@@ -35,15 +38,15 @@ Detalhes e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADA
 - [x] M-01: custo unitário por entrada e fornecedores fictícios com vínculo validado.
 - [x] M-02: alteração, desativação, reativação e histórico completo de versões.
 - [x] M-04: reconciliação automática antes de novos lançamentos, com releitura e log.
-- [x] M-05: projeção em memória por SKU, leituras sem trava, repetição controlada, entrada com 8 leituras em vez de 13 e medição antes/depois.
-- [ ] M-06: interface Angular + Tailwind compatível com Apps Script. **Parcial:** telas, estados, chave por tentativa, acessibilidade, HTML único, pré-visualização local, 39 testes de interface e 13 mutações prontos. **Falta:** verificação em navegador real e capturas (D-047). Detalhes em [RELATORIO_INTERFACE.md](RELATORIO_INTERFACE.md).
+- [x] M-05: projeção em memória por SKU, leituras sem trava, repetição controlada e medição. Desde a Fase 2, oito tabelas exigem 8 leituras por consulta e 11 por entrada; conferências pós-escrita mantidas (D-060).
+- [ ] M-06: interface Angular + Tailwind compatível com Apps Script. **Parcial:** telas de estoque e vendas, estados, chave por tentativa, HTML único de 434.763 bytes, pré-visualização local e 51 testes de interface. **Falta:** verificação em navegador real e capturas (D-061). Detalhes em [RELATORIO_INTERFACE.md](RELATORIO_INTERFACE.md).
 - [x] M-03: operações com vários registros, formato antigo legível, contagem de inventário com vários SKUs, 51 testes e 21 mutações novas. Detalhes em [RELATORIO_M03.md](RELATORIO_M03.md).
 
 ## Pendente no Google (nada disto foi executado)
 
 O acesso foi verificado na revisão da Fase 00, sem execução de Apps Script. A Fase 01 exclui integração Google do escopo e não a retestou. Ela continua pendente e depende de autorização efetiva para executar Apps Script; o conector Drive sozinho não basta.
 
-- [ ] Criar a planilha com as abas `PRODUTOS`, `MOVIMENTOS_ESTOQUE` e `OPERACOES_LOG`.
+- [ ] Criar a planilha com as oito tabelas atuais de `src/infra/esquema.js`.
 - [ ] Autenticar o `clasp` em conta autorizada e enviar `src/`.
 - [ ] Implementar a porta `armazenamento` com `SpreadsheetApp`, incluindo a conversão entre célula vazia e `null` e a gravação de instantes como texto.
 - [ ] Implementar a porta `lock` com `LockService`, `relogio` e `gerarId` com `Utilities.getUuid`.
@@ -53,7 +56,8 @@ O acesso foi verificado na revisão da Fase 00, sem execução de Apps Script. A
 ## Fases
 
 - [x] Fase 1: 40 SKUs, 6 fornecedores, perda, ajuste por contagem, alerta e reposição.
-- [ ] Próxima execução: concluir M-06 no navegador, se autorizado, e iniciar a Fase 2 (vendas) sobre M-03. Google somente com acesso efetivo.
-- [ ] Fase 2: vendas com múltiplos itens e estorno.
+- [ ] Próxima execução: Fase 3 (dashboard e automações); concluir M-06 no navegador quando autorizado/disponível. Google somente com acesso efetivo.
+- [x] Fase 2 local: vendas com múltiplos itens, histórico, estorno total, CLI e interface. M-06/navegador e Google continuam pendentes.
+- [ ] Reversão de perdas, ajustes e contagens: fatia própria ainda adiada (D-058).
 - [ ] Fase 3: dashboard e automações.
 - [ ] Fase 4: refino e case de portfólio.

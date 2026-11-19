@@ -1,101 +1,85 @@
-# Prompt para a próxima execução — PULSO
+# PULSO — próxima execução: Fase 3 (dashboard e automações)
 
-Estado de referência: M-03 concluída localmente em 19/11/2026 na branch `m03-operacoes` (a partir de `interface-angular`). M-06 continua sem verificação em navegador real. Este arquivo descreve a execução seguinte; ainda não foi executado.
+**Referência em 19/11/2026:** branch `fase-02-vendas`. Fases 00/01, M-03 e funcionalidades da Fase 2 implementadas e verificadas localmente. M-06 continua parcial por falta de navegador real. Este prompt descreve a próxima execução; dashboard e automações ainda não foram implementados.
 
-**Antes de iniciar a sessão (ação do proprietário):** a verificação em navegador foi bloqueada nas duas execuções anteriores (D-047, D-054). Para concluí-la, autorize um destes caminhos: executar o Firefox do sistema via `flatpak-spawn --host`, executar um Chromium baixado em `/tmp`, ou abrir a sessão dentro do Maestri com o CLI `maestri` disponível. Sem isso, as etapas de navegador ficam registradas como impossíveis e a execução segue com o restante.
+## Missão
 
-```text
-# MERCA 27 — PULSO — FASE 2: VENDAS COM VÁRIOS ITENS E ESTORNO (E M-06 NO NAVEGADOR, SE AUTORIZADO)
+Executar a Fase 3 diretamente no repositório: indicadores por período reconciliáveis, interface de visão geral e resumo operacional diário com execução local controlada. Preservar estoque, vendas e estornos. Não declarar integração Google, notificação ou teste de navegador sem evidência real.
 
-Você é o engenheiro responsável pelo PULSO, sistema de gestão de um mercado inteiramente fictício. Trabalhe diretamente nos arquivos, teste e documente. Apresente um plano curto e execute sem esperar confirmação para decisões técnicas rotineiras.
+## 1. Leitura e estado real
 
-## 1. LEITURA OBRIGATÓRIA
+Leia integralmente README, `interface/README.md`, `fixtures/SEED_README.md`, `docs/RELATORIO_FASE_02.md`, `RELATORIO_M03.md`, `RELATORIO_INTERFACE.md`, `PROGRESSO.md`, `DECISOES.md`, `TESTES.md` e `MELHORIAS_PLANEJADAS.md`. Leia os cinco documentos-base v1.1.0, especialmente mestre 10–15 e 20–21, arquitetura 8, 11 e 12, roteiro Fase 3. Preserve os originais; estados/contagens antigos estão desatualizados (D-054).
 
-Leia integralmente:
-- docs/RELATORIO_M03.md, docs/RELATORIO_INTERFACE.md, docs/PROGRESSO.md, docs/DECISOES.md (especialmente D-002, D-027, D-031, D-040 a D-054) e docs/TESTES.md.
-- docs/MELHORIAS_PLANEJADAS.md.
-- Os cinco documentos-base (v1.1.0). Para esta fase importam sobretudo: Documento Mestre seções 9, 13, 14 e 15 (jornada de venda, regras não negociáveis, KPIs e exemplo); docs/03 seções 4.3 e 4.4 (VENDAS e ITENS_VENDA), 6.2 (confirmarVenda), 6.5 (estornarVenda), 8.1 e 8.2 (receita e CMV), 9 (códigos de erro), 12.1 (T05 a T11, T15, T18 e T19) e 12.3 (reconciliações); docs/04 Fase 2. Não altere os documentos-base; registre divergências em docs/DECISOES.md. As divergências já conhecidas estão em D-054.
-- README.md, interface/README.md, fixtures/SEED_README.md e todo o código em src/, local/, tipos/, tests/ e interface/src/.
+Leia todo o código próprio de `src/`, `local/`, `tipos/`, `tests/` e `interface/src/`, os manifestos, configurações e evidências. Não trate planejamento histórico como ordem para refazer Fase 00. Código e testes executados prevalecem sobre números antigos deste prompt.
 
-Confirme o estado real pelo código e pelos comandos. Em caso de divergência, o código e os testes executados prevalecem sobre este prompt.
+Estado de referência:
 
-## 2. ESTADO REAL
+- Núcleo em scripts globais `var PULSO`, sem imports, APIs Node ou build. Portas: armazenamento `{ ler, anexar }`, lock `{ executar }`, relógio e IDs. Consultas sem trava com uma repetição sob trava quando há inconsistência; nenhuma gravação em consulta.
+- Oito tabelas: FORNECEDORES, PRODUTOS, PRODUTOS_ALTERACOES, MOVIMENTOS_ESTOQUE, VENDAS, ITENS_VENDA, ESTORNOS_VENDA, OPERACOES_LOG. Esquema exato em `src/infra/esquema.js`.
+- Intenção `{ registros: [{ tabela, linha }, ...] }`, 1–200 registros ordenados, escrita e releitura integral de cada um antes da confirmação. Pendências são reconciliadas antes de nova operação. Referência do evento é a chave do primeiro registro. Operação confirmada precisa de todos os registros, sem extras nem divergências.
+- Compatibilidade `{ tabela, linha }` só para os sete `TIPOS_LEGADOS`; nunca ampliar essa lista para operações novas. `fixtures/base-fase01/` é imutável e não pode ser regenerada.
+- Contagem de inventário até 100 itens, somente núcleo/CLI; sem ação de interface. Reversões de perda/ajuste/contagem permanecem adiadas (D-058). Não usar estorno de venda para corrigir isso.
+- Venda: 1–50 SKUs distintos, ordenados, tudo ou nada sob trava. Pagamento informativo DINHEIRO/PIX/CARTAO, sem descontos. Preço e custo capturados no instante da venda. Estorno total e único com motivo, devolvendo todos os itens como revendáveis, sem alterar o registro original. Estado ESTORNADA é derivado.
+- `listarVendas({ desde?, ate?, limite? })`: ISO UTC, início inclusivo e fim exclusivo, 100 por padrão e máximo 500. Não usar essa lista limitada para calcular KPIs: consultar o estado completo na camada de aplicação. Detalhe por vendaId ou requisicaoId, exatamente um.
+- Interface Angular 22.3.0, Tailwind 4.3.5, TypeScript 6.0.3 strict, dependências próprias. Rotas por hash, importação imediata, um HTML autocontido. Último build de referência: 434.763 bytes. Sem CDN, lazy loading ou biblioteca de componentes.
+- Despacho tem 18 ações; vendas acrescentaram confirmarVenda, estornarVenda, listarVendas e consultarVenda. Não expõe cadastro de fornecedor nem contagem. Transporte único google.script.run, simulado na pré-visualização em 127.0.0.1.
+- Chave por tentativa lógica (D-045): incerto preserva chave/dados, repetir reenvia o pedido incerto, clique duplo bloqueado. Registro dura a sessão, não recarga. Nas telas de vendas, comprovante e recarga observam sucesso inclusive por repetição compartilhada. `Campo` remove id do wrapper para evitar IDs duplicados.
+- Referência: 507 testes do núcleo, 51 da interface, 163 alvos de mutação no núcleo e 26 na interface. Resultados completos e sobreviventes justificados em TESTES/evidências; confirme os números antes de reutilizá-los.
 
-- Branch m03-operacoes, com commits locais por fatia; sem merge em main, remoto ou publicação.
-- Núcleo src/ em scripts globais var PULSO, sem build e sem APIs do Node (D-002, D-027). Portas: armazenamento { ler, anexar }, lock { executar }, relogio e gerarId.
-- Protocolo: intenção PENDENTE com payload { registros: [{ tabela, linha }, ...] } -> cada registro com releitura e comparação completa -> CONFIRMADA. Reconciliação grava só o que falta; operação confirmada precisa ter todos os registros; linha só vale se constar, igual, na lista da sua operação; referencia_id é a chave do primeiro registro (D-049 a D-051). O formato { tabela, linha } da Fase 01 é legível só para os sete tipos antigos.
-- Tipos de operação: CADASTRO_FORNECEDOR, CADASTRO_PRODUTO, ALTERACAO_PRODUTO, ENTRADA, SALDO_INICIAL, PERDA, AJUSTE e CONTAGEM_INVENTARIO (vários AJUSTE, tudo ou nada; só pela CLI, D-052).
-- Tabelas: FORNECEDORES, PRODUTOS, PRODUTOS_ALTERACOES, MOVIMENTOS_ESTOQUE e OPERACOES_LOG. PULSO.movimento.TIPOS já prevê VENDA e ESTORNO, sem uso.
-- Idempotência por requisicaoId, REQUISICAO_CONFLITANTE, reconciliação automática antes de novo lançamento, consultas sem trava com uma repetição sob trava. Saldo sempre derivado.
-- Interface Angular 22.3.0 + Tailwind 4.3.5 em interface/ (D-040 a D-046), um único HTML de cerca de 395 KiB, despacho com 14 ações (D-044), chave por tentativa lógica (D-045). Pré-visualização em local/servidor-preview.js (127.0.0.1, --seed, --falhas-simuladas).
-- Testes: 421 na raiz, 39 na interface. Mutações: 134 no núcleo e 13 na interface (resultados em docs/TESTES.md). fixtures/base-fase01/ prova a compatibilidade e não pode ser editada.
-- Pendente: M-06 no navegador (360, 390, 768 e 1440 px, capturas em docs/capturas/). Google sem acesso efetivo (D-048).
+## 2. Ambiente, preservação e linha de base
 
-## 3. AMBIENTE E LINHA DE BASE
+Inspecione Git, mudanças locais e ferramentas. Preserve trabalho existente; crie `fase-03-dashboard` a partir da Fase 2 se ainda não houver branch adequada. Não resete nem apague bases.
 
-1. Preserve alterações locais. Confira Git e branch; crie a branch fase-02-vendas a partir de m03-operacoes. Sem merge ou push.
-2. Node/npm podem não estar no PATH. Foi usado /tmp/merca27-runtime/node-v22.23.5-linux-x64/bin. Se a pasta não existir, baixe o Node 22 oficial para /tmp e confira o SHA-256 antes de extrair. Nada global.
-3. Volume vfat com showexec: nenhum binário roda a partir dele. Mantenha bin-links=false, instale a interface com npm run interface:instalar e use os scripts da raiz (D-042).
-4. Antes de alterar, execute npm ci, npm test, npm run check, npm run typecheck, npm run demo, npm run interface:typecheck, npm run interface:test, npm run interface:build e npm run mutacao -- --verificar-alvos. Meça com npm run medir e guarde em docs/evidencias/ como "antes".
-5. Rode npm run mutacao (cerca de uma hora) e npm run interface:mutacao nos marcos e no fim, sem outra carga pesada ao mesmo tempo: medições e mutações em paralelo distorcem tempos. Alvos ausentes, erros de compilação contados como detecção ou sobreviventes sem justificativa são falhas. Ao refatorar, rode --verificar-alvos e reescreva alvos com o mesmo efeito. Se um teste novo ler arquivos fora de src/, local/, tests/, fixtures/ e interface/src/, inclua-os na cópia de local/mutacao.js. Ao mudar a forma de dados internos, revise os testes que montam repositórios ou operações falsas: em M-03, dois deles passaram a acertar pelo motivo errado e esconderam MUT-08 e MUT-09. Testes de falha devem conferir a mensagem ou a causa, não só o código.
-6. Commits com identidade por comando: git -c user.name="PULSO Dev" -c user.email="dev@merca27.invalid" commit.
-7. Nunca apague nem migre silenciosamente bases anteriores. Novas tabelas precisam conviver com bases das Fases 01 e M-03: uma base sem as abas novas deve ser lida como tendo zero vendas. Use PULSO_DADOS temporário nos testes.
+Node/npm podem estar fora do PATH. Existe runtime oficial temporário validado em `/tmp/merca27-runtime/node-v22.23.5-linux-x64/bin`; use-o se existir. Se faltar, baixe runtime oficial em `/tmp`, confira checksum, sem instalação global. O volume vfat tem showexec e não permite symlinks: `.npmrc` usa bin-links=false. Dependências via `npm ci --ignore-scripts --no-audit --no-fund` e `npm run interface:instalar`; ferramentas da interface sempre pelos scripts da raiz. `local/interface.js` prepara esbuild em `/tmp`. A instalação pode demorar bastante neste volume; aguarde terminar antes de diagnosticar tipos ausentes.
 
-## 4. ETAPA 1: M-06 NO NAVEGADOR (SÓ SE AUTORIZADO)
+Antes de alterar, execute npm test, check, typecheck, demo, interface:typecheck, interface:test, interface:build e `npm run mutacao -- --verificar-alvos`. Meça `npm run medir` e salve JSON novo. Use apenas pastas temporárias para testes e sementes, nunca a base de outra execução.
 
-Verifique os três caminhos sem contornar bloqueios. Se algum funcionar, cumpra a seção 4 do prompt anterior, que está registrada em docs/RELATORIO_INTERFACE.md: capturas nas quatro larguras, jornadas, falhas simuladas, teclado e movimento reduzido. Se nenhum funcionar, registre e siga. Repita a verificação ao fim da etapa 3, para as telas de venda.
+Execute as baterias completas `npm run mutacao` e `npm run interface:mutacao` em marcos/final. Demoram: não interrompa só pelo tempo. Não rode testes, builds ou medição concorrentes com elas. Alvo ausente, erro de compilação/execução e sobrevivente sem justificativa são falha. Preserve o defeito conceitual ao adaptar alvos. Testes que leiam arquivos fora da lista copiada exigem ampliar a cópia do executor para não mascarar sobreviventes. Não aceite teste passando por erro de forma ou causa diferente da asserção pretendida.
 
-## 5. ETAPA 2: VENDAS NO NÚCLEO (FASE 2)
+Commits locais por fatia, após testes: `git -c user.name="PULSO Dev" -c user.email="dev@merca27.invalid" commit`. Sem push, merge em main ou publicação.
 
-### 5.1 Modelo
-- Novas tabelas, com colunas em ordem fixa em src/infra/esquema.js: VENDAS (venda_id, operacao_id, requisicao_id, registrado_em, forma_pagamento, total_centavos, custo_est_centavos, observacao, operador_simulado) e ITENS_VENDA (item_id, venda_id, operacao_id, sku, quantidade, preco_unit_centavos, custo_unit_est_centavos, subtotal_centavos). Ajuste os nomes se o código pedir, registrando em DECISOES.
-- Não grave estado mutável na linha da venda (o armazenamento só acrescenta): "estornada" é derivado da existência do estorno.
-- Movimentos tipo VENDA com delta negativo, preço e custo capturados no momento da venda e referência à venda.
-- Pontos que precisam conhecer as tabelas novas (todos, ou linhas de venda ficam sem conferência): TABELAS em src/infra/esquema.js; TABELAS_DE_DADOS, a leitura em carregarEstado, as chamadas de conferirOrigem, o mapa linhasPorTabela da checagem de presença e a lista de tipos em dobrarOperacoes (src/infra/repositorio.js); conferirIntencao, com reconstrução própria para VENDA e ESTORNO_VENDA; a reprodução cronológica; e o armazenamento em memória de tests/apoio.js (local/medir-desempenho.js já lê as tabelas do esquema). TIPOS_LEGADOS não muda: tipos novos só usam o formato atual.
-- Cada tabela nova acrescenta uma leitura por consulta (hoje são 5). Meça e registre o efeito; não troque releituras de verificação por cache para compensar.
+## 3. M-06 e Google: condições reais
 
-### 5.2 confirmarVenda (operação VENDA)
-- Pedido: requisicaoId, itens [{ sku, quantidade }] (1 a 50), formaPagamentoFicticia (DINHEIRO, PIX ou CARTAO, só informativa), observacao opcional sem dados pessoais, operador simulado. Sem descontos.
-- SKU repetido no pedido: decida entre agregar e recusar (T09) e registre em DECISOES. A contagem recusa repetição; prefira coerência, salvo motivo melhor.
-- Dentro da trava: idempotência, saldo atual de cada item, produto existente e ativo (T10). Qualquer item inválido ou sem saldo recusa a venda inteira (T06, T07), com SALDO_INSUFICIENTE indicando o SKU e o saldo.
-- Uma operação grava, nesta ordem: a venda, os itens e um movimento VENDA por item, usando o M-03. Total = Σ(quantidade × preço capturado); custo estimado = Σ(quantidade × custo de referência vigente) (docs/03 seções 8.1 e 8.2, T15). Alteração posterior de preço não muda a venda (T11).
-- A validação da intenção e a reprodução cronológica devem reconstruir venda, itens e movimentos pelas regras de domínio e conferir as relações: itens da venda, movimentos dos itens, Σ subtotais = total, Σ custos = custo estimado e saldo nunca negativo (docs/03 seção 12.3).
+D-047/D-054/D-061 registram chamadas de navegador negadas e Maestri sem CLI. Não repetir meios negados sem nova autorização. Se o proprietário tiver autorizado um caminho permitido e disponível (Firefox do host, Chromium em /tmp ou Maestri), validar o HTML único a 360, 390, 768 e 1440 px, teclado, foco, movimento reduzido, jornada de vendas/estorno e dashboard; salvar capturas reais em docs/capturas. Sem caminho disponível/autorizado, registrar a impossibilidade e continuar o trabalho local. M-06 permanece parcial.
 
-### 5.3 estornarVenda (operação ESTORNO_VENDA)
-- Estorno total, uma única vez por venda, com motivo obrigatório: grava o registro do estorno (por exemplo, tabela ESTORNOS_VENDA) e um movimento ESTORNO por item, devolvendo as unidades ao estoque. Não apaga nem edita a venda.
-- Simplificação do protótipo, a documentar: todo estorno devolve as unidades como revendáveis. Estorno parcial e item não revendável ficam fora (docs/03 seção 6.5).
-- Repetir o mesmo estorno é idempotente; um segundo estorno da mesma venda, com outra chave, é recusado (VENDA_JA_ESTORNADA). Estorno de venda inexistente é recusado.
-- Se houver tempo depois das demais fatias, avalie a reversão compensatória de perda e ajuste adiada em D-031. Senão, registre que continua adiada.
+Google continua pendente. Conector Drive não prova acesso para executar Apps Script. Só integrar se houver autorização efetiva e ferramenta adequada, sem credenciais no repositório. Não criar triggers, publicar app ou enviar notificações reais com base em presunção de acesso. Sem isso, testar a automação localmente e documentar a porta futura.
 
-### 5.4 Consultas
-- listarVendas (período opcional, mais recentes primeiro, com estado derivado), consultarVenda por venda_id ou requisicaoId com itens e movimentos.
-- consultarEstoque passa a mostrar os movimentos VENDA e ESTORNO. Nenhum KPI ou dashboard nesta fase: receita e margem por período ficam para a Fase 3.
+## 4. Política dos indicadores antes da implementação
 
-### 5.5 Testes do núcleo
-- T05 a T11, T15, T18 e T19 do docs/03, com os valores do exemplo do Documento Mestre seção 15.
-- Falhas antes, depois e silenciosas em cada posição da lista de registros da venda e do estorno; repetição conclui sem duplicar; nada de venda incompleta em saldo, listagem ou consulta.
-- Adulteração: item removido, extra ou alterado, total divergente, movimento de venda sem item, estorno duplicado, venda estornada com movimento faltando.
-- Concorrência real com processos: duas vendas acima do saldo disputando o mesmo SKU (só uma é aceita), a mesma venda disparada várias vezes (uma gravação) e estornos concorrentes da mesma venda (um aceito).
-- Compatibilidade: fixtures/base-fase01/ e uma base gerada pelo código de M-03 continuam legíveis.
-- Mutações novas para cada regra de venda e estorno.
+Registre uma decisão explícita sobre período e estornos, com exemplos de fronteira. Recomenda-se expor separadamente vendas brutas realizadas no período, devoluções registradas no período e receita após devoluções, com nomes claros. Estorno de venda de período anterior precisa ter tratamento documentado; não retirar uma venda histórica só porque hoje está estornada.
 
-## 6. ETAPA 3: VENDAS NA INTERFACE E NA CLI
+Defina número de vendas, unidades brutas, unidades devolvidas, ticket médio e CMV/margem de forma coerente com a política escolhida. Para ticket médio, explicite numerador e denominador; zero vendas deve ser N/D. Margem percentual com denominador zero deve ser N/D. Um período com apenas estornos pode ter resultado negativo, se essa for a política por data do evento, sem ser convertido em zero silenciosamente.
 
-- CLI: venda --item MER-001=2 --item MER-002=1 --pagamento PIX; vendas; venda --id; estorno --venda ID --motivo "...".
-- Despacho: exponha confirmarVenda, listarVendas, consultarVenda e estornarVenda. Atualize o teste da lista de ações e o shim.
-- Interface (mesmas regras de D-041 a D-046): tela de venda com vários itens (busca de produto, quantidade, preço capturado exibido em BRL, total calculado só para conferência visual, o valor oficial vem do núcleo), revisão antes de confirmar, histórico de vendas com busca por ID e detalhe com estorno. Mesma chave por tentativa lógica, os estados vazio, carregando, sucesso, falha incerta, conflito e pendente, e clique duplo bloqueado.
-- Opcional: tela de contagem de inventário; se fizer, exponha registrarContagem no despacho.
-- Testes de componente e mutações de interface para as telas novas.
+Use centavos e unidades inteiras exatas. CMV gerencial é a captura dos itens; estorno usa o mesmo custo original, mesmo após mudar cadastro. Perda é separada de venda. Valores estimados de estoque devem indicar se são atuais ou um retrato no fim do período; não misturar ambos sem rótulo. Não chamar margem bruta de lucro líquido, receita de caixa, nem os números de resultado real.
 
-## 7. FORA DESTA EXECUÇÃO
+## 5. Consultas do dashboard
 
-Dashboard, KPIs por período, despesas, automações periódicas, lotes e validade, descontos, estorno parcial, cadastro de fornecedor pela interface e pagamentos reais. Google só com acesso efetivo e autorizado para executar Apps Script, seguindo D-048. Não simule integração concluída.
+Implemente domínio puro para agregação e casos de uso de consulta sobre o estado completo validado. Entrada com limites ISO UTC válidos, `[desde, ate)` e período explícito; apresentação em America/Sao_Paulo. Se a interface aceitar dias locais, converta corretamente para instantes UTC na fronteira, com testes de meia-noite, sem misturar data local com UTC.
 
-## 8. ENTREGA
+Mínimo: receita bruta e devoluções, receita após devoluções, número de vendas, unidades, ticket, CMV/margem estimados, perdas em unidades/valor e reposição. Pode incluir receita por SKU e série diária se trouxerem rastreabilidade. Não somar pendências ou registros incompletos. Retorne IDs/linhas de origem ou consulta de detalhamento que permita conferir o indicador. Não cachear saldo persistente nem relaxar verificações de integridade.
 
-Conclua cada fatia com testes antes de cada commit local. Não publique, não envie ao remoto e não exponha credenciais. Use somente dados fictícios.
+Teste T15/T16 e reconciliações da arquitetura 12.3. Casos: base vazia, período sem vendas, limites inclusivo/exclusivo, muitos registros além do limite de listarVendas, vários itens, preço/custo alterados depois, venda/estorno no mesmo período e em períodos distintos, somente estornos, perda/ajuste separados, falha parcial e adulteração. Compare agregação com cálculo independente dos registros confirmados, sem repetir o algoritmo do código.
 
-Atualize README.md, docs/PROGRESSO.md, docs/DECISOES.md, docs/TESTES.md, docs/MELHORIAS_PLANEJADAS.md e docs/RELATORIO_INTERFACE.md (navegador, se houver). Crie docs/RELATORIO_FASE_02.md com arquivos, comandos, resultados, compatibilidade com bases anteriores, desempenho antes e depois, limitações e situação real do Google. Reescreva este prompt para a Fase 3 (dashboard e automações) com base no que existir. Se algum critério não puder ser cumprido, registre o que falta sem marcar a funcionalidade como concluída.
+## 6. Interface de visão geral
 
-COMECE AGORA pela leitura, pela linha de base e pelo plano curto; depois siga as etapas em ordem.
-```
+Acrescente somente as ações necessárias ao despacho, contratos e gateway. Sem regras de negócio nos componentes. Filtros de período visíveis, unidades e fórmulas acessíveis, valores estimados rotulados, estados vazio/carregando/falha, links até vendas ou movimentos. Mantenha a identidade PULSO, contraste AA, rótulos, foco e navegação responsiva. Gráficos apenas se ajudarem, sem biblioteca pesada ou números inventados.
+
+Teste componentes e acrescente mutações para período enviado, N/D, dados devolvidos pelo núcleo, navegação de detalhe e estados. Build deve continuar em HTML único e dentro do orçamento; informe tamanho final. Não afirmar teste de navegador com base em jsdom.
+
+## 7. Resumo diário e automação local
+
+Implemente primeiro a geração do resumo operacional diário (reposições, movimentação, falhas/pendências), com dia/fuso, instante e origem explícitos. A geração deve ser reconciliável com as mesmas consultas do dashboard.
+
+Para uma execução programada, escolha e documente chave idempotente por tipo/dia e estratégia de logs de tentativa/sucesso/falha. Qualquer tabela/tipo novo precisa ampliar esquema, validação da intenção, reprodução e testes; aproveitar o protocolo M-03, sem criar log paralelo sem integridade. Defina como distinguir reexecutar geração de enviar notificação: o protótipo local pode preparar o resumo e registrar execução sem enviar nada.
+
+Disponibilize CLI de execução manual e simulação de agenda com relógio controlado e porta de entrega falsa. Teste repetição do mesmo dia, dias distintos, falha antes/depois de persistir, recuperação, concorrência e resumo com pendência. Se não houver meio autorizado para agenda real, não invente trigger ativo; registre execução local e adaptador futuro. Não enviar e-mails ou mensagens reais nem configurar destinatários sem instrução explícita do proprietário.
+
+## 8. Volume, medição e entrega
+
+Crie cenário determinístico de 90 dias com vendas de vários itens, estoque suficiente na ordem dos eventos, perdas e estornos, incluindo fronteiras entre períodos. Catálogo seed existente e fixture da Fase 01 ficam intactos; cenário deve usar pasta temporária e ter totais independentes conhecidos. Meça consultas/escritas atuais e dashboard, indicando volume de cada caso, aquecimentos, amostras e leituras. Sem benchmarks concorrentes com mutação, testes ou build; não extrapole para Google.
+
+Ao terminar cada fatia, execute verificações apropriadas e registre commit local. No final, rode os controles completos, as duas baterias de mutação e medição isolada. Não reduzir cobertura para produzir contagem verde. Documente sobreviventes equivalentes com a regra que ainda recusa o caso.
+
+Atualize README, PROGRESSO, DECISOES, TESTES, MELHORIAS_PLANEJADAS e RELATORIO_INTERFACE quando pertinente. Crie `docs/RELATORIO_FASE_03.md` com arquivos, decisões, comandos/resultados, política temporal, conciliação independente, compatibilidade, desempenho e limitações reais. Reescreva este prompt para o próximo passo baseado no que existe. Critérios incompletos devem ficar explícitos; não marcar M-06/Google ou agenda real como concluídos sem executar.
+
+Fora desta fase: despesas, fiscal, pagamentos reais, lotes/FEFO, descontos, estornos parciais, compra automática, banco remoto, autenticação própria, IA e publicação. Reversão administrativa pendente deve continuar registrada ou receber uma fatia própria se houver espaço após os objetivos centrais.

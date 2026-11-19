@@ -2,6 +2,14 @@
 
 **Data:** 19/11/2026 · **Branch:** `interface-angular` (criada a partir de `fase-01`) · **Ambiente:** exclusivamente local.
 
+## Atualização da Fase 2 (branch `fase-02-vendas`)
+
+Acrescentadas as telas `/vendas`, `/vendas/nova` e `/vendas/:id`: busca de produtos, itens, revisão, confirmação com total oficial, histórico, detalhe e estorno total com motivo. O despacho tem 18 ações. O HTML único passou a 434.763 bytes (424,6 KiB); tipos strict, 51 testes de interface e build aprovados. Os resultados das mutações estão na seção atual de [TESTES.md](TESTES.md).
+
+Corrigidos o novo envio após venda concluída, a atualização de comprovante/detalhe após repetição incerta, a ligação do formulário de estorno à diretiva Angular e IDs duplicados entre `Campo` e controle interno. Os testes clicam nos botões reais, conferem chave/pedido, momento da recarga, rótulos e IDs únicos.
+
+**M-06 permanece parcial.** Nenhum caminho de navegador foi explicitamente autorizado nesta sessão; Maestri continua sem CLI e chamadas anteriormente negadas não foram repetidas (D-061). Não há capturas ou verificação nas quatro larguras. Não houve execução Google. O conteúdo abaixo registra a entrega original de M-06; o estado atual da Fase 2 está em [RELATORIO_FASE_02.md](RELATORIO_FASE_02.md).
+
 ## Resultado
 
 **M-06 está parcialmente concluída.** A interface foi implementada, compilada num HTML único compatível com o HTML Service e coberta por testes automatizados, com mutações. **Faltam a verificação em navegador real e as capturas de tela**, que são critérios de aceite: as três formas de abrir um navegador neste ambiente foram bloqueadas (seção "Navegador"). Por isso M-06 **não** está marcada como concluída. A integração Google continua pendente por falta de acesso efetivo.

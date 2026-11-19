@@ -2,7 +2,7 @@
 
 > **Demonstração educacional.** A MERCA 27 é um mercado fictício e todos os dados são sintéticos. O PULSO não é sistema fiscal, contábil nem produto pronto para uso empresarial real.
 
-**Estado atual: Fase 01, M-03 e interface M-06 implementadas localmente.** Produtos, fornecedores, entradas, perdas, contagens (individuais e de inventário com vários SKUs), histórico de versões e reposição funcionam pela CLI, e quase tudo também pela interface Angular + Tailwind. São 421 testes no núcleo e 39 na interface. A interface ainda não foi verificada em navegador real, e a integração Google continua pendente ([relatório](docs/RELATORIO_INTERFACE.md)).
+**Estado atual: Fase 2 local, com vendas de vários itens e estorno total.** Produtos, fornecedores, entradas, perdas, contagens, versões e reposição continuam disponíveis. Vendas, histórico e estornos funcionam pela CLI e pela interface Angular + Tailwind. A validação em navegador real de M-06 e a integração Google continuam pendentes ([relatório da Fase 2](docs/RELATORIO_FASE_02.md)). Resultados executados em [TESTES.md](docs/TESTES.md).
 
 ## Requisitos
 
@@ -20,16 +20,16 @@ Nesta máquina, Node/npm não estão no PATH padrão. A revisão usou um runtime
 npm test            # testes automatizados
 npm run check       # verificação de sintaxe
 npm run typecheck   # contratos JSDoc; exige npm ci
-npm run mutacao     # 134 defeitos em cópias temporárias; leva cerca de 40 minutos
+npm run mutacao     # defeitos em cópias temporárias; execução demorada
 npm run mutacao -- --verificar-alvos   # só confere que cada alvo de mutação existe
 npm run medir       # cenário temporário de 90 dias; tempos e volume em JSON
 npm run demo        # demonstração do primeiro marco, em pasta temporária
 
 npm run interface:instalar   # dependências da interface (uma vez)
 npm run interface:build      # HTML único: interface/dist/html-service/Interface.html
-npm run interface:test       # 39 testes da interface
+npm run interface:test       # componentes, transporte e estados da interface
 npm run interface:typecheck  # TypeScript strict da interface
-npm run interface:mutacao    # 13 defeitos na interface, em cópias temporárias
+npm run interface:mutacao    # defeitos na interface, em cópias temporárias
 PULSO_DADOS=/tmp/pulso-demo npm run interface:preview -- --seed   # http://127.0.0.1:4827/
 
 npm run -s pulso -- seed
@@ -46,6 +46,10 @@ npm run -s pulso -- saldo-inicial --sku MER-041 --quantidade 7 --custo 600 --mot
 npm run -s pulso -- perda --sku MER-041 --quantidade 2 --categoria-perda AVARIA --motivo "Avaria fictícia"
 npm run -s pulso -- ajuste --sku MER-041 --contada 4 --motivo "Contagem fictícia"
 npm run -s pulso -- contagem --item MER-001=7 --item MER-002=0 --motivo "Inventário fictício"
+npm run -s pulso -- venda --item MER-001=2 --pagamento PIX --requisicao EXEMPLO-VENDA-001
+npm run -s pulso -- vendas
+npm run -s pulso -- venda --id VEN-...  # use o ID devolvido pelo comando venda
+npm run -s pulso -- estorno --venda VEN-... --motivo "Devolução fictícia" --requisicao EXEMPLO-ESTORNO-001
 npm run -s pulso -- reposicao
 npm run -s pulso -- historico-produto --sku MER-001
 npm run -s pulso -- reconciliar
@@ -54,6 +58,10 @@ npm run -s pulso -- reconciliar
 Preço, custo de referência e custo unitário de entrada são informados em centavos. Entrada exige `--custo` (zero para bonificação) e `--fornecedor`. Os dados ficam em `data/`, que não é versionada; use `PULSO_DADOS` para escolher outra pasta. Para repetir uma entrada, use o mesmo `--requisicao ID` e os mesmos dados. Uma entrada nova usa outra chave. O custo da entrada não altera automaticamente o custo de referência.
 
 A pré-visualização serve o HTML único e simula `google.script.run` chamando os mesmos casos de uso. Ouve só em `127.0.0.1`. Use `--falhas-simuladas` para testar repetição após falha e `PULSO_PREVIEW_ATRASO_MS` para ver o estado de carregamento. **Ela não é integração com o Google.**
+
+Venda aceita de 1 a 50 itens, cada SKU uma única vez, com quantidade inteira positiva. Se qualquer item for inválido ou não tiver saldo, a venda inteira é recusada. `DINHEIRO`, `PIX` e `CARTAO` são campos informativos. Preço e custo de referência são capturados pelo núcleo na confirmação, em centavos; o total da revisão visual é apenas para conferência. Repetir a mesma requisição com os mesmos itens, mesmo em outra ordem, devolve a venda existente. O estorno é total e único, exige motivo e devolve todas as unidades como revendáveis, sem apagar a venda. Devoluções parciais, taxas e pagamentos reais ficam fora deste protótipo.
+
+No núcleo, `listarVendas({ desde?, ate?, limite? })` usa ISO UTC, início inclusivo e fim exclusivo, e retorna até 100 vendas por padrão (máximo 500). `consultarVenda` aceita exatamente um de `vendaId` ou `requisicaoId`. A busca da interface filtra a lista carregada; para um ID fora dela, abra `/#/vendas/ID` ou consulte pelo núcleo/CLI.
 
 `npm run demo` valida os próprios resultados e termina com erro se alguma expectativa falhar. Usa uma pasta temporária, sem alterar `data/`. A seed e os resultados esperados estão em [fixtures/SEED_README.md](fixtures/SEED_README.md).
 
@@ -95,11 +103,11 @@ Em 19/11/2026 (M-06), o conector Drive exigia autorização nesta sessão e cont
 ## Limitações
 
 - Sem Google Sheets, Apps Script, sidebar ou menu. A interface roda só na pré-visualização local e ainda não foi verificada em navegador real nem no HTML Service.
-- Sem vendas, estornos, dashboard, lotes, validade, automações periódicas ou compra automática. Reversão de perdas e ajustes foi adiada para a Fase 2.
+- Sem dashboard, lotes, validade, automações periódicas ou compra automática. A reversão compensatória de perdas e ajustes continua adiada, com justificativa em D-058.
 - A contagem de inventário com vários SKUs existe no núcleo e na CLI, ainda sem tela na interface.
 - Bases da Fase 00 não são migradas nem apagadas automaticamente. Preserve o histórico antigo e escolha uma pasta nova com `PULSO_DADOS` para o esquema da Fase 01.
 - Alterações coerentes de todo o histórico podem não ser detectadas: as comparações não são uma assinatura criptográfica. Não há cadeia de hashes nem cópia externa de auditoria.
 - Uma interrupção real durante a escrita pode deixar uma linha incompleta. Ela é detectada e bloqueia a operação; não há reparo automático de arquivo truncado.
 - Se um processo for encerrado à força durante uma operação, o arquivo `.pulso.lock` precisa ser removido manualmente. A mensagem de erro indica o caminho.
 
-Detalhes atuais em [docs/RELATORIO_M03.md](docs/RELATORIO_M03.md), [docs/RELATORIO_INTERFACE.md](docs/RELATORIO_INTERFACE.md) e [docs/RELATORIO_FASE_01.md](docs/RELATORIO_FASE_01.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). A [Fase 00](docs/RELATORIO_FASE_00.md) permanece como registro histórico.
+Detalhes atuais em [docs/RELATORIO_FASE_02.md](docs/RELATORIO_FASE_02.md) e [docs/RELATORIO_INTERFACE.md](docs/RELATORIO_INTERFACE.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). Os relatórios de [M-03](docs/RELATORIO_M03.md), [Fase 01](docs/RELATORIO_FASE_01.md) e [Fase 00](docs/RELATORIO_FASE_00.md) permanecem como registros históricos.

@@ -1,5 +1,63 @@
 # Evidências de testes
 
+## Fase 2 — vendas e estorno (19/11/2026)
+
+Estado atual na branch `fase-02-vendas`, exclusivamente local. Os registros seguintes são marcos históricos. Relatório e política de dados em [RELATORIO_FASE_02.md](RELATORIO_FASE_02.md), decisões D-055–D-062. **Navegador real e Google não foram executados** (D-061).
+
+| Verificação | Resultado executado |
+|---|---|
+| Linha de base do diretório encontrado | 494 testes aprovados; implementação de vendas já presente sem commit, preservada |
+| Instalação | `npm ci --ignore-scripts --no-audit --no-fund` e `npm run interface:instalar`, saída 0; a interface levou cerca de 14 minutos |
+| `npm test` | 507 aprovados; 0 falhas, cancelados ou ignorados |
+| `npm run check` | 45 arquivos, zero erros |
+| `npm run typecheck` | Duas configurações aprovadas |
+| `npm run demo` | Saldo e recálculo independente 10; um movimento |
+| `npm run interface:typecheck` | strict e strictTemplates aprovados |
+| `npm run interface:test` | 51 aprovados em 6 arquivos (39 existentes + 12 novos de vendas) |
+| `npm run interface:build` | HTML único de 434.763 bytes (424,6 KiB), sem chunks externos |
+| `npm run mutacao -- --verificar-alvos` | 163 alvos encontrados uma única vez |
+| `npm run mutacao` | 163 defeitos: 157 detectados, 6 equivalentes justificados, zero erros, saída 0. [Evidência](evidencias/mutacao-fase02.txt) |
+| `npm run interface:mutacao` | 26 defeitos, 26 detectados por falhas de teste, zero problemas, saída 0. [Evidência](evidencias/mutacao-interface-fase02.txt) |
+| Medição isolada | Referência M-03 e Fase 2 executadas sequencialmente, fora das mutações/builds/testes |
+| Compatibilidade com M-03 e fumaça HTTP | Código de `18e7f01` gerou base nova; Fase 2 vendeu/estornou sem reescrever prefixos antigos. HTTP 200, 40 produtos, venda de 2 itens/2.108 centavos, repetição após 503 sem duplicar; estorno e saldos finais 10/10. [Evidência](evidencias/fumaca-fase02.json) |
+
+Conferência final sem mutações: os oito comandos de teste/sintaxe/tipos/demo/interface/build/alvos foram repetidos após as baterias, com saída 0 e os mesmos resultados. [Síntese dos controles](evidencias/validacao-fase02.json). `git diff --check` e a comparação dos cinco documentos-base, catálogo e fixture da Fase 01 com `18e7f01` passaram sem diferenças.
+
+### Cobertura e correções
+
+Equivalentes: MUT-10/MUT-11 são recusadas pela reconstrução canônica antes da soma; MUT-37 pelo conteúdo distinto das assinaturas; MUT-115 pelas regras de quantidade/ordem/reconstrução dos registros; MUT-123 pelo esquema e reconstrução canônica; MUT-155 pela verificação final de saldo histórico negativo (D-062). Nenhuma sobrevivente sem justificativa foi aceita. Os 29 alvos novos da Fase 2 tiveram 28 detecções e essa única equivalência nova.
+
+Na interface, os 13 alvos anteriores e os 13 novos foram detectados. O executor agora também recusa timeout, erro de execução e falha sem resumo de testes reprovados; compilação não conta como detecção. As duas baterias foram executadas em sequência, sem outras cargas pesadas concorrentes.
+
+A fumaça foi executada depois das baterias por `node /tmp/merca27-fase02-fumaca.js` (roteiro temporário desta sessão). Extraiu-se `git archive 18e7f01` em `/tmp`; o núcleo antigo cadastrou dois produtos, entradas e contagem de dois SKUs. O núcleo atual leu zero vendas, vendeu e estornou, preservando os prefixos de todos os arquivos anteriores. Outra pasta temporária serviu o HTML único real, com CSP e shim, e simulou perda de resposta tanto na venda quanto no estorno (HTTP 503 depois de executar); repetir devolveu `OPERACAO_DUPLICADA`. Dados e servidor foram encerrados pelo roteiro. Isso comprova transporte HTTP local, **não** execução em navegador ou Google.
+
+`tests/vendas.test.js` cobre venda de vários itens, preço/custo capturados, total/CMV em centavos, disponibilidade de todos os itens, SKU repetido recusado, idempotência em outra ordem, conflito, produto inativo, histórico após reajuste e estorno único. Testa 50 itens válidos (101 registros), excesso de itens, estouro monetário e devolução acima do limite de unidades. Recusas não criam intenção nem alteram dados de domínio.
+
+Há falhas antes, depois e silenciosas em cada um dos cinco registros de uma venda de dois itens e dos três do seu estorno. A operação incompleta não afeta saldo/lista/detalhe; repetir completa apenas os registros faltantes. Adulterações incluem item ausente/extra/alterado, total/preço incorretos, movimento sem item, quantidade divergente, desativação antecipada no log, estorno duplicado, devolução diferente e movimento de estorno faltante. Reconciliações independentes conferem movimentos, itens, totais e estornos.
+
+Concorrência usa processos reais: oito vendas sobre saldo limitado, duas vendas de seis sobre saldo dez (apenas uma confirma), a mesma venda enviada seis vezes e seis pedidos diferentes de estorno para a mesma venda (apenas um confirma). A CLI cobre os comandos novos e o alias `venda --id`. Fixture antiga continua intacta; suas operações, pendência e novas vendas são legíveis. As suítes existentes de M-03, adulteração e executor permanecem aprovadas, incluindo as mensagens que evitam testes passando pela causa errada.
+
+Na interface, os testes clicam em botões e verificam revisão antes de enviar, pedido sem preço fornecido pelo cliente, clique duplo, total oficial só após sucesso, bloqueio depois da confirmação, falha incerta com mesma chave/dados, recusa/conflito/pendência, busca por nome/SKU e por requisição/ID, histórico, detalhe, estorno e recarga só após confirmação. Foram corrigidos IDs duplicados de campos e um formulário de estorno sem diretiva de envio. Tentativas durante a instalação incompleta falharam por dependências parciais; controles foram repetidos após instalar, sem ignorar erros de tipos.
+
+### Desempenho
+
+O arquivo `desempenho-fase02-antes.json` já existia e foi preservado. Nesta revisão, o marco M-03 `18e7f01` foi reexecutado em cópia temporária como referência, depois das alterações no diretório atual; em seguida foi medido o código atual. Não se apresenta essa reprodução como medição anterior à sessão. Ambos usam Node 22.23.5, três aquecimentos e 20 amostras, 90 dias sintéticos, 40 produtos, seis fornecedores, 270 movimentos, 13 alterações e 658 eventos iniciais. Vendas são medidas depois das escritas de estoque; seu histórico contém 23 vendas de três itens antes das consultas/estornos.
+
+| Caso | Mediana referência / Fase 2 (ms) | Leituras referência / Fase 2 |
+|---|---:|---:|
+| Listar produtos | 17,379 / 18,381 | 5 / 8 |
+| Consultar estoque | 17,362 / 18,968 | 5 / 8 |
+| Consultar reposição | 17,068 / 17,438 | 5 / 8 |
+| Entrada | 44,301 / 57,705 | 8 / 11 |
+| Contagem de cinco SKUs | 67,510 / 73,108 | 12 / 15 |
+| Venda de três itens | — / 76,366 | — / 17 |
+| Listar vendas | — / 30,805 | — / 8 |
+| Consultar venda | — / 29,375 | — / 8 |
+| Estorno de três itens | — / 89,810 | — / 14 |
+
+As tabelas acrescentaram três leituras por carregamento; as releituras de confirmação foram mantidas. Tempos locais, sujeitos a ruído e a crescimento do volume entre casos; não medem Google. Evidências integrais: [referência M-03](evidencias/desempenho-fase02-base-m03.json) e [Fase 2](evidencias/desempenho-fase02-depois.json).
+
+
 ## M-03 — operações com vários registros (19/11/2026)
 
 Estado atual. Ambiente local, Node 22.23.5. **Nada foi executado em navegador real, Google Sheets ou Apps Script** (D-048, D-054).
