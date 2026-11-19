@@ -1,0 +1,33 @@
+{
+  "data": "2026-11-19",
+  "ambiente": "local",
+  "node": "v22.23.5",
+  "comandosAprovados": [
+    "npm test",
+    "npm run check",
+    "npm run typecheck",
+    "npm run demo",
+    "npm run interface:typecheck",
+    "npm run interface:test",
+    "npm run interface:build",
+    "npm run mutacao -- --verificar-alvos"
+  ],
+  "saidaDaCadeia": 0,
+  "testesNucleo": {
+    "aprovados": 507,
+    "falhas": 0,
+    "ignorados": 0,
+    "cancelados": 0
+  },
+  "testesInterface": {
+    "aprovados": 51,
+    "arquivos": 6
+  },
+  "sintaxe": {
+    "arquivos": 45,
+    "erros": 0
+  },
+  "htmlUnicoBytes": 434763,
+  "alvosMutacaoUnicos": 163,
+  "observacao": "Conferência sem mutações executada após as duas baterias completas. Navegador real e Google não executados."
+}

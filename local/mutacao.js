@@ -133,7 +133,7 @@ const MUTACOES = [
   // M-03: operações com vários registros e CONTAGEM_INVENTARIO.
   mutacao('MUT-114', REPO, "&&\n        TIPOS_LEGADOS.indexOf(evento.tipo) !== -1) registros = [payload];", ") registros = [payload];"),
   mutacao('MUT-115', REPO, 'if (vistos.has(identificador))', 'if (false)',
-    'Registro repetido também é recusado pela exigência de um registro por operação antiga e pela ordem estrita dos itens da contagem; a checagem é defesa redundante.'),
+    'Registro repetido também é recusado pela exigência de um registro antigo, ordem da contagem ou reconstrução canônica e espelho dos itens de venda/estorno; defesa redundante.'),
   mutacao('MUT-116', REPO, 'if (!registros.length || registros.length > LIMITE_REGISTROS)', 'if (registros.length > LIMITE_REGISTROS)'),
   mutacao('MUT-117', REPO, 'else if (!operacao.registros.every(', 'else if (!operacao.registros.some('),
   mutacao('MUT-118', REPO, 'return r.tabela === tabela && r.linha[chave] === linha[chave];', 'return r.tabela === tabela;'),

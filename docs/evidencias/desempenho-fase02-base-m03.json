@@ -1,0 +1,57 @@
+{
+  "rotulo": "referencia-m03-18e7f01",
+  "node": "v22.23.5",
+  "dias": 90,
+  "operacoesDiarias": 3,
+  "alteracoesSemanais": 13,
+  "volume": {
+    "PRODUTOS_ALTERACOES": 13,
+    "FORNECEDORES": 6,
+    "PRODUTOS": 40,
+    "MOVIMENTOS_ESTOQUE": 270,
+    "OPERACOES_LOG": 658
+  },
+  "medidas": [
+    {
+      "nome": "listarProdutos",
+      "repeticoes": 20,
+      "medianaMs": 17.379,
+      "mediaMs": 17.505,
+      "p95Ms": 18.823,
+      "leiturasPorChamada": 5
+    },
+    {
+      "nome": "consultarEstoque",
+      "repeticoes": 20,
+      "medianaMs": 17.362,
+      "mediaMs": 17.466,
+      "p95Ms": 18.5,
+      "leiturasPorChamada": 5
+    },
+    {
+      "nome": "consultarReposicao",
+      "repeticoes": 20,
+      "medianaMs": 17.068,
+      "mediaMs": 17.196,
+      "p95Ms": 18.048,
+      "leiturasPorChamada": 5
+    },
+    {
+      "nome": "registrarEntrada",
+      "repeticoes": 20,
+      "medianaMs": 44.301,
+      "mediaMs": 45.701,
+      "p95Ms": 53.622,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "registrarContagem",
+      "repeticoes": 20,
+      "medianaMs": 67.51,
+      "mediaMs": 66.907,
+      "p95Ms": 74.855,
+      "leiturasPorChamada": 12
+    }
+  ],
+  "limites": "Ambiente local JSONL, dados sintéticos e volume declarado; não mede Google, vendas nem uma operação comercial real."
+}

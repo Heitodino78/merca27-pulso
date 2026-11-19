@@ -44,6 +44,8 @@ function medirDesempenho(rotulo = 'atual') {
     const base = criarArmazenamentoJsonl(pasta);
     let leituras = 0;
     let req = 0;
+    const vendasMedidas = [];
+    let proximoEstorno = 0;
     const pulso = nucleo.criar({
       armazenamento: { ler: (tabela) => { leituras++; return base.ler(tabela); }, anexar: (tabela, linha) => base.anexar(tabela, linha) },
       lock: criarLockArquivo(path.join(pasta, '.pulso.lock')), relogio: () => new Date().toISOString(), gerarId: (p) => `${p}-MEDICAO-${++sequencia}`,
@@ -65,9 +67,16 @@ function medirDesempenho(rotulo = 'atual') {
         medir('registrarContagem', () => pulso.registrarContagem({ requisicaoId: `MED-CONT-${++req}`, motivo: 'Inventário fictício',
           itens: ['MER-010', 'MER-011', 'MER-012', 'MER-013', 'MER-014'].map((sku, i) => ({ sku, quantidadeContada: 100 + ((req + i) % 2) })) })),
         // Fase 2: as contagens acima deixam 100 ou 101 unidades nesses SKUs; cada venda leva 1 de três deles.
-        medir('confirmarVenda', () => pulso.confirmarVenda({ requisicaoId: `MED-VENDA-${++req}`, formaPagamentoFicticia: 'PIX',
-          itens: [{ sku: 'MER-010', quantidade: 1 }, { sku: 'MER-011', quantidade: 1 }, { sku: 'MER-012', quantidade: 1 }] })),
-        medir('listarVendas', () => pulso.listarVendas({}))],
+        medir('confirmarVenda', () => {
+          const r = exigir(pulso.confirmarVenda({ requisicaoId: `MED-VENDA-${++req}`, formaPagamentoFicticia: 'PIX',
+            itens: [{ sku: 'MER-010', quantidade: 1 }, { sku: 'MER-011', quantidade: 1 }, { sku: 'MER-012', quantidade: 1 }] }));
+          vendasMedidas.push(r.vendaId);
+          return r;
+        }),
+        medir('listarVendas', () => pulso.listarVendas({})),
+        medir('consultarVenda', () => pulso.consultarVenda({ vendaId: vendasMedidas[0] })),
+        medir('estornarVenda', () => pulso.estornarVenda({ requisicaoId: `MED-ESTORNO-${++req}`,
+          vendaId: vendasMedidas[proximoEstorno++], motivo: 'Devolução sintética' }))],
       limites: 'Ambiente local JSONL, dados sintéticos e volume declarado; vendas medidas após o cenário de estoque. Não mede Google nem uma operação comercial real.' };
   } finally { fs.rmSync(pasta, { recursive: true, force: true }); }
 }

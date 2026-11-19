@@ -1,0 +1,35 @@
+
+> a002-merca27-pulso@0.1.0 interface:mutacao
+> node local/mutacao-interface.js
+
+MUI-01: DETECTADA  (src/app/nucleo/envio.ts)
+MUI-02: DETECTADA  (src/app/nucleo/envio.ts)
+MUI-03: DETECTADA  (src/app/nucleo/envio.ts)
+MUI-04: DETECTADA  (src/app/nucleo/envio.ts)
+MUI-05: DETECTADA  (src/app/nucleo/envio.ts)
+MUI-06: DETECTADA  (src/app/nucleo/classificacao.ts)
+MUI-07: DETECTADA  (src/app/nucleo/pulso-api.ts)
+MUI-08: DETECTADA  (src/app/nucleo/pulso-api.ts)
+MUI-09: DETECTADA  (src/app/nucleo/dinheiro.ts)
+MUI-10: DETECTADA  (src/app/nucleo/dinheiro.ts)
+MUI-11: DETECTADA  (src/app/ui/aviso-envio.ts)
+MUI-12: DETECTADA  (src/app/formularios/form-entrada.ts)
+MUI-13: DETECTADA  (src/app/formularios/form-entrada.ts)
+MUI-14: DETECTADA  (src/app/paginas/venda-nova.ts)
+MUI-15: DETECTADA  (src/app/paginas/venda-nova.ts)
+MUI-16: DETECTADA  (src/app/paginas/venda-nova.ts)
+MUI-17: DETECTADA  (src/app/paginas/venda-nova.ts)
+MUI-18: DETECTADA  (src/app/paginas/venda-nova.ts)
+MUI-19: DETECTADA  (src/app/paginas/vendas.ts)
+MUI-20: DETECTADA  (src/app/paginas/venda-nova.ts)
+MUI-21: DETECTADA  (src/app/paginas/vendas.ts)
+MUI-22: DETECTADA  (src/app/paginas/venda-nova.ts)
+MUI-23: DETECTADA  (src/app/paginas/vendas.ts)
+MUI-24: DETECTADA  (src/app/nucleo/classificacao.ts)
+MUI-25: DETECTADA  (src/app/nucleo/pulso-api.ts)
+MUI-26: DETECTADA  (src/app/ui/campo.ts)
+{
+  "total": 26,
+  "detectadas": 26,
+  "problemas": []
+}

@@ -1,0 +1,92 @@
+{
+  "rotulo": "fase02-depois",
+  "node": "v22.23.5",
+  "dias": 90,
+  "operacoesDiarias": 3,
+  "alteracoesSemanais": 13,
+  "volume": {
+    "PRODUTOS_ALTERACOES": 13,
+    "FORNECEDORES": 6,
+    "PRODUTOS": 40,
+    "MOVIMENTOS_ESTOQUE": 270,
+    "VENDAS": 0,
+    "ITENS_VENDA": 0,
+    "ESTORNOS_VENDA": 0,
+    "OPERACOES_LOG": 658
+  },
+  "medidas": [
+    {
+      "nome": "listarProdutos",
+      "repeticoes": 20,
+      "medianaMs": 18.381,
+      "mediaMs": 18.502,
+      "p95Ms": 20.073,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "consultarEstoque",
+      "repeticoes": 20,
+      "medianaMs": 18.968,
+      "mediaMs": 19.505,
+      "p95Ms": 22.536,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "consultarReposicao",
+      "repeticoes": 20,
+      "medianaMs": 17.438,
+      "mediaMs": 17.729,
+      "p95Ms": 19.213,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "registrarEntrada",
+      "repeticoes": 20,
+      "medianaMs": 57.705,
+      "mediaMs": 60.832,
+      "p95Ms": 80.299,
+      "leiturasPorChamada": 11
+    },
+    {
+      "nome": "registrarContagem",
+      "repeticoes": 20,
+      "medianaMs": 73.108,
+      "mediaMs": 74.482,
+      "p95Ms": 89.24,
+      "leiturasPorChamada": 15
+    },
+    {
+      "nome": "confirmarVenda",
+      "repeticoes": 20,
+      "medianaMs": 76.366,
+      "mediaMs": 76.726,
+      "p95Ms": 84.679,
+      "leiturasPorChamada": 17
+    },
+    {
+      "nome": "listarVendas",
+      "repeticoes": 20,
+      "medianaMs": 30.805,
+      "mediaMs": 35.233,
+      "p95Ms": 56.956,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "consultarVenda",
+      "repeticoes": 20,
+      "medianaMs": 29.375,
+      "mediaMs": 29.71,
+      "p95Ms": 32.551,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "estornarVenda",
+      "repeticoes": 20,
+      "medianaMs": 89.81,
+      "mediaMs": 89.693,
+      "p95Ms": 106.371,
+      "leiturasPorChamada": 14
+    }
+  ],
+  "limites": "Ambiente local JSONL, dados sintéticos e volume declarado; vendas medidas após o cenário de estoque. Não mede Google nem uma operação comercial real."
+}

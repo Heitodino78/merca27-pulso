@@ -206,6 +206,15 @@ test('estorno é aceito mesmo com produto desativado depois da venda', () => {
   assert.equal(saldo(pulso, 'MER-002'), 5);
 });
 
+test('estorno preserva custo capturado mesmo após reajuste do cadastro', () => {
+  const { pulso, armazenamento } = ambienteDeVenda();
+  const venda = pulso.confirmarVenda(VENDA);
+  assert.equal(pulso.alterarProduto({ requisicaoId: 'V-ALT-CUSTO', sku: 'MER-001', motivo: 'Reajuste fictício', campos: { precoVendaCentavos: 1500, custoRefCentavos: 900 } }).ok, true);
+  assert.equal(pulso.estornarVenda({ requisicaoId: 'V-EST-CUSTO', vendaId: venda.vendaId, motivo: 'Devolução fictícia' }).ok, true);
+  assert.equal(armazenamento.tabelas.MOVIMENTOS_ESTOQUE.find((m) => m.tipo === 'ESTORNO' && m.sku === 'MER-001').custo_unit_centavos, 600);
+  assert.equal(pulso.consultarVenda({ vendaId: venda.vendaId }).venda.custoEstCentavos, 2400);
+});
+
 test('estorno que excederia o limite de unidades é recusado antes da intenção, sem bloquear a base', () => {
   const { pulso, armazenamento } = ambienteDeVenda();
   const venda = pulso.confirmarVenda(VENDA);
@@ -534,6 +543,14 @@ test('T19: vendas concorrentes acima do saldo — só cabem as que o estoque com
   assert.equal(pulso.listarVendas({}).vendas.length, 3);
 });
 
+test('T19: duas vendas concorrentes de seis sobre saldo dez confirmam apenas uma', async (t) => {
+  const pasta = pastaComEstoque(t, 10);
+  const codigos = await Promise.all(['A', 'B'].map((s) =>
+    cliAssincrona(pasta, 'venda', '--item', 'MER-001=6', '--pagamento', 'PIX', '--requisicao', `CONC-DUAS-${s}`)));
+  assert.equal(codigos.filter((c) => c === 0).length, 1);
+  assert.equal(criarPulsoLocal(pasta).consultarEstoque({ sku: 'MER-001' }).saldoAtual, 4);
+});
+
 test('concorrência real: a mesma venda e o mesmo estorno disparados várias vezes gravam uma única vez', async (t) => {
   const pasta = pastaComEstoque(t, 10);
   const vendas = await Promise.all(Array.from({ length: 6 }, () =>
@@ -561,6 +578,7 @@ test('CLI: venda, vendas, ver-venda e estorno de ponta a ponta', (t) => {
   assert.match(venda.stdout, /Total R\$\s*4,00/);
   assert.match(cli('vendas').stdout, new RegExp(`${id}.*CONFIRMADA`));
   assert.match(cli('ver-venda', '--id', id).stdout, /MER-001 .*2 un/);
+  assert.match(cli('venda', '--id', id).stdout, /MER-001 .*2 un/);
   assert.equal(cli('estorno', '--venda', id, '--motivo', 'Devolução fictícia').status, 0);
   assert.match(cli('vendas').stdout, new RegExp(`${id}.*ESTORNADA`));
   assert.match(cli('venda', '--item', 'MER-001=99', '--pagamento', 'PIX').stderr, /SALDO_INSUFICIENTE/);

@@ -1,0 +1,22 @@
+{
+  "commitBaseCompatibilidade": "18e7f01",
+  "compatibilidadeM03": "aprovada, prefixos de todos os arquivos antigos preservados",
+  "htmlBytesComShim": 435929,
+  "http": 200,
+  "produtos": 40,
+  "venda": {
+    "itens": 2,
+    "totalCentavos": 2108,
+    "repeticaoAposRetornoPerdido": "OPERACAO_DUPLICADA"
+  },
+  "estorno": {
+    "estado": "ESTORNADA",
+    "movimentos": 4,
+    "saldosFinais": [
+      10,
+      10
+    ]
+  },
+  "navegadorReal": false,
+  "google": false
+}

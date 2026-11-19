@@ -231,6 +231,7 @@ describe('VendaDetalhePagina', () => {
     expect(t.daAcao('consultarVenda').length).toBe(1);
     t.daAcao('estornarVenda')[0]!.falhar(new FalhaTransporte('Retorno perdido', true));
     await estabilizar(fixture);
+    expect(t.daAcao('consultarVenda').length).toBe(1);
     botao(el, 'Repetir com a mesma chave').click();
     await estabilizar(fixture);
     expect(t.daAcao('estornarVenda')[1]!.pedido).toEqual(t.daAcao('estornarVenda')[0]!.pedido);

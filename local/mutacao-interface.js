@@ -63,10 +63,13 @@ function executar(mutacao, esbuild) {
     fs.writeFileSync(alvo, codigo.replace(mutacao.de, mutacao.para));
     const r = spawnSync(process.execPath, [path.join(DIR, 'node_modules', '@angular', 'cli', 'bin', 'ng.js'), 'test', '--watch=false'], {
       cwd: COPIA, encoding: 'utf8', env: { ...process.env, ESBUILD_BINARY_PATH: esbuild, NG_CLI_ANALYTICS: 'false', FORCE_COLOR: '0' },
+      timeout: 180000, maxBuffer: 4 * 1024 * 1024,
     });
+    if (r.error || r.signal) return 'ERRO_EXECUCAO';
     if (r.status === 0) return 'SOBREVIVEU';
     // Falha de compilação não prova que os testes detectam o defeito.
     if (/bundle generation failed/i.test(r.stdout + r.stderr)) return 'ERRO_COMPILACAO';
+    if (!/Tests\s+\d+ failed/.test(r.stdout + r.stderr)) return 'ERRO_EXECUCAO';
     return 'DETECTADA';
   } finally {
     fs.rmSync(COPIA, { recursive: true, force: true });
