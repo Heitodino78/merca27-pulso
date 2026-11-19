@@ -62,6 +62,10 @@ Nenhum bloqueio foi contornado. Por isso **não há capturas em `docs/capturas/`
 
 Para concluir: autorizar um dos caminhos acima (por exemplo, permitir executar o Chromium em `/tmp/merca27-navegador`) e repetir o roteiro da seção 7 do prompt.
 
+### Tentativa na execução seguinte (M-03, 19/11/2026)
+
+O CLI do Maestri continuava ausente, e o proprietário não autorizou os outros dois caminhos; as chamadas negadas antes não foram repetidas. Os critérios de navegador e capturas continuam pendentes (D-054). A interface não mudou nesta execução, e seus 39 testes continuam aprovados.
+
 ## Situação do Google
 
 - Conector Google Drive desta sessão: exige autorização e não carregou ferramentas.

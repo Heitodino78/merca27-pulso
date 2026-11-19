@@ -1,105 +1,101 @@
 # Prompt para a próxima execução — PULSO
 
-Estado de referência: M-06 implementada e testada localmente em 19/11/2026 na branch `interface-angular` (criada a partir de `fase-01`), ainda sem verificação em navegador real. Este arquivo descreve a execução seguinte; ainda não foi executado.
+Estado de referência: M-03 concluída localmente em 19/11/2026 na branch `m03-operacoes` (a partir de `interface-angular`). M-06 continua sem verificação em navegador real. Este arquivo descreve a execução seguinte; ainda não foi executado.
 
-**Antes de iniciar a sessão (ação do proprietário):** a verificação em navegador da execução anterior foi bloqueada pela política de permissões (D-047). Para concluir M-06, autorize um destes caminhos: executar o Firefox do sistema via `flatpak-spawn --host`, executar um Chromium baixado em `/tmp`, ou abrir a sessão dentro do Maestri com o CLI `maestri` disponível. Sem isso, a etapa 4 termina registrada como impossível e a execução segue para M-03.
+**Antes de iniciar a sessão (ação do proprietário):** a verificação em navegador foi bloqueada nas duas execuções anteriores (D-047, D-054). Para concluí-la, autorize um destes caminhos: executar o Firefox do sistema via `flatpak-spawn --host`, executar um Chromium baixado em `/tmp`, ou abrir a sessão dentro do Maestri com o CLI `maestri` disponível. Sem isso, as etapas de navegador ficam registradas como impossíveis e a execução segue com o restante.
 
 ```text
-# MERCA 27 — PULSO — CONCLUIR M-06 NO NAVEGADOR E IMPLEMENTAR M-03 (VÁRIOS REGISTROS POR OPERAÇÃO)
+# MERCA 27 — PULSO — FASE 2: VENDAS COM VÁRIOS ITENS E ESTORNO (E M-06 NO NAVEGADOR, SE AUTORIZADO)
 
 Você é o engenheiro responsável pelo PULSO, sistema de gestão de um mercado inteiramente fictício. Trabalhe diretamente nos arquivos, teste e documente. Apresente um plano curto e execute sem esperar confirmação para decisões técnicas rotineiras.
 
 ## 1. LEITURA OBRIGATÓRIA
 
 Leia integralmente:
-- docs/RELATORIO_INTERFACE.md, docs/PROGRESSO.md, docs/DECISOES.md (especialmente D-002, D-007, D-017, D-027, D-029, D-030, D-031 e D-040 a D-048) e docs/TESTES.md.
-- docs/MELHORIAS_PLANEJADAS.md, especialmente M-06 e M-03.
-- Os cinco documentos-base (v1.1.0), de docs/00_COMECE_AQUI.md a docs/04_ROTEIRO_EXECUCAO_E_PROMPT.md. Não os altere; registre divergências em docs/DECISOES.md.
+- docs/RELATORIO_M03.md, docs/RELATORIO_INTERFACE.md, docs/PROGRESSO.md, docs/DECISOES.md (especialmente D-002, D-027, D-031, D-040 a D-054) e docs/TESTES.md.
+- docs/MELHORIAS_PLANEJADAS.md.
+- Os cinco documentos-base (v1.1.0). Para esta fase importam sobretudo: Documento Mestre seções 9, 13, 14 e 15 (jornada de venda, regras não negociáveis, KPIs e exemplo); docs/03 seções 4.3 e 4.4 (VENDAS e ITENS_VENDA), 6.2 (confirmarVenda), 6.5 (estornarVenda), 8.1 e 8.2 (receita e CMV), 9 (códigos de erro), 12.1 (T05 a T11, T15, T18 e T19) e 12.3 (reconciliações); docs/04 Fase 2. Não altere os documentos-base; registre divergências em docs/DECISOES.md. As divergências já conhecidas estão em D-054.
 - README.md, interface/README.md, fixtures/SEED_README.md e todo o código em src/, local/, tipos/, tests/ e interface/src/.
 
 Confirme o estado real pelo código e pelos comandos. Em caso de divergência, o código e os testes executados prevalecem sobre este prompt.
 
 ## 2. ESTADO REAL
 
-- Branch interface-angular, com commits locais por fatia; sem merge em main, remoto ou publicação.
+- Branch m03-operacoes, com commits locais por fatia; sem merge em main, remoto ou publicação.
 - Núcleo src/ em scripts globais var PULSO, sem build e sem APIs do Node (D-002, D-027). Portas: armazenamento { ler, anexar }, lock { executar }, relogio e gerarId.
-- Protocolo de escrita: intenção PENDENTE -> dado -> CONFIRMADA, com releitura e comparação completa após cada gravação, idempotência por requisicaoId, REQUISICAO_CONFLITANTE e reconciliação automática antes de novo lançamento (D-030). Saldo sempre derivado.
-- Cada operação ainda grava UM registro: o payload da intenção é { tabela, linha }.
-- Tabelas: FORNECEDORES, PRODUTOS, PRODUTOS_ALTERACOES, MOVIMENTOS_ESTOQUE e OPERACOES_LOG. Tipos de operação: CADASTRO_FORNECEDOR, CADASTRO_PRODUTO, ALTERACAO_PRODUTO, ENTRADA, SALDO_INICIAL, PERDA e AJUSTE.
-- src/application/despacho.js expõe 14 ações à interface (D-044); cadastrarFornecedor fica fora.
-- Interface em interface/: Angular 22.3.0 zoneless, TypeScript 6.0.3 strict, Tailwind CSS 4.3.5, versões exatas (D-041). Rotas por hash e sem carregamento tardio; o build vira um único HTML de cerca de 395 KiB em interface/dist/html-service/Interface.html (D-043). Transporte único: google.script.run.pulsoChamar(acao, pedido).
-- Pré-visualização local (local/servidor-preview.js): só 127.0.0.1, google.script.run simulado, opções --seed e --falhas-simuladas, PULSO_PREVIEW_ATRASO_MS. Não é integração Google.
-- Chave por tentativa lógica, classificação "nada gravado / incerto / conflito / pendente" e registro de envios por sessão (D-045). A interface valida só formato (D-046).
-- Testes: 359 na raiz e 39 na interface. npm run mutacao: 113 defeitos, 110 detectados e 3 equivalentes justificados (MUT-10, MUT-11 e MUT-37). npm run interface:mutacao: 13 defeitos, 13 detectados.
-- Pendente em M-06: navegador real em 360, 390, 768 e 1440 px, capturas em docs/capturas/, teclado de ponta a ponta e prefers-reduced-motion (D-047).
-- Google: sem acesso efetivo; nenhum adaptador de Sheets (D-048).
+- Protocolo: intenção PENDENTE com payload { registros: [{ tabela, linha }, ...] } -> cada registro com releitura e comparação completa -> CONFIRMADA. Reconciliação grava só o que falta; operação confirmada precisa ter todos os registros; linha só vale se constar, igual, na lista da sua operação; referencia_id é a chave do primeiro registro (D-049 a D-051). O formato { tabela, linha } da Fase 01 é legível só para os sete tipos antigos.
+- Tipos de operação: CADASTRO_FORNECEDOR, CADASTRO_PRODUTO, ALTERACAO_PRODUTO, ENTRADA, SALDO_INICIAL, PERDA, AJUSTE e CONTAGEM_INVENTARIO (vários AJUSTE, tudo ou nada; só pela CLI, D-052).
+- Tabelas: FORNECEDORES, PRODUTOS, PRODUTOS_ALTERACOES, MOVIMENTOS_ESTOQUE e OPERACOES_LOG. PULSO.movimento.TIPOS já prevê VENDA e ESTORNO, sem uso.
+- Idempotência por requisicaoId, REQUISICAO_CONFLITANTE, reconciliação automática antes de novo lançamento, consultas sem trava com uma repetição sob trava. Saldo sempre derivado.
+- Interface Angular 22.3.0 + Tailwind 4.3.5 em interface/ (D-040 a D-046), um único HTML de cerca de 395 KiB, despacho com 14 ações (D-044), chave por tentativa lógica (D-045). Pré-visualização em local/servidor-preview.js (127.0.0.1, --seed, --falhas-simuladas).
+- Testes: 421 na raiz, 39 na interface. Mutações: 134 no núcleo e 13 na interface (resultados em docs/TESTES.md). fixtures/base-fase01/ prova a compatibilidade e não pode ser editada.
+- Pendente: M-06 no navegador (360, 390, 768 e 1440 px, capturas em docs/capturas/). Google sem acesso efetivo (D-048).
 
 ## 3. AMBIENTE E LINHA DE BASE
 
-1. Preserve alterações locais encontradas. Confira Git e branch. Conclua M-06 em interface-angular; crie a branch m03-operacoes a partir dela para M-03. Sem merge ou push.
-2. Node/npm podem não estar no PATH. Foi usado /tmp/merca27-runtime/node-v22.23.5-linux-x64/bin (Node 22.23.5, npm 10.9.9). Se a pasta não existir, baixe o Node 22 oficial para /tmp e confira o SHA-256 antes de extrair. Nada global.
-3. O volume é vfat montado com showexec: nenhum binário roda a partir dele. Mantenha bin-links=false. Instale a interface com npm run interface:instalar (npm ci --ignore-scripts) e use sempre os scripts da raiz, que executam o Angular por local/interface.js com ESBUILD_BINARY_PATH (D-042).
-4. Antes de alterar, execute: npm ci, npm test, npm run check, npm run typecheck, npm run demo, npm run interface:instalar, npm run interface:typecheck, npm run interface:test e npm run interface:build. Corrija falhas reais sem enfraquecer testes.
-5. Execute npm run mutacao (cerca de 30 minutos) e npm run interface:mutacao (cerca de 5 minutos) nos marcos relevantes e no fim. Alvos ausentes, erros de compilação contados como detecção ou sobreviventes sem justificativa são falhas. local/mutacao.js copia interface/src porque tests/contraste.test.js depende dele; qualquer teste novo que leia arquivos fora de src/, local/, tests/ e fixtures/ exige o mesmo cuidado, ou mascara sobreviventes.
-6. Commits com identidade por comando, sem mudar a configuração global: git -c user.name="PULSO Dev" -c user.email="dev@merca27.invalid" commit.
-7. As bases da Fase 00 têm outro esquema, e as da Fase 01 usam o payload { tabela, linha }. Nunca apague nem migre silenciosamente. Use PULSO_DADOS temporário nos testes.
+1. Preserve alterações locais. Confira Git e branch; crie a branch fase-02-vendas a partir de m03-operacoes. Sem merge ou push.
+2. Node/npm podem não estar no PATH. Foi usado /tmp/merca27-runtime/node-v22.23.5-linux-x64/bin. Se a pasta não existir, baixe o Node 22 oficial para /tmp e confira o SHA-256 antes de extrair. Nada global.
+3. Volume vfat com showexec: nenhum binário roda a partir dele. Mantenha bin-links=false, instale a interface com npm run interface:instalar e use os scripts da raiz (D-042).
+4. Antes de alterar, execute npm ci, npm test, npm run check, npm run typecheck, npm run demo, npm run interface:typecheck, npm run interface:test, npm run interface:build e npm run mutacao -- --verificar-alvos. Meça com npm run medir e guarde em docs/evidencias/ como "antes".
+5. Rode npm run mutacao (cerca de uma hora) e npm run interface:mutacao nos marcos e no fim, sem outra carga pesada ao mesmo tempo: medições e mutações em paralelo distorcem tempos. Alvos ausentes, erros de compilação contados como detecção ou sobreviventes sem justificativa são falhas. Ao refatorar, rode --verificar-alvos e reescreva alvos com o mesmo efeito. Se um teste novo ler arquivos fora de src/, local/, tests/, fixtures/ e interface/src/, inclua-os na cópia de local/mutacao.js. Ao mudar a forma de dados internos, revise os testes que montam repositórios ou operações falsas: em M-03, dois deles passaram a acertar pelo motivo errado e esconderam MUT-08 e MUT-09. Testes de falha devem conferir a mensagem ou a causa, não só o código.
+6. Commits com identidade por comando: git -c user.name="PULSO Dev" -c user.email="dev@merca27.invalid" commit.
+7. Nunca apague nem migre silenciosamente bases anteriores. Novas tabelas precisam conviver com bases das Fases 01 e M-03: uma base sem as abas novas deve ser lida como tendo zero vendas. Use PULSO_DADOS temporário nos testes.
 
-## 4. ETAPA 1: CONCLUIR M-06 NO NAVEGADOR
+## 4. ETAPA 1: M-06 NO NAVEGADOR (SÓ SE AUTORIZADO)
 
-1. Verifique quais navegadores podem ser executados com autorização efetiva: Firefox do sistema via flatpak-spawn --host, Chromium baixado em /tmp com puppeteer-core, ou Maestri Portal (leia a skill antes de usá-la). Não contorne bloqueios de permissão. Se nenhum caminho for autorizado, registre em docs/DECISOES.md e docs/RELATORIO_INTERFACE.md e siga para M-03 sem marcar M-06 como concluída.
-2. Rode PULSO_DADOS=<pasta temporária> npm run interface:build e depois npm run interface:preview -- --seed --falhas-simuladas. Use PULSO_PREVIEW_ATRASO_MS=800 para observar o carregamento. Abra http://127.0.0.1:4827/.
-3. Em 360, 390, 768 e 1440 px, grave capturas reais em docs/capturas/ de: lista de produtos, detalhe com histórico e versões, formulário com erros, falha incerta, conflito, aviso de reconciliação pendente, reposição e estado vazio (pasta sem seed).
-4. Verifique: cadastro -> entrada -> saldo; clique duplo; repetição após falha (POST /__preview/falha com {"modo":"depois"}, depois "Repetir com a mesma chave"); conflito (alterar a quantidade após falha incerta); falha antes de executar ({"modo":"antes"}); produto inativo; alteração e versões; erros de domínio; teclado (Tab, Shift+Tab, Enter, foco visível, "Pular para o conteúdo", foco no título ao navegar); prefers-reduced-motion emulado; ausência de rolagem horizontal em 360 px.
-5. Corrija defeitos visuais e de acessibilidade com testes. Marque M-06 como concluída só com todos os critérios comprovados. Nunca declare inspeção ou capturas que não executou.
+Verifique os três caminhos sem contornar bloqueios. Se algum funcionar, cumpra a seção 4 do prompt anterior, que está registrada em docs/RELATORIO_INTERFACE.md: capturas nas quatro larguras, jornadas, falhas simuladas, teclado e movimento reduzido. Se nenhum funcionar, registre e siga. Repita a verificação ao fim da etapa 3, para as telas de venda.
 
-## 5. ETAPA 2: M-03 — VÁRIOS REGISTROS POR OPERAÇÃO
+## 5. ETAPA 2: VENDAS NO NÚCLEO (FASE 2)
 
-Objetivo: permitir que uma operação grave um conjunto de registros com as mesmas garantias de hoje, preparando as vendas da Fase 2.
+### 5.1 Modelo
+- Novas tabelas, com colunas em ordem fixa em src/infra/esquema.js: VENDAS (venda_id, operacao_id, requisicao_id, registrado_em, forma_pagamento, total_centavos, custo_est_centavos, observacao, operador_simulado) e ITENS_VENDA (item_id, venda_id, operacao_id, sku, quantidade, preco_unit_centavos, custo_unit_est_centavos, subtotal_centavos). Ajuste os nomes se o código pedir, registrando em DECISOES.
+- Não grave estado mutável na linha da venda (o armazenamento só acrescenta): "estornada" é derivado da existência do estorno.
+- Movimentos tipo VENDA com delta negativo, preço e custo capturados no momento da venda e referência à venda.
+- Pontos que precisam conhecer as tabelas novas (todos, ou linhas de venda ficam sem conferência): TABELAS em src/infra/esquema.js; TABELAS_DE_DADOS, a leitura em carregarEstado, as chamadas de conferirOrigem, o mapa linhasPorTabela da checagem de presença e a lista de tipos em dobrarOperacoes (src/infra/repositorio.js); conferirIntencao, com reconstrução própria para VENDA e ESTORNO_VENDA; a reprodução cronológica; e o armazenamento em memória de tests/apoio.js (local/medir-desempenho.js já lê as tabelas do esquema). TIPOS_LEGADOS não muda: tipos novos só usam o formato atual.
+- Cada tabela nova acrescenta uma leitura por consulta (hoje são 5). Meça e registre o efeito; não troque releituras de verificação por cache para compensar.
 
-### 5.1 Formato e compatibilidade
-- Novo payload da intenção: { registros: [{ tabela, linha }, ...] }, com pelo menos um registro, chaves únicas dentro da operação e ordem fixa.
-- Operações já gravadas com { tabela, linha } continuam legíveis como uma lista de um registro, sem reescrever o log. Toda gravação nova usa o formato novo. Documente a compatibilidade em docs/DECISOES.md e teste a leitura de uma base da Fase 01 gerada pelo código atual.
-- Defina o significado de referencia_id nos eventos de operações com vários registros (por exemplo, a chave do primeiro registro ou um identificador da operação) e valide-o com o mesmo rigor de hoje.
+### 5.2 confirmarVenda (operação VENDA)
+- Pedido: requisicaoId, itens [{ sku, quantidade }] (1 a 50), formaPagamentoFicticia (DINHEIRO, PIX ou CARTAO, só informativa), observacao opcional sem dados pessoais, operador simulado. Sem descontos.
+- SKU repetido no pedido: decida entre agregar e recusar (T09) e registre em DECISOES. A contagem recusa repetição; prefira coerência, salvo motivo melhor.
+- Dentro da trava: idempotência, saldo atual de cada item, produto existente e ativo (T10). Qualquer item inválido ou sem saldo recusa a venda inteira (T06, T07), com SALDO_INSUFICIENTE indicando o SKU e o saldo.
+- Uma operação grava, nesta ordem: a venda, os itens e um movimento VENDA por item, usando o M-03. Total = Σ(quantidade × preço capturado); custo estimado = Σ(quantidade × custo de referência vigente) (docs/03 seções 8.1 e 8.2, T15). Alteração posterior de preço não muda a venda (T11).
+- A validação da intenção e a reprodução cronológica devem reconstruir venda, itens e movimentos pelas regras de domínio e conferir as relações: itens da venda, movimentos dos itens, Σ subtotais = total, Σ custos = custo estimado e saldo nunca negativo (docs/03 seção 12.3).
 
-### 5.2 Pontos do código que assumem um único registro (todos precisam mudar)
-- src/infra/repositorio.js: abrirIntencao (exige exatamente as chaves tabela e linha), conferirIntencao (reconstrói uma linha por tipo), dobrarOperacoes (compara referencia_id com operacao.linha), conferirOrigem (operacao.tabela e operacao.linha), a checagem de presença em carregarEstado (hoje basta existir uma linha com o operacao_id) e a reprodução cronológica (usa operacao.linha).
-- src/application/operacoes.js: gravarNova (anexa um registro), concluir (usa existe para um registro) e linhaEvento/referenciaId.
-- src/application/casos-de-uso.js: construir passa a devolver a lista de registros.
-- tipos/contratos.d.ts: novos tipos de intenção e de operação.
+### 5.3 estornarVenda (operação ESTORNO_VENDA)
+- Estorno total, uma única vez por venda, com motivo obrigatório: grava o registro do estorno (por exemplo, tabela ESTORNOS_VENDA) e um movimento ESTORNO por item, devolvendo as unidades ao estoque. Não apaga nem edita a venda.
+- Simplificação do protótipo, a documentar: todo estorno devolve as unidades como revendáveis. Estorno parcial e item não revendável ficam fora (docs/03 seção 6.5).
+- Repetir o mesmo estorno é idempotente; um segundo estorno da mesma venda, com outra chave, é recusado (VENDA_JA_ESTORNADA). Estorno de venda inexistente é recusado.
+- Se houver tempo depois das demais fatias, avalie a reversão compensatória de perda e ajuste adiada em D-031. Senão, registre que continua adiada.
 
-### 5.3 Regras
-- Gravação: intenção PENDENTE -> cada registro, com releitura e comparação completa após cada um -> CONFIRMADA.
-- Reconciliação: grava apenas os registros ausentes, na ordem da intenção, e confere que o conjunto final é exatamente o da intenção, nem mais nem menos.
-- Operação confirmada com registro ausente ou extra, ou registro cuja operação não o lista, resulta em DADOS_INCONSISTENTES.
-- Nenhum registro de operação incompleta compõe saldos, versões, reposição ou listagens.
-- A validação da intenção e a reprodução cronológica devem ser ampliadas na mesma medida: cada registro é reconstruído pelas regras de domínio do seu tipo. Não remova verificações para aceitar o formato novo.
+### 5.4 Consultas
+- listarVendas (período opcional, mais recentes primeiro, com estado derivado), consultarVenda por venda_id ou requisicaoId com itens e movimentos.
+- consultarEstoque passa a mostrar os movimentos VENDA e ESTORNO. Nenhum KPI ou dashboard nesta fase: receita e margem por período ficam para a Fase 3.
 
-### 5.4 Primeiro uso real: contagem de inventário com vários SKUs
-Para provar M-03 com uma operação de negócio, e não só com um tipo de teste, implemente CONTAGEM_INVENTARIO: um pedido com vários SKUs e suas quantidades contadas, um motivo e o operador simulado, gerando um movimento AJUSTE por SKU com diferença.
-- Tudo ou nada: SKU inexistente, SKU repetido no pedido, quantidade inválida ou nenhuma diferença recusa o pedido inteiro, sem gravar nada.
-- SKUs sem diferença não geram movimento; a resposta informa quais foram ajustados e quais já conferiam.
-- Saldos anterior e novo e o custo de referência são capturados dentro da trava, como no AJUSTE atual (D-031).
-- Exponha a ação no despacho somente se a interface ganhar a tela correspondente nesta execução; caso contrário, deixe-a disponível só pela CLI e registre a decisão.
-- Registre a escolha deste caso de uso em docs/DECISOES.md. Se, ao ler o código, outro caso de uso fizer mais sentido, justifique a troca.
+### 5.5 Testes do núcleo
+- T05 a T11, T15, T18 e T19 do docs/03, com os valores do exemplo do Documento Mestre seção 15.
+- Falhas antes, depois e silenciosas em cada posição da lista de registros da venda e do estorno; repetição conclui sem duplicar; nada de venda incompleta em saldo, listagem ou consulta.
+- Adulteração: item removido, extra ou alterado, total divergente, movimento de venda sem item, estorno duplicado, venda estornada com movimento faltando.
+- Concorrência real com processos: duas vendas acima do saldo disputando o mesmo SKU (só uma é aceita), a mesma venda disparada várias vezes (uma gravação) e estornos concorrentes da mesma venda (um aceito).
+- Compatibilidade: fixtures/base-fase01/ e uma base gerada pelo código de M-03 continuam legíveis.
+- Mutações novas para cada regra de venda e estorno.
 
-### 5.5 Testes e medição
-- Falha antes, depois e silenciosa em cada posição da lista: nunca anuncia sucesso, e a repetição com a mesma chave conclui sem duplicar.
-- Repetição confirmada (OPERACAO_DUPLICADA), conflito com dados diferentes e reconciliação automática antes de novo lançamento.
-- Adulteração: registro removido, extra, alterado, trocado de operação ou com ordem diferente; payload antigo e novo adulterados.
-- Concorrência real com processos, como os testes atuais.
-- Os testes atuais de entrada, cadastro, alteração e movimentos continuam aprovados sem enfraquecimento. Se algum teste forjar payload no formato antigo, mantenha-o como teste de compatibilidade e crie o equivalente no formato novo.
-- Mutações novas em local/mutacao.js para cada regra de M-03 e para CONTAGEM_INVENTARIO.
-- Meça com npm run medir antes e depois e registre em docs/evidencias/.
+## 6. ETAPA 3: VENDAS NA INTERFACE E NA CLI
 
-## 6. FORA DESTA EXECUÇÃO
+- CLI: venda --item MER-001=2 --item MER-002=1 --pagamento PIX; vendas; venda --id; estorno --venda ID --motivo "...".
+- Despacho: exponha confirmarVenda, listarVendas, consultarVenda e estornarVenda. Atualize o teste da lista de ações e o shim.
+- Interface (mesmas regras de D-041 a D-046): tela de venda com vários itens (busca de produto, quantidade, preço capturado exibido em BRL, total calculado só para conferência visual, o valor oficial vem do núcleo), revisão antes de confirmar, histórico de vendas com busca por ID e detalhe com estorno. Mesma chave por tentativa lógica, os estados vazio, carregando, sucesso, falha incerta, conflito e pendente, e clique duplo bloqueado.
+- Opcional: tela de contagem de inventário; se fizer, exponha registrarContagem no despacho.
+- Testes de componente e mutações de interface para as telas novas.
 
-Vendas (Fase 2) só começam depois de M-03 aprovada, numa nova execução. Também ficam fora: estorno, reversão de perda e ajuste, dashboard, automações periódicas, lotes e validade, e cadastro de fornecedor pela interface. Google só com acesso efetivo e autorizado para executar Apps Script, com adaptadores finos, cabeçalhos exatos, testes na planilha real e nada público. Não simule integração concluída.
+## 7. FORA DESTA EXECUÇÃO
 
-## 7. ENTREGA
+Dashboard, KPIs por período, despesas, automações periódicas, lotes e validade, descontos, estorno parcial, cadastro de fornecedor pela interface e pagamentos reais. Google só com acesso efetivo e autorizado para executar Apps Script, seguindo D-048. Não simule integração concluída.
+
+## 8. ENTREGA
 
 Conclua cada fatia com testes antes de cada commit local. Não publique, não envie ao remoto e não exponha credenciais. Use somente dados fictícios.
 
-Atualize README.md, docs/PROGRESSO.md, docs/DECISOES.md, docs/TESTES.md, docs/MELHORIAS_PLANEJADAS.md e docs/RELATORIO_INTERFACE.md (resultado do navegador). Crie docs/RELATORIO_M03.md com arquivos, comandos, resultados, compatibilidade com bases anteriores, desempenho, limitações e situação real do Google. Reescreva este prompt para a Fase 2 (vendas) com base no que existir. Se algum critério não puder ser cumprido, registre o que falta sem marcar a funcionalidade como concluída.
+Atualize README.md, docs/PROGRESSO.md, docs/DECISOES.md, docs/TESTES.md, docs/MELHORIAS_PLANEJADAS.md e docs/RELATORIO_INTERFACE.md (navegador, se houver). Crie docs/RELATORIO_FASE_02.md com arquivos, comandos, resultados, compatibilidade com bases anteriores, desempenho antes e depois, limitações e situação real do Google. Reescreva este prompt para a Fase 3 (dashboard e automações) com base no que existir. Se algum critério não puder ser cumprido, registre o que falta sem marcar a funcionalidade como concluída.
 
-COMECE AGORA pela leitura, pela linha de base e pelo plano curto; depois conclua M-06 no navegador e só então implemente M-03.
+COMECE AGORA pela leitura, pela linha de base e pelo plano curto; depois siga as etapas em ordem.
 ```

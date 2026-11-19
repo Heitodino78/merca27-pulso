@@ -1,5 +1,41 @@
 # Evidências de testes
 
+## M-03 — operações com vários registros (19/11/2026)
+
+Estado atual. Ambiente local, Node 22.23.5. **Nada foi executado em navegador real, Google Sheets ou Apps Script** (D-048, D-054).
+
+| Verificação | Resultado |
+|---|---|
+| Linha de base antes de alterar | 359 testes, 42 arquivos, tipos, demo, 39 testes de interface e build aprovados |
+| `npm test` | 421 testes, 421 aprovados, 0 falhas |
+| `npm run check` | 43 arquivos, 0 erros |
+| `npm run typecheck` | Duas configurações aprovadas |
+| `npm run demo` | Saldo 10, recálculo independente 10 e um movimento |
+| `npm run interface:test` | 39 aprovados |
+| `npm run mutacao -- --verificar-alvos` | 134 alvos, cada um encontrado uma única vez |
+| `npm run mutacao` | 134 defeitos: **129 detectados e 5 equivalentes justificados** (MUT-10, MUT-11, MUT-37, MUT-115 e MUT-123), saída 0. Evidência em [mutacao-m03.txt](evidencias/mutacao-m03.txt) |
+| `npm run interface:mutacao` | 13 defeitos, 13 detectados (interface sem mudanças). Evidência em [mutacao-interface-m03.txt](evidencias/mutacao-interface-m03.txt) |
+| `npm run medir` | Consultas com 5 leituras e entrada com 8, como antes; contagem de 5 SKUs com mediana de 68,311 ms e 12 leituras ([antes](evidencias/desempenho-m03-antes.json), [depois](evidencias/desempenho-m03-depois.json)) |
+
+### Testes novos e adaptados
+
+- `tests/m03.test.js` (51): compatibilidade com `fixtures/base-fase01/`, formato novo em toda gravação, contagem e 16 recusas por inteiro, repetição em outra ordem, conflito, falhas antes, depois e silenciosas em cada posição de uma lista de três, falha na confirmação, reconciliação automática, 13 adulterações do conjunto, operação antiga com dois registros e concorrência real com 12 processos.
+- Testes de adulteração que editavam `payload.linha` (`auditoria`, `integridade`, `falhas` e `revisao-fase01`) passaram a rodar nos formatos **legado** e **atual** por meio de `editarPayload` em `tests/apoio.js` (+10 testes). Nenhuma asserção foi removida. O teste de tabela proibida agora confere que só a tabela mudou, e não a forma do payload, para não passar por acaso.
+- `fluxo.test.js`: a lista de métodos públicos inclui `registrarContagem`, um movimento auditado e não uma edição de saldo.
+
+### Defeito encontrado pelas mutações
+
+A primeira bateria completa depois da refatoração mostrou MUT-08 e MUT-09, antes detectadas, sobrevivendo. Dois testes de `auditoria.test.js` usavam repositórios falsos ainda na forma antiga: um `construir` que devolvia objeto e uma pendência com `{ tabela, linha }`. Com M-03, os dois quebravam por erro de forma e devolviam `FALHA_GRAVACAO` pelo motivo errado. Os testes passaram a usar a forma nova e a conferir a mensagem esperada, e um teste novo cobre explicitamente o `construir` que não devolve lista. A bateria foi interrompida e reiniciada do zero; só a segunda vale como evidência.
+
+### Mutações novas que sobreviveram na primeira rodada
+
+| Mutação | Tratamento |
+|---|---|
+| MUT-114: formato antigo aceito para a contagem | O teste usava uma contagem de dois registros, que outra regra já recusava. Novo teste com contagem de um registro; agora detectada |
+| MUT-115: sem checagem de registro repetido | Equivalente justificada (D-053) |
+| MUT-123: sem checagem da tabela da contagem | Equivalente justificada (D-053) |
+
+
 ## M-06 — interface Angular + Tailwind (19/11/2026)
 
 Esta seção traz o estado atual. Ambiente local, Node 22.23.5 e npm 10.9.9 em `/tmp/merca27-runtime` (SHA-256 conferido). **Nada foi executado em navegador real, Google Sheets ou Apps Script** (D-047, D-048).

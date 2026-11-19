@@ -1,6 +1,6 @@
 # Progresso do A-002 — MERCA 27 / PULSO
 
-Última atualização: 19/11/2026. M-06 implementada e testada localmente na branch `interface-angular`, ainda sem verificação em navegador real.
+Última atualização: 19/11/2026. M-03 concluída localmente na branch `m03-operacoes`; M-06 continua sem verificação em navegador real.
 
 ## Implementado e testado localmente
 
@@ -37,7 +37,7 @@ Detalhes e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADA
 - [x] M-04: reconciliação automática antes de novos lançamentos, com releitura e log.
 - [x] M-05: projeção em memória por SKU, leituras sem trava, repetição controlada, entrada com 8 leituras em vez de 13 e medição antes/depois.
 - [ ] M-06: interface Angular + Tailwind compatível com Apps Script. **Parcial:** telas, estados, chave por tentativa, acessibilidade, HTML único, pré-visualização local, 39 testes de interface e 13 mutações prontos. **Falta:** verificação em navegador real e capturas (D-047). Detalhes em [RELATORIO_INTERFACE.md](RELATORIO_INTERFACE.md).
-- [ ] M-03: operações com vários registros, antes da Fase 2.
+- [x] M-03: operações com vários registros, formato antigo legível, contagem de inventário com vários SKUs, 51 testes e 21 mutações novas. Detalhes em [RELATORIO_M03.md](RELATORIO_M03.md).
 
 ## Pendente no Google (nada disto foi executado)
 
@@ -53,7 +53,7 @@ O acesso foi verificado na revisão da Fase 00, sem execução de Apps Script. A
 ## Fases
 
 - [x] Fase 1: 40 SKUs, 6 fornecedores, perda, ajuste por contagem, alerta e reposição.
-- [ ] Próxima execução: concluir a verificação de M-06 em navegador real; depois M-03. Google somente com acesso efetivo.
+- [ ] Próxima execução: concluir M-06 no navegador, se autorizado, e iniciar a Fase 2 (vendas) sobre M-03. Google somente com acesso efetivo.
 - [ ] Fase 2: vendas com múltiplos itens e estorno.
 - [ ] Fase 3: dashboard e automações.
 - [ ] Fase 4: refino e case de portfólio.

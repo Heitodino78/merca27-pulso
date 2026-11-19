@@ -1,0 +1,171 @@
+
+> a002-merca27-pulso@0.1.0 mutacao
+> node local/mutacao.js
+
+MUT-01: DETECTADA
+MUT-02: DETECTADA
+MUT-03: DETECTADA
+MUT-04: DETECTADA
+MUT-05: DETECTADA
+MUT-06: DETECTADA
+MUT-07: DETECTADA
+MUT-08: DETECTADA
+MUT-09: DETECTADA
+MUT-10: SOBREVIVEU — A reconstrução canônica da intenção já recusa tipo divergente antes da soma.
+MUT-11: SOBREVIVEU — A validação de domínio da intenção já recusa delta zero antes da soma.
+MUT-12: DETECTADA
+MUT-13: DETECTADA
+MUT-14: DETECTADA
+MUT-15: DETECTADA
+MUT-16: DETECTADA
+MUT-17: DETECTADA
+MUT-18: DETECTADA
+MUT-19: DETECTADA
+MUT-20: DETECTADA
+MUT-21: DETECTADA
+MUT-22: DETECTADA
+MUT-23: DETECTADA
+MUT-24: DETECTADA
+MUT-25: DETECTADA
+MUT-26: DETECTADA
+MUT-27: DETECTADA
+MUT-28: DETECTADA
+MUT-29: DETECTADA
+MUT-30: DETECTADA
+MUT-31: DETECTADA
+MUT-32: DETECTADA
+MUT-33: DETECTADA
+MUT-34: DETECTADA
+MUT-35: DETECTADA
+MUT-36: DETECTADA
+MUT-37: SOBREVIVEU — Os tipos têm dados canônicos distintos; a assinatura já recusa esse conflito.
+MUT-38: DETECTADA
+MUT-39: DETECTADA
+MUT-40: DETECTADA
+MUT-41: DETECTADA
+MUT-42: DETECTADA
+MUT-43: DETECTADA
+MUT-44: DETECTADA
+MUT-45: DETECTADA
+MUT-46: DETECTADA
+MUT-47: DETECTADA
+MUT-48: DETECTADA
+MUT-49: DETECTADA
+MUT-50: DETECTADA
+MUT-51: DETECTADA
+MUT-52: DETECTADA
+MUT-53: DETECTADA
+MUT-54: DETECTADA
+MUT-55: DETECTADA
+MUT-56: DETECTADA
+MUT-57: DETECTADA
+MUT-58: DETECTADA
+MUT-59: DETECTADA
+MUT-60: DETECTADA
+MUT-61: DETECTADA
+MUT-62: DETECTADA
+MUT-63: DETECTADA
+MUT-64: DETECTADA
+MUT-65: DETECTADA
+MUT-66: DETECTADA
+MUT-67: DETECTADA
+MUT-68: DETECTADA
+MUT-69: DETECTADA
+MUT-70: DETECTADA
+MUT-71: DETECTADA
+MUT-72: DETECTADA
+MUT-73: DETECTADA
+MUT-74: DETECTADA
+MUT-75: DETECTADA
+MUT-76: DETECTADA
+MUT-77: DETECTADA
+MUT-78: DETECTADA
+MUT-79: DETECTADA
+MUT-80: DETECTADA
+MUT-81: DETECTADA
+MUT-82: DETECTADA
+MUT-83: DETECTADA
+MUT-84: DETECTADA
+MUT-85: DETECTADA
+MUT-86: DETECTADA
+MUT-87: DETECTADA
+MUT-88: DETECTADA
+MUT-89: DETECTADA
+MUT-90: DETECTADA
+MUT-91: DETECTADA
+MUT-92: DETECTADA
+MUT-93: DETECTADA
+MUT-94: DETECTADA
+MUT-95: DETECTADA
+MUT-96: DETECTADA
+MUT-97: DETECTADA
+MUT-98: DETECTADA
+MUT-99: DETECTADA
+MUT-100: DETECTADA
+MUT-101: DETECTADA
+MUT-102: DETECTADA
+MUT-103: DETECTADA
+MUT-104: DETECTADA
+MUT-105: DETECTADA
+MUT-106: DETECTADA
+MUT-107: DETECTADA
+MUT-108: DETECTADA
+MUT-109: DETECTADA
+MUT-110: DETECTADA
+MUT-111: DETECTADA
+MUT-112: DETECTADA
+MUT-113: DETECTADA
+MUT-114: DETECTADA
+MUT-115: SOBREVIVEU — Registro repetido também é recusado pela exigência de um registro por operação antiga e pela ordem estrita dos itens da contagem; a checagem é defesa redundante.
+MUT-116: DETECTADA
+MUT-117: DETECTADA
+MUT-118: DETECTADA
+MUT-119: DETECTADA
+MUT-120: DETECTADA
+MUT-121: DETECTADA
+MUT-122: DETECTADA
+MUT-123: SOBREVIVEU — Linha de outra tabela é recusada antes pelo esquema dessa tabela e depois pela reconstrução canônica do movimento; a checagem é defesa redundante.
+MUT-124: DETECTADA
+MUT-125: DETECTADA
+MUT-126: DETECTADA
+MUT-127: DETECTADA
+MUT-128: DETECTADA
+MUT-129: DETECTADA
+MUT-130: DETECTADA
+MUT-131: DETECTADA
+MUT-132: DETECTADA
+MUT-133: DETECTADA
+MUT-134: DETECTADA
+{
+  "total": 134,
+  "detectadas": 129,
+  "sobreviventes": [
+    {
+      "id": "MUT-10",
+      "estado": "SOBREVIVEU",
+      "justificativa": "A reconstrução canônica da intenção já recusa tipo divergente antes da soma."
+    },
+    {
+      "id": "MUT-11",
+      "estado": "SOBREVIVEU",
+      "justificativa": "A validação de domínio da intenção já recusa delta zero antes da soma."
+    },
+    {
+      "id": "MUT-37",
+      "estado": "SOBREVIVEU",
+      "justificativa": "Os tipos têm dados canônicos distintos; a assinatura já recusa esse conflito."
+    },
+    {
+      "id": "MUT-115",
+      "estado": "SOBREVIVEU",
+      "justificativa": "Registro repetido também é recusado pela exigência de um registro por operação antiga e pela ordem estrita dos itens da contagem; a checagem é defesa redundante."
+    },
+    {
+      "id": "MUT-123",
+      "estado": "SOBREVIVEU",
+      "justificativa": "Linha de outra tabela é recusada antes pelo esquema dessa tabela e depois pela reconstrução canônica do movimento; a checagem é defesa redundante."
+    }
+  ],
+  "erros": []
+}
+saida=0

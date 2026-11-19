@@ -1,6 +1,6 @@
 # Melhorias planejadas — PULSO
 
-**Status em 19/11/2026:** M-01, M-02, M-04, M-05 e M-07 concluídas, com evidência em `docs/TESTES.md`. M-06 implementada e testada localmente, mas sem os critérios de navegador e capturas (ver `docs/RELATORIO_INTERFACE.md`). M-03 pendente.
+**Status em 19/11/2026:** M-01, M-02, M-04, M-05 e M-07 concluídas, com evidência em `docs/TESTES.md`. M-06 implementada e testada localmente, mas sem os critérios de navegador e capturas (ver `docs/RELATORIO_INTERFACE.md`). M-03 concluída em 19/11/2026.
 
 ## Ordem de execução
 
@@ -12,7 +12,7 @@
 | 4 | M-04 | Reconciliação automática | Bloco 5 da Fase 01 | [x] Concluída |
 | 5 | M-05 | Desempenho e leituras sem trava | Bloco 9 da Fase 01, antes do Sheets | [x] Concluída |
 | 6 | M-06 | Interface compatível com Apps Script | Depois de M-01 e M-02 | [ ] Parcial: falta navegador real e capturas |
-| 7 | M-03 | Operações com vários registros | Antes da Fase 2 (vendas) | [ ] Pendente |
+| 7 | M-03 | Operações com vários registros | Antes da Fase 2 (vendas) | [x] Concluída em 19/11/2026 |
 
 Os dados de `data/` são sintéticos e descartáveis. Mudanças de esquema podem recriá-los, desde que isso fique registrado em `docs/DECISOES.md`.
 
@@ -66,11 +66,13 @@ Os dados de `data/` são sintéticos e descartáveis. Mudanças de esquema podem
 - Exigir que uma operação confirmada tenha todos os seus registros presentes.
 - Fazer `conferirOrigem` aceitar apenas registros que constem na lista da operação.
 
-**Critérios de aceite:**
-- Uma falha simulada em cada posição da lista não anuncia sucesso, e a repetição conclui sem duplicar nada.
-- Nenhum registro de operação incompleta compõe saldos ou relatórios.
-- Registro extra ou ausente em operação confirmada resulta em `DADOS_INCONSISTENTES`.
-- Os testes atuais de entrada e cadastro continuam aprovados.
+**Critérios de aceite (situação em 19/11/2026):**
+- [x] Uma falha simulada em cada posição da lista não anuncia sucesso, e a repetição conclui sem duplicar nada (antes, depois e silenciosa, nas três posições).
+- [x] Nenhum registro de operação incompleta compõe saldos ou relatórios (saldo, listagem e reposição testados).
+- [x] Registro extra ou ausente em operação confirmada resulta em `DADOS_INCONSISTENTES`.
+- [x] Os testes atuais de entrada e cadastro continuam aprovados, e os de adulteração rodam nos dois formatos.
+
+**Como foi feito:** payload `{ registros }` com leitura do formato antigo (D-049), contagem de inventário como primeiro uso (D-050) e regras do conjunto (D-051). Relatório em `docs/RELATORIO_M03.md`.
 
 ---
 

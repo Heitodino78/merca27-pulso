@@ -2,7 +2,7 @@
 
 > **Demonstração educacional.** A MERCA 27 é um mercado fictício e todos os dados são sintéticos. O PULSO não é sistema fiscal, contábil nem produto pronto para uso empresarial real.
 
-**Estado atual: Fase 01 concluída e interface M-06 implementada localmente.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI e por uma interface Angular + Tailwind, com 359 testes no núcleo e 39 na interface. A interface ainda não foi verificada em navegador real, e a integração Google continua pendente ([relatório](docs/RELATORIO_INTERFACE.md)).
+**Estado atual: Fase 01, M-03 e interface M-06 implementadas localmente.** Produtos, fornecedores, entradas, perdas, contagens (individuais e de inventário com vários SKUs), histórico de versões e reposição funcionam pela CLI, e quase tudo também pela interface Angular + Tailwind. São 421 testes no núcleo e 39 na interface. A interface ainda não foi verificada em navegador real, e a integração Google continua pendente ([relatório](docs/RELATORIO_INTERFACE.md)).
 
 ## Requisitos
 
@@ -20,7 +20,8 @@ Nesta máquina, Node/npm não estão no PATH padrão. A revisão usou um runtime
 npm test            # testes automatizados
 npm run check       # verificação de sintaxe
 npm run typecheck   # contratos JSDoc; exige npm ci
-npm run mutacao     # 108 defeitos em cópias temporárias; leva cerca de 15 minutos
+npm run mutacao     # 134 defeitos em cópias temporárias; leva cerca de 40 minutos
+npm run mutacao -- --verificar-alvos   # só confere que cada alvo de mutação existe
 npm run medir       # cenário temporário de 90 dias; tempos e volume em JSON
 npm run demo        # demonstração do primeiro marco, em pasta temporária
 
@@ -44,6 +45,7 @@ npm run -s pulso -- reativar --sku MER-001 --motivo "Retorno fictício"
 npm run -s pulso -- saldo-inicial --sku MER-041 --quantidade 7 --custo 600 --motivo "Inventário fictício"
 npm run -s pulso -- perda --sku MER-041 --quantidade 2 --categoria-perda AVARIA --motivo "Avaria fictícia"
 npm run -s pulso -- ajuste --sku MER-041 --contada 4 --motivo "Contagem fictícia"
+npm run -s pulso -- contagem --item MER-001=7 --item MER-002=0 --motivo "Inventário fictício"
 npm run -s pulso -- reposicao
 npm run -s pulso -- historico-produto --sku MER-001
 npm run -s pulso -- reconciliar
@@ -76,7 +78,7 @@ docs/                Documentos-base, decisões, progresso, testes e relatório
 
 - O saldo nunca é armazenado: é a soma dos movimentos de operações confirmadas.
 - O armazenamento só oferece `ler` e `anexar`, então o fluxo normal não edita nem apaga histórico.
-- Cada escrita segue a ordem intenção → dado → confirmação, com releitura e comparação de todo o conteúdo após cada gravação.
+- Cada escrita segue a ordem intenção → dados → confirmação, com releitura e comparação de todo o conteúdo após cada gravação. Uma operação pode gravar vários registros (M-03); confirmada, precisa ter todos, exatamente iguais à intenção. Logs da Fase 01, com um registro por intenção, continuam legíveis.
 - Repetir a mesma requisição não duplica. Reutilizá-la com dados diferentes é rejeitado.
 - Antes de novo lançamento, a pendência anterior é reconciliada automaticamente dentro da trava; falha impede iniciar a nova operação. Repetição com a mesma chave e `reconciliar` também continuam disponíveis.
 - Divergências entre registros e intenções, duplicidades, referências e estados inválidos são detectados na leitura (`DADOS_INCONSISTENTES`). A reconciliação relê o estado final antes de anunciar conclusão.
@@ -94,9 +96,10 @@ Em 19/11/2026 (M-06), o conector Drive exigia autorização nesta sessão e cont
 
 - Sem Google Sheets, Apps Script, sidebar ou menu. A interface roda só na pré-visualização local e ainda não foi verificada em navegador real nem no HTML Service.
 - Sem vendas, estornos, dashboard, lotes, validade, automações periódicas ou compra automática. Reversão de perdas e ajustes foi adiada para a Fase 2.
+- A contagem de inventário com vários SKUs existe no núcleo e na CLI, ainda sem tela na interface.
 - Bases da Fase 00 não são migradas nem apagadas automaticamente. Preserve o histórico antigo e escolha uma pasta nova com `PULSO_DADOS` para o esquema da Fase 01.
 - Alterações coerentes de todo o histórico podem não ser detectadas: as comparações não são uma assinatura criptográfica. Não há cadeia de hashes nem cópia externa de auditoria.
 - Uma interrupção real durante a escrita pode deixar uma linha incompleta. Ela é detectada e bloqueia a operação; não há reparo automático de arquivo truncado.
 - Se um processo for encerrado à força durante uma operação, o arquivo `.pulso.lock` precisa ser removido manualmente. A mensagem de erro indica o caminho.
 
-Detalhes atuais em [docs/RELATORIO_INTERFACE.md](docs/RELATORIO_INTERFACE.md) e [docs/RELATORIO_FASE_01.md](docs/RELATORIO_FASE_01.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). A [Fase 00](docs/RELATORIO_FASE_00.md) permanece como registro histórico.
+Detalhes atuais em [docs/RELATORIO_M03.md](docs/RELATORIO_M03.md), [docs/RELATORIO_INTERFACE.md](docs/RELATORIO_INTERFACE.md) e [docs/RELATORIO_FASE_01.md](docs/RELATORIO_FASE_01.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). A [Fase 00](docs/RELATORIO_FASE_00.md) permanece como registro histórico.
