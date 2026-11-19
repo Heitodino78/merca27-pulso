@@ -80,4 +80,5 @@ interface PulsoNucleo {
   repositorio: ReturnType<typeof pulsoCriarRepositorio>;
   operacoes: ReturnType<typeof pulsoCriarOperacoes>;
   casosDeUso: ReturnType<typeof pulsoCriarCasosDeUso>;
+  despacho: ReturnType<typeof pulsoCriarDespacho>;
 }
