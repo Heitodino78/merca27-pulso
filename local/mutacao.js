@@ -12,6 +12,7 @@ const CASOS = 'src/application/casos-de-uso.js';
 const MOV = 'src/domain/movimento.js';
 const ALT = 'src/domain/alteracao.js';
 const FORN = 'src/domain/fornecedor.js';
+const DESP = 'src/application/despacho.js';
 const mutacao = (id, arquivo, de, para, justificativa = '') => ({ id, arquivo, de, para, justificativa });
 const MUTACOES = [
   mutacao('MUT-01', REPO, "operacao.estado === 'CONFIRMADA' || evento.estado === 'PENDENTE'", "false || evento.estado === 'PENDENTE'"),
@@ -122,12 +123,18 @@ const MUTACOES = [
   mutacao('MUT-106', FORN, "!v.inteiroNaoNegativo(request.prazoEstimadoDias)", "false"),
   mutacao('MUT-107', FORN, "extras.length || !idValido(request.fornecedorId)", "!idValido(request.fornecedorId)"),
   mutacao('MUT-108', 'src/domain/estoque.js', "custoUnitCentavos: movimento.custo_unit_centavos,", "custoUnitCentavos: null,"),
+  // M-06: despacho da interface.
+  mutacao('MUT-109', DESP, "typeof acao !== 'string' || ACOES.indexOf(acao) === -1", "typeof acao !== 'string'"),
+  mutacao('MUT-110', DESP, "if (semPedido && pedido !== undefined && pedido !== null) {", "if (false) {"),
+  mutacao('MUT-111', DESP, "if (!semPedido && !PULSO.validacao.eObjeto(pedido)) {", "if (false) {"),
+  mutacao('MUT-112', DESP, "const ACOES_SEM_PEDIDO = CONSULTAS_SEM_PEDIDO.concat(['reconciliarPendencias']);", "const ACOES_SEM_PEDIDO = CONSULTAS_SEM_PEDIDO.concat(['reconciliarPendencias', 'cadastrarFornecedor']);"),
+  mutacao('MUT-113', DESP, "return falha('FALHA_INESPERADA'", "throw erro; return falha('FALHA_INESPERADA'"),
 ];
 
 function executarMutacao(m) {
   const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'pulso-mutacao-'));
   try {
-    for (const nome of ['src', 'local', 'tests', 'fixtures', 'package.json']) {
+    for (const nome of ['src', 'local', 'tests', 'fixtures', 'package.json', 'interface/src']) {
       fs.cpSync(path.join(RAIZ, nome), path.join(pasta, nome), { recursive: true });
     }
     const alvo = path.join(pasta, m.arquivo);

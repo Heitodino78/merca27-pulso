@@ -16,7 +16,13 @@
     "pulso": "node local/cli.js",
     "mutacao": "node local/mutacao.js",
     "medir": "node local/medir-desempenho.js",
-    "typecheck": "node node_modules/typescript/lib/tsc.js -p tsconfig.src.json && node node_modules/typescript/lib/tsc.js -p tsconfig.local.json"
+    "typecheck": "node node_modules/typescript/lib/tsc.js -p tsconfig.src.json && node node_modules/typescript/lib/tsc.js -p tsconfig.local.json",
+    "interface:instalar": "cd interface && npm ci --ignore-scripts --no-audit --no-fund",
+    "interface:build": "node local/interface.js build",
+    "interface:test": "node local/interface.js test",
+    "interface:typecheck": "node local/interface.js typecheck",
+    "interface:preview": "node local/servidor-preview.js",
+    "interface:mutacao": "node local/mutacao-interface.js"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
