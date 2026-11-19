@@ -6,6 +6,10 @@ function pulsoCriarEsquema() {
   const INSTANTE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
   const TABELAS = {
+    PRODUTOS_ALTERACOES: {
+      chave: 'alteracao_id', colunas: [['alteracao_id', 'texto'], ['operacao_id', 'texto'], ['sku', 'texto'],
+        ['campos_json', 'texto'], ['motivo', 'texto'], ['registrado_em', 'instante'], ['operador_simulado', 'texto']],
+    },
     FORNECEDORES: {
       chave: 'fornecedor_id',
       colunas: [['fornecedor_id', 'texto'], ['nome_ficticio', 'texto'], ['categoria_principal', 'texto'],

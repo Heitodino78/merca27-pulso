@@ -34,7 +34,7 @@ function pulsoCriarRepositorio() {
       throw inconsistente('operação ' + evento.operacao_id + ' com payload ilegível');
     }
     if (!PULSO.validacao.eObjeto(payload) || Object.keys(payload).length !== 2 ||
-        ['PRODUTOS', 'MOVIMENTOS_ESTOQUE', 'FORNECEDORES'].indexOf(payload.tabela) === -1) {
+        ['PRODUTOS', 'MOVIMENTOS_ESTOQUE', 'FORNECEDORES', 'PRODUTOS_ALTERACOES'].indexOf(payload.tabela) === -1) {
       throw inconsistente('operação ' + evento.operacao_id + ' com payload inválido');
     }
     const problema = PULSO.esquema.problemaLinha(payload.tabela, payload.linha);
@@ -79,6 +79,16 @@ function pulsoCriarRepositorio() {
       normalizado = PULSO.fornecedor.normalizarCadastro({ fornecedorId: linha.fornecedor_id, nomeFicticio: linha.nome_ficticio,
         categoriaPrincipal: linha.categoria_principal, prazoEstimadoDias: linha.prazo_estimado_dias, ativo: linha.ativo });
       if (normalizado.ok) reconstruida = PULSO.fornecedor.construirLinha(normalizado.dados, evento.operacao_id, linha.criado_em);
+    } else if (payload.tabela === 'PRODUTOS_ALTERACOES' && evento.tipo === 'ALTERACAO_PRODUTO') {
+      try {
+        normalizado = PULSO.alteracao.normalizar(JSON.parse(evento.assinatura));
+        const campos = JSON.parse(linha.campos_json);
+        if (!PULSO.validacao.eObjeto(campos) || !Object.keys(campos).length ||
+            !normalizado.ok || Object.keys(campos).some(function (c) { return campos[c] !== normalizado.dados.campos[c]; })) {
+          throw inconsistente('alteração divergente do pedido');
+        }
+        reconstruida = PULSO.alteracao.construirLinha(normalizado.dados, linha.alteracao_id, evento.operacao_id, linha.registrado_em, campos);
+      } catch (erro) { throw inconsistente('alteração com campos ou assinatura inválidos'); }
     }
     const chave = PULSO.esquema.TABELAS[payload.tabela].chave;
     if (!normalizado || !('dados' in normalizado)) {
@@ -99,7 +109,7 @@ function pulsoCriarRepositorio() {
     const rejeitadas = new Set();
     eventos.forEach(function (evento) {
       if (['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1 ||
-          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR'].indexOf(evento.tipo) === -1) {
+          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO'].indexOf(evento.tipo) === -1) {
         throw inconsistente('operação ' + evento.operacao_id + ' com evento inválido');
       }
       if (evento.estado === 'REJEITADA') {
@@ -178,11 +188,13 @@ function pulsoCriarRepositorio() {
       const linhasProdutos = lerTabela(armazenamento, 'PRODUTOS');
       const linhasMovimentos = lerTabela(armazenamento, 'MOVIMENTOS_ESTOQUE');
       const linhasFornecedores = lerTabela(armazenamento, 'FORNECEDORES');
+      const linhasAlteracoes = lerTabela(armazenamento, 'PRODUTOS_ALTERACOES');
       conferirOrigem('PRODUTOS', linhasProdutos, dobra.operacoes);
       conferirOrigem('MOVIMENTOS_ESTOQUE', linhasMovimentos, dobra.operacoes);
       conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);
+      conferirOrigem('PRODUTOS_ALTERACOES', linhasAlteracoes, dobra.operacoes);
 
-      const presentes = new Set(linhasProdutos.concat(linhasMovimentos, linhasFornecedores).map(function (l) { return l.operacao_id; }));
+      const presentes = new Set(linhasProdutos.concat(linhasMovimentos, linhasFornecedores, linhasAlteracoes).map(function (l) { return l.operacao_id; }));
       const pendentes = [];
       dobra.operacoes.forEach(function (operacao) {
         if (operacao.estado !== 'CONFIRMADA') pendentes.push(operacao);
@@ -195,6 +207,21 @@ function pulsoCriarRepositorio() {
       confirmadas(linhasProdutos, dobra.operacoes).forEach(function (p) { produtos.set(p.sku, p); });
       const fornecedores = new Map();
       confirmadas(linhasFornecedores, dobra.operacoes).forEach(function (f) { fornecedores.set(f.fornecedor_id, f); });
+      const versoes = new Map();
+      produtos.forEach(function (p) { versoes.set(p.sku, [{ produto: Object.assign({}, p), operacaoId: p.operacao_id,
+        alteracaoId: null, motivo: 'Cadastro inicial', registradoEm: p.criado_em, operadorSimulado: null }]); });
+      confirmadas(linhasAlteracoes, dobra.operacoes).forEach(function (a) {
+        const produto = produtos.get(a.sku);
+        if (!produto) throw inconsistente('alteração de produto inexistente');
+        const pedido = JSON.parse(dobra.operacoes.get(a.operacao_id).assinatura);
+        const campos = PULSO.alteracao.efeito(produto, pedido.campos);
+        if (!Object.keys(campos).length || PULSO.alteracao.canonico(campos) !== a.campos_json) throw inconsistente('alteração sem efeito ou com campos divergentes');
+        const resultado = PULSO.alteracao.aplicar(produto, campos, a.registrado_em);
+        if (!resultado.ok || (resultado.produto.fornecedor_id && !fornecedores.has(resultado.produto.fornecedor_id))) throw inconsistente('versão de produto inválida');
+        produtos.set(a.sku, resultado.produto);
+        versoes.get(a.sku).push({ produto: Object.assign({}, resultado.produto), operacaoId: a.operacao_id,
+          alteracaoId: a.alteracao_id, motivo: a.motivo, registradoEm: a.registrado_em, operadorSimulado: a.operador_simulado });
+      });
       produtos.forEach(function (p) {
         if (p.fornecedor_id && !fornecedores.has(p.fornecedor_id)) throw inconsistente('produto vinculado a fornecedor inexistente');
       });
@@ -209,6 +236,7 @@ function pulsoCriarRepositorio() {
       return {
         produtos: produtos,
         fornecedores: fornecedores,
+        versoes: versoes,
         movimentos: movimentos,
         operacoesPorRequisicao: dobra.porRequisicao,
         pendentes: pendentes,

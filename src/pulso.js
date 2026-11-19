@@ -17,6 +17,10 @@ function pulsoCriar(portas) {
     gerarId: portas.gerarId,
   };
   return {
+    alterarProduto: function (request) { return PULSO.casosDeUso.alterarProduto(ctx, request); },
+    desativarProduto: function (request) { return PULSO.casosDeUso.desativarProduto(ctx, request); },
+    reativarProduto: function (request) { return PULSO.casosDeUso.reativarProduto(ctx, request); },
+    consultarHistoricoProduto: function (request) { return PULSO.casosDeUso.consultarHistoricoProduto(ctx, request); },
     cadastrarFornecedor: function (request) { return PULSO.casosDeUso.cadastrarFornecedor(ctx, request); },
     listarFornecedores: function () { return PULSO.casosDeUso.listarFornecedores(ctx); },
     cadastrarProduto: /** @param {PedidoCadastro} request */ function (request) { return PULSO.casosDeUso.cadastrarProduto(ctx, request); },

@@ -3,7 +3,7 @@
 const { carregarNucleo } = require('../local/nucleo');
 
 function criarArmazenamentoMemoria() {
-  const tabelas = { PRODUTOS: [], MOVIMENTOS_ESTOQUE: [], OPERACOES_LOG: [], FORNECEDORES: [] };
+  const tabelas = { PRODUTOS: [], MOVIMENTOS_ESTOQUE: [], OPERACOES_LOG: [], FORNECEDORES: [], PRODUTOS_ALTERACOES: [] };
   const falhas = [];
   return {
     tabelas,

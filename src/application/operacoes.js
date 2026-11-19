@@ -72,9 +72,9 @@ function pulsoCriarOperacoes() {
     }));
   }
 
-  function gravarNova(ctx, def, requisicaoId, assinatura, dados) {
+  function gravarNova(ctx, def, requisicaoId, assinatura, dados, estado) {
     const operacaoId = ctx.gerarId('OPR');
-    const registro = def.construir(dados, operacaoId, ctx.relogio());
+    const registro = def.construir(dados, operacaoId, ctx.relogio(), estado);
     const chave = PULSO.esquema.TABELAS[registro.tabela].chave;
     const base = {
       operacaoId: operacaoId,
@@ -172,7 +172,7 @@ function pulsoCriarOperacoes() {
       const recusa = def.verificar(estado, normalizado.dados);
       if (recusa) return rejeitar(ctx, def.tipo, requisicaoId, recusa);
 
-      const falhaGravacao = gravarNova(ctx, def, requisicaoId, assinatura, normalizado.dados);
+      const falhaGravacao = gravarNova(ctx, def, requisicaoId, assinatura, normalizado.dados, estado);
       if (falhaGravacao) return falhaGravacao;
 
       estado = ctx.repositorio.carregarEstado();

@@ -26,7 +26,7 @@ Detalhes e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADA
 
 - [x] M-07: checagem de tipos em `src/` e `local/`, sem build ou APIs Node no núcleo.
 - [x] M-01: custo unitário por entrada e fornecedores fictícios com vínculo validado.
-- [ ] M-02: alteração e desativação de produto.
+- [x] M-02: alteração, desativação, reativação e histórico completo de versões.
 - [ ] M-04: reconciliação automática.
 - [ ] M-05: desempenho e leituras sem trava.
 - [ ] M-06: interface compatível com Apps Script.

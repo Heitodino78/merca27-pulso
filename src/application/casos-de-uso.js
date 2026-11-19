@@ -28,6 +28,45 @@ function pulsoCriarCasosDeUso() {
     });
   }
 
+  function alterarProduto(ctx, request) {
+    return PULSO.operacoes.executar(ctx, {
+      tipo: 'ALTERACAO_PRODUTO', normalizar: PULSO.alteracao.normalizar, assinatura: function (dados) { return dados; },
+      verificar: function (estado, dados) {
+        const produto = estado.produtos.get(dados.sku);
+        if (!produto) return PULSO.erros.falha('SKU_INEXISTENTE', 'Produto não cadastrado.');
+        const aplicado = PULSO.alteracao.aplicar(produto, dados.campos, produto.atualizado_em);
+        if (!aplicado.ok) return aplicado;
+        if (aplicado.produto.fornecedor_id && !estado.fornecedores.has(aplicado.produto.fornecedor_id)) return PULSO.erros.falha('FORNECEDOR_INEXISTENTE', 'Fornecedor não cadastrado.');
+        if (!Object.keys(PULSO.alteracao.efeito(produto, dados.campos)).length) return PULSO.erros.falha('ALTERACAO_SEM_MUDANCA', 'Nenhum valor do produto foi alterado.');
+        return null;
+      },
+      construir: function (dados, operacaoId, agora, estado) {
+        return { tabela: 'PRODUTOS_ALTERACOES', linha: PULSO.alteracao.construirLinha(dados, 'ALT-' + operacaoId, operacaoId, agora,
+          PULSO.alteracao.efeito(estado.produtos.get(dados.sku), dados.campos)) };
+      },
+      responder: function (estado, operacao, situacao) {
+        return { ok: true, operacaoId: operacao.operacaoId, sku: operacao.linha.sku, duplicada: situacao.duplicada,
+          recuperada: situacao.recuperada, mensagem: 'Alteração de produto confirmada.' };
+      },
+    }, request);
+  }
+
+  function mudarStatus(ctx, request, ativo) {
+    if (!PULSO.validacao.eObjeto(request)) return alterarProduto(ctx, request);
+    // Mantém campos extras para que a validação do executor os rejeite.
+    const dados = Object.assign({}, request, { campos: { ativo: ativo } });
+    if (Object.prototype.hasOwnProperty.call(request, 'campos')) dados.campoNaoPermitido = true;
+    return alterarProduto(ctx, dados);
+  }
+
+  function consultarHistoricoProduto(ctx, request) {
+    if (!request || !PULSO.validacao.skuValido(request.sku)) return PULSO.erros.falha('SKU_INVALIDO', 'Informe o SKU no formato MER-001.');
+    return PULSO.operacoes.consultar(ctx, function (estado) {
+      if (!estado.produtos.has(request.sku)) return PULSO.erros.falha('SKU_INEXISTENTE', 'Produto não cadastrado.');
+      return { ok: true, sku: request.sku, versoes: estado.versoes.get(request.sku) };
+    });
+  }
+
   function cadastrarProduto(ctx, request) {
     return PULSO.operacoes.executar(ctx, {
       tipo: 'CADASTRO_PRODUTO',
@@ -122,6 +161,8 @@ function pulsoCriarCasosDeUso() {
         categoria: produto.categoria_id,
         unidade: produto.unidade,
         ativo: produto.ativo,
+        precoVendaCentavos: produto.preco_venda_centavos, custoRefCentavos: produto.custo_ref_centavos,
+        fornecedorId: produto.fornecedor_id, criadoEm: produto.criado_em, atualizadoEm: produto.atualizado_em,
         saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, produto.sku),
         estoqueMinimo: produto.estoque_minimo,
         estoqueAlvo: produto.estoque_alvo,
@@ -142,6 +183,7 @@ function pulsoCriarCasosDeUso() {
             nome: produto.nome,
             categoria: produto.categoria_id,
             precoVendaCentavos: produto.preco_venda_centavos,
+            custoRefCentavos: produto.custo_ref_centavos, fornecedorId: produto.fornecedor_id, atualizadoEm: produto.atualizado_em,
             ativo: produto.ativo,
             saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, produto.sku),
             estoqueMinimo: produto.estoque_minimo,
@@ -153,6 +195,9 @@ function pulsoCriarCasosDeUso() {
   }
 
   return {
+    alterarProduto: alterarProduto, consultarHistoricoProduto: consultarHistoricoProduto,
+    desativarProduto: function (ctx, request) { return mudarStatus(ctx, request, false); },
+    reativarProduto: function (ctx, request) { return mudarStatus(ctx, request, true); },
     cadastrarFornecedor: cadastrarFornecedor, listarFornecedores: listarFornecedores,
     cadastrarProduto: cadastrarProduto,
     registrarEntrada: registrarEntrada,
