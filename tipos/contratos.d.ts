@@ -25,6 +25,26 @@ interface PedidoSaldoInicial extends PedidoStatus { quantidade: number; custoUni
 interface PedidoPerda extends PedidoStatus { quantidade: number; categoriaPerda: string; }
 interface PedidoAjuste extends PedidoStatus { quantidadeContada: number; }
 interface PedidoConsulta { sku: string; limiteHistorico?: number; }
+interface ItemVenda { sku: string; quantidade: number; }
+interface PedidoVenda {
+  requisicaoId?: string; itens: ItemVenda[]; formaPagamentoFicticia: string;
+  observacao?: string | null; operadorSimulado?: string;
+}
+interface PedidoEstorno { requisicaoId?: string; vendaId: string; motivo: string; operadorSimulado?: string; }
+interface PedidoListarVendas { desde?: string; ate?: string; limite?: number; }
+interface PedidoConsultarVenda { vendaId?: string; requisicaoId?: string; }
+interface LinhaVenda {
+  venda_id: string; operacao_id: string; requisicao_id: string; registrado_em: string; forma_pagamento: string;
+  total_centavos: number; custo_est_centavos: number; observacao: string | null; operador_simulado: string;
+}
+interface LinhaItemVenda {
+  item_id: string; venda_id: string; operacao_id: string; sku: string; quantidade: number;
+  preco_unit_centavos: number; custo_unit_est_centavos: number; subtotal_centavos: number;
+}
+interface LinhaEstornoVenda {
+  estorno_id: string; venda_id: string; operacao_id: string; requisicao_id: string; registrado_em: string;
+  motivo: string; operador_simulado: string;
+}
 interface ItemContagem { sku: string; quantidadeContada: number; }
 interface PedidoContagem { requisicaoId?: string; itens: ItemContagem[]; motivo: string; operadorSimulado?: string; }
 /** Registro de uma operação: um dado em uma tabela. M-03: uma operação grava uma lista deles. */
@@ -69,8 +89,12 @@ interface RespostaOperacao {
   /** Contagem de inventário: ajustes gravados e SKUs que já conferiam. */
   ajustados?: { sku: string; movimentoId: string; saldoAnterior: number; saldoNovo: number; deltaUnidades: number }[];
   semDiferenca?: string[];
+  /** Venda e estorno (Fase 2). */
+  vendaId?: string; estornoId?: string; totalCentavos?: number; custoEstCentavos?: number; formaPagamento?: string;
+  itens?: { sku: string; quantidade: number; precoUnitCentavos: number; subtotalCentavos: number; saldoAtual: number }[];
+  devolvidos?: { sku: string; quantidade: number; saldoAtual: number }[];
 }
-type LinhaPulso = LinhaProduto | LinhaMovimento | LinhaEvento | LinhaFornecedor | LinhaAlteracao;
+type LinhaPulso = LinhaProduto | LinhaMovimento | LinhaEvento | LinhaFornecedor | LinhaAlteracao | LinhaVenda | LinhaItemVenda | LinhaEstornoVenda;
 interface ArmazenamentoPulso {
   ler(tabela: string): LinhaPulso[];
   anexar(tabela: string, linha: LinhaPulso): void;
@@ -88,6 +112,7 @@ interface PulsoNucleo {
   fornecedor: ReturnType<typeof pulsoCriarFornecedor>;
   alteracao: ReturnType<typeof pulsoCriarAlteracao>;
   movimento: ReturnType<typeof pulsoCriarMovimento>;
+  venda: ReturnType<typeof pulsoCriarVenda>;
   estoque: ReturnType<typeof pulsoCriarEstoque>;
   esquema: ReturnType<typeof pulsoCriarEsquema>;
   repositorio: ReturnType<typeof pulsoCriarRepositorio>;

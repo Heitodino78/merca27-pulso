@@ -18,13 +18,14 @@ function preparar() {
   return { ...ambiente, despacho: carregarNucleo().despacho };
 }
 
-test('despacho expõe somente as ações da interface, sem cadastrar fornecedor', () => {
+test('despacho expõe somente as ações da interface, sem cadastrar fornecedor nem contagem', () => {
   const { despacho } = preparar();
   assert.deepEqual([...despacho.ACOES].sort(), [
-    'ajustarPorContagem', 'alterarProduto', 'cadastrarProduto', 'consultarEstoque', 'consultarHistoricoProduto',
-    'consultarReposicao', 'desativarProduto', 'listarFornecedores', 'listarProdutos', 'reativarProduto',
-    'reconciliarPendencias', 'registrarEntrada', 'registrarPerda', 'registrarSaldoInicial',
+    'ajustarPorContagem', 'alterarProduto', 'cadastrarProduto', 'confirmarVenda', 'consultarEstoque', 'consultarHistoricoProduto',
+    'consultarReposicao', 'consultarVenda', 'desativarProduto', 'estornarVenda', 'listarFornecedores', 'listarProdutos', 'listarVendas',
+    'reativarProduto', 'reconciliarPendencias', 'registrarEntrada', 'registrarPerda', 'registrarSaldoInicial',
   ]);
+  assert.equal(despacho.ACOES.includes('registrarContagem'), false);
   assert.equal(despacho.ACOES.includes('cadastrarFornecedor'), false);
 });
 

@@ -35,6 +35,23 @@ function pulsoCriarEsquema() {
         ['saldo_anterior', 'inteiro?'], ['saldo_novo', 'inteiro?'],
       ],
     },
+    // Fase 2: vendas, itens e estornos. Nenhuma linha guarda estado mutável; "estornada" é derivado.
+    VENDAS: {
+      chave: 'venda_id',
+      colunas: [['venda_id', 'texto'], ['operacao_id', 'texto'], ['requisicao_id', 'texto'], ['registrado_em', 'instante'],
+        ['forma_pagamento', 'texto'], ['total_centavos', 'inteiro'], ['custo_est_centavos', 'inteiro'],
+        ['observacao', 'texto?'], ['operador_simulado', 'texto']],
+    },
+    ITENS_VENDA: {
+      chave: 'item_id',
+      colunas: [['item_id', 'texto'], ['venda_id', 'texto'], ['operacao_id', 'texto'], ['sku', 'texto'], ['quantidade', 'inteiro'],
+        ['preco_unit_centavos', 'inteiro'], ['custo_unit_est_centavos', 'inteiro'], ['subtotal_centavos', 'inteiro']],
+    },
+    ESTORNOS_VENDA: {
+      chave: 'estorno_id',
+      colunas: [['estorno_id', 'texto'], ['venda_id', 'texto'], ['operacao_id', 'texto'], ['requisicao_id', 'texto'],
+        ['registrado_em', 'instante'], ['motivo', 'texto'], ['operador_simulado', 'texto']],
+    },
     OPERACOES_LOG: {
       chave: 'evento_id',
       colunas: [

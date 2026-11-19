@@ -80,7 +80,7 @@ function pulsoCriarOperacoes() {
   function gravarNova(ctx, def, requisicaoId, assinatura, dados, estado) {
     const operacaoId = ctx.gerarId('OPR');
     // construir devolve a lista ordenada de registros da operação.
-    const registros = def.construir(dados, operacaoId, ctx.relogio(), estado);
+    const registros = def.construir(dados, operacaoId, ctx.relogio(), estado, requisicaoId);
     if (!Array.isArray(registros) || !registros.length) throw new Error('Operação sem registros.');
     const principal = registros[0];
     const base = {
@@ -145,7 +145,7 @@ function pulsoCriarOperacoes() {
 
   /**
    * def: { tipo, normalizar(request), assinatura(dados), verificar(estado, dados),
-   *        construir(dados, operacaoId, agora, estado) -> [{ tabela, linha }, ...],
+   *        construir(dados, operacaoId, agora, estado, requisicaoId) -> [{ tabela, linha }, ...],
    *        responder(estado, operacao, situacao) }
    */
   /** @returns {RespostaOperacao} */

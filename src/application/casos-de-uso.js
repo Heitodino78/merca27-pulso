@@ -212,6 +212,153 @@ function pulsoCriarCasosDeUso() {
     }, request);
   }
 
+  /** Venda com vários itens (Fase 2): tudo ou nada, valores capturados no momento da venda. */
+  function confirmarVenda(ctx, request) {
+    return PULSO.operacoes.executar(ctx, {
+      tipo: 'VENDA', normalizar: PULSO.venda.normalizarVenda, assinatura: function (dados) { return dados; },
+      verificar: function (estado, dados) {
+        for (let i = 0; i < dados.itens.length; i++) {
+          const item = dados.itens[i];
+          const produto = estado.produtos.get(item.sku);
+          if (!produto) return PULSO.erros.falha('SKU_INEXISTENTE', 'O SKU ' + item.sku + ' não está cadastrado. Nenhum item foi vendido.');
+          if (!produto.ativo) return PULSO.erros.falha('SKU_INATIVO', 'O SKU ' + item.sku + ' está inativo e não pode ser vendido. Nenhum item foi vendido.');
+          const saldo = estado.saldos.get(item.sku) || 0;
+          if (item.quantidade > saldo) {
+            return PULSO.erros.falha('SALDO_INSUFICIENTE', 'Saldo insuficiente de ' + item.sku + ': disponível ' + saldo + ', pedido ' + item.quantidade + '. Nenhum item foi vendido.',
+              { sku: item.sku, saldoDisponivel: saldo, quantidadePedida: item.quantidade });
+          }
+        }
+        if (!PULSO.venda.totais(dados.itens, capturasDe(estado, dados))) {
+          return PULSO.erros.falha('DADOS_INVALIDOS', 'O total da venda ultrapassa o limite que o sistema calcula com exatidão.');
+        }
+        return null;
+      },
+      construir: function (dados, operacaoId, agora, estado, requisicaoId) {
+        return PULSO.venda.construirRegistrosVenda(dados, operacaoId, requisicaoId, agora, capturasDe(estado, dados));
+      },
+      responder: function (estado, operacao, situacao) {
+        const venda = principal(operacao);
+        const itens = operacao.registros.filter(function (r) { return r.tabela === 'ITENS_VENDA'; }).map(function (r) {
+          return { sku: r.linha.sku, quantidade: r.linha.quantidade, precoUnitCentavos: r.linha.preco_unit_centavos,
+            subtotalCentavos: r.linha.subtotal_centavos, saldoAtual: estado.saldos.get(r.linha.sku) || 0 };
+        });
+        return { ok: true, duplicada: situacao.duplicada, recuperada: situacao.recuperada, operacaoId: operacao.operacaoId,
+          vendaId: venda.venda_id, totalCentavos: venda.total_centavos, custoEstCentavos: venda.custo_est_centavos,
+          formaPagamento: venda.forma_pagamento, itens: itens,
+          mensagem: situacao.duplicada ? 'Venda já registrada por esta requisição; nada foi duplicado.' : 'Venda ' + venda.venda_id + ' confirmada.' };
+      },
+    }, request);
+  }
+
+  /** Preço de venda e custo de referência vigentes, na ordem dos itens. */
+  function capturasDe(estado, dados) {
+    return dados.itens.map(function (item) {
+      const produto = estado.produtos.get(item.sku);
+      return { precoUnitCentavos: produto.preco_venda_centavos, custoUnitCentavos: produto.custo_ref_centavos };
+    });
+  }
+
+  /** Estorno total e único, devolvendo as unidades ao estoque (simplificação documentada em D-057). */
+  function estornarVenda(ctx, request) {
+    return PULSO.operacoes.executar(ctx, {
+      tipo: 'ESTORNO_VENDA', normalizar: PULSO.venda.normalizarEstorno, assinatura: function (dados) { return dados; },
+      verificar: function (estado, dados) {
+        const registro = estado.vendas.get(dados.vendaId);
+        if (!registro) return PULSO.erros.falha('VENDA_INEXISTENTE', 'A venda ' + dados.vendaId + ' não existe.');
+        if (registro.estorno) return PULSO.erros.falha('VENDA_JA_ESTORNADA', 'A venda ' + dados.vendaId + ' já foi estornada por outra requisição.');
+        const excedente = registro.itens.find(function (item) {
+          return !PULSO.validacao.inteiroNaoNegativo((estado.saldos.get(item.sku) || 0) + item.quantidade);
+        });
+        if (excedente) return PULSO.erros.falha('QTD_INVALIDA', 'A devolução de ' + excedente.sku + ' ultrapassa o limite de unidades exatas. Nenhum item foi estornado.');
+        return null;
+      },
+      construir: function (dados, operacaoId, agora, estado, requisicaoId) {
+        const itens = estado.vendas.get(dados.vendaId).itens.map(function (item) {
+          return { sku: item.sku, quantidade: item.quantidade, custoUnitCentavos: item.custo_unit_est_centavos };
+        });
+        return PULSO.venda.construirRegistrosEstorno(dados, operacaoId, requisicaoId, agora, itens);
+      },
+      responder: function (estado, operacao, situacao) {
+        const estorno = principal(operacao);
+        return { ok: true, duplicada: situacao.duplicada, recuperada: situacao.recuperada, operacaoId: operacao.operacaoId,
+          estornoId: estorno.estorno_id, vendaId: estorno.venda_id,
+          devolvidos: operacao.registros.slice(1).map(function (r) {
+            return { sku: r.linha.sku, quantidade: r.linha.delta_unidades, saldoAtual: estado.saldos.get(r.linha.sku) || 0 };
+          }),
+          mensagem: situacao.duplicada ? 'Estorno já registrado por esta requisição; nada foi duplicado.' : 'Venda ' + estorno.venda_id + ' estornada.' };
+      },
+    }, request);
+  }
+
+  function resumoVenda(registro) {
+    const v = registro.venda;
+    return { vendaId: v.venda_id, requisicaoId: v.requisicao_id, registradoEm: v.registrado_em, formaPagamento: v.forma_pagamento,
+      totalCentavos: v.total_centavos, custoEstCentavos: v.custo_est_centavos, observacao: v.observacao,
+      operadorSimulado: v.operador_simulado, quantidadeItens: registro.itens.length,
+      estado: registro.estorno ? 'ESTORNADA' : 'CONFIRMADA' };
+  }
+
+  const INSTANTE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+  function instanteValido(valor) {
+    return typeof valor === 'string' && INSTANTE.test(valor) && Number.isFinite(Date.parse(valor)) && new Date(valor).toISOString() === valor;
+  }
+
+  /** Vendas confirmadas, mais recentes primeiro. desde (inclusivo) e ate (exclusivo) em instantes ISO UTC. */
+  function listarVendas(ctx, request) {
+    const v = PULSO.validacao;
+    if (request !== undefined && !v.eObjeto(request)) return PULSO.erros.falha('DADOS_INVALIDOS', 'Envie a consulta como objeto.');
+    const consulta = request === undefined ? {} : request;
+    if (v.camposDesconhecidos(consulta, ['desde', 'ate', 'limite']).length ||
+        (consulta.desde !== undefined && !instanteValido(consulta.desde)) ||
+        (consulta.ate !== undefined && !instanteValido(consulta.ate)) ||
+        (consulta.desde !== undefined && consulta.ate !== undefined && consulta.desde >= consulta.ate) ||
+        (consulta.limite !== undefined && !(v.inteiroPositivo(consulta.limite) && consulta.limite <= 500))) {
+      return PULSO.erros.falha('DADOS_INVALIDOS', 'Período em instantes ISO (AAAA-MM-DDTHH:MM:SS.mmmZ) e limite inteiro de 1 a 500.');
+    }
+    return PULSO.operacoes.consultar(ctx, function (estado) {
+      const vendas = Array.from(estado.vendas.values())
+        .filter(function (r) {
+          return (consulta.desde === undefined || r.venda.registrado_em >= consulta.desde) &&
+            (consulta.ate === undefined || r.venda.registrado_em < consulta.ate);
+        })
+        .reverse()
+        .slice(0, consulta.limite === undefined ? 100 : consulta.limite)
+        .map(resumoVenda);
+      return { ok: true, vendas: vendas, operacoesPendentes: estado.pendentes.length };
+    });
+  }
+
+  /** Detalhe por vendaId ou por requisicaoId (exatamente um dos dois). */
+  function consultarVenda(ctx, request) {
+    const v = PULSO.validacao;
+    const consulta = v.eObjeto(request) ? request : {};
+    const porVenda = typeof consulta.vendaId === 'string' && consulta.vendaId.length > 0;
+    const porRequisicao = typeof consulta.requisicaoId === 'string' && consulta.requisicaoId.length > 0;
+    if (v.camposDesconhecidos(consulta, ['vendaId', 'requisicaoId']).length || porVenda === porRequisicao) {
+      return PULSO.erros.falha('DADOS_INVALIDOS', 'Informe vendaId ou requisicaoId, apenas um deles.');
+    }
+    return PULSO.operacoes.consultar(ctx, function (estado) {
+      let registro = porVenda ? estado.vendas.get(consulta.vendaId) : null;
+      if (porRequisicao) {
+        estado.vendas.forEach(function (r) { if (r.venda.requisicao_id === consulta.requisicaoId) registro = r; });
+      }
+      if (!registro) return PULSO.erros.falha('VENDA_INEXISTENTE', 'Venda não encontrada.');
+      return {
+        ok: true, venda: resumoVenda(registro),
+        itens: registro.itens.map(function (i) {
+          return { itemId: i.item_id, sku: i.sku, quantidade: i.quantidade, precoUnitCentavos: i.preco_unit_centavos,
+            custoUnitEstCentavos: i.custo_unit_est_centavos, subtotalCentavos: i.subtotal_centavos };
+        }),
+        movimentos: registro.movimentos.map(function (m) {
+          return { movimentoId: m.movimento_id, tipo: m.tipo, sku: m.sku, deltaUnidades: m.delta_unidades, registradoEm: m.registrado_em };
+        }),
+        estorno: registro.estorno ? { estornoId: registro.estorno.estorno_id, registradoEm: registro.estorno.registrado_em,
+          motivo: registro.estorno.motivo, operadorSimulado: registro.estorno.operador_simulado } : null,
+        operacoesPendentes: estado.pendentes.length,
+      };
+    });
+  }
+
   function consultarEstoque(ctx, request) {
     const consulta = PULSO.validacao.eObjeto(request) ? request : {};
     if (!PULSO.validacao.skuValido(consulta.sku)) {
@@ -289,6 +436,7 @@ function pulsoCriarCasosDeUso() {
     registrarPerda: function (ctx, request) { return registrarAdministrativo(ctx, request, 'PERDA'); },
     ajustarPorContagem: function (ctx, request) { return registrarAdministrativo(ctx, request, 'AJUSTE'); },
     registrarContagem: registrarContagem,
+    confirmarVenda: confirmarVenda, estornarVenda: estornarVenda, listarVendas: listarVendas, consultarVenda: consultarVenda,
     alterarProduto: alterarProduto, consultarHistoricoProduto: consultarHistoricoProduto,
     desativarProduto: function (ctx, request) { return mudarStatus(ctx, request, false); },
     reativarProduto: function (ctx, request) { return mudarStatus(ctx, request, true); },

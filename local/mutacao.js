@@ -13,6 +13,7 @@ const MOV = 'src/domain/movimento.js';
 const ALT = 'src/domain/alteracao.js';
 const FORN = 'src/domain/fornecedor.js';
 const DESP = 'src/application/despacho.js';
+const VEN = 'src/domain/venda.js';
 const mutacao = (id, arquivo, de, para, justificativa = '') => ({ id, arquivo, de, para, justificativa });
 const MUTACOES = [
   mutacao('MUT-01', REPO, "operacao.estado === 'CONFIRMADA' || evento.estado === 'PENDENTE'", "false || evento.estado === 'PENDENTE'"),
@@ -20,7 +21,7 @@ const MUTACOES = [
   mutacao('MUT-03', REPO, "if (!produto) throw inconsistente('movimento '", "if (false) throw inconsistente('movimento '"),
   mutacao('MUT-04', REPO, 'evento.referencia_id !== linha[chave] ||', 'false ||'),
   mutacao('MUT-05', REPO, "['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1", 'false'),
-  mutacao('MUT-06', REPO, "['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE', 'CONTAGEM_INVENTARIO'].indexOf(evento.tipo) === -1", 'false'),
+  mutacao('MUT-06', REPO, "['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE', 'CONTAGEM_INVENTARIO', 'VENDA', 'ESTORNO_VENDA'].indexOf(evento.tipo) === -1", 'false'),
   mutacao('MUT-07', 'local/armazenamento-jsonl.js', 'fs.fsyncSync(descritor);', '/* sem fsync */'),
   mutacao('MUT-08', OPS, "if (!operacao || operacao.estado !== 'CONFIRMADA')", 'if (false)'),
   mutacao('MUT-09', OPS, 'if (estadoFinal.pendentes.length)', 'if (false)'),
@@ -47,7 +48,7 @@ const MUTACOES = [
   mutacao('MUT-30', REPO, 'evento.tentativas < 1', 'false'),
   mutacao('MUT-31', REPO, 'if (!PULSO.validacao.inteiroSeguro(saldo))', 'if (false)'),
   mutacao('MUT-32', REPO, 'gravadas.length !== 1 || esquema.canonica(tabela, gravadas[0]) !== esquema.canonica(tabela, linha)', 'gravadas.length !== 1'),
-  mutacao('MUT-33', 'src/application/casos-de-uso.js', "if (!produto.ativo)", 'if (false)'),
+  mutacao('MUT-33', 'src/application/casos-de-uso.js', "if (!produto.ativo) return PULSO.erros.falha('SKU_INATIVO', 'O SKU ' + dados.sku", "if (false) return PULSO.erros.falha('SKU_INATIVO', 'O SKU ' + dados.sku"),
   mutacao('MUT-34', 'src/application/casos-de-uso.js', 'if (estado.produtos.has(dados.sku))', 'if (false)'),
   mutacao('MUT-35', 'src/application/casos-de-uso.js', 'if (!PULSO.validacao.inteiroNaoNegativo(saldoResultante))', 'if (false)'),
   mutacao('MUT-36', OPS, 'anterior.assinatura !== assinatura', 'false'),
@@ -108,7 +109,7 @@ const MUTACOES = [
   mutacao('MUT-91', REPO, "if (tipoMovimento === 'ENTRADA' && !produto.ativo) throw", "if (false) throw"),
   mutacao('MUT-92', REPO, "conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);", ""),
   mutacao('MUT-93', REPO, "conferirOrigem('PRODUTOS_ALTERACOES', linhasAlteracoes, dobra.operacoes);", ""),
-  mutacao('MUT-94', REPO, "FORNECEDORES: linhasFornecedores, PRODUTOS_ALTERACOES: linhasAlteracoes };", "FORNECEDORES: [], PRODUTOS_ALTERACOES: [] };"),
+  mutacao('MUT-94', REPO, "FORNECEDORES: linhasFornecedores, PRODUTOS_ALTERACOES: linhasAlteracoes,", "FORNECEDORES: [], PRODUTOS_ALTERACOES: [],"),
   mutacao('MUT-95', REPO, "Object.keys(campos).some(function (c) { return campos[c] !== normalizado.dados.campos[c]; })", "false"),
   mutacao('MUT-96', REPO, "(evento.tipo === 'AJUSTE' && !PULSO.validacao.inteiroNaoNegativo(linha.saldo_anterior))", "false"),
   mutacao('MUT-97', REPO, "return reutilizar && ultimasTabelas.has(tabela) ? ultimasTabelas.get(tabela) : lerAtual(tabela);", "return lerAtual(tabela);"),
@@ -137,7 +138,7 @@ const MUTACOES = [
   mutacao('MUT-117', REPO, 'else if (!operacao.registros.every(', 'else if (!operacao.registros.some('),
   mutacao('MUT-118', REPO, 'return r.tabela === tabela && r.linha[chave] === linha[chave];', 'return r.tabela === tabela;'),
   mutacao('MUT-119', REPO, "if (registros.length !== 1) throw", "if (false) throw"),
-  mutacao('MUT-120', REPO, 'operacao.registros.forEach(function (registro) { reproduzir(operacao, registro.linha); });', 'reproduzir(operacao, operacao.registros[0].linha);'),
+  mutacao('MUT-120', REPO, 'operacao.registros.forEach(function (registro) { reproduzirRegistro(operacao, registro); });', 'reproduzirRegistro(operacao, operacao.registros[0]);'),
   mutacao('MUT-121', REPO, "if (operacao.tipo === 'CONTAGEM_INVENTARIO') conferirItensContados(operacao, produtos, saldos);", ''),
   mutacao('MUT-122', REPO, 'if (evento.referencia_id !== registros[0].linha.movimento_id)', 'if (false)'),
   mutacao('MUT-123', REPO, "if (registro.tabela !== 'MOVIMENTOS_ESTOQUE') throw", 'if (false) throw',
@@ -153,7 +154,38 @@ const MUTACOES = [
   mutacao('MUT-131', CASOS, 'if (ausente) return', 'if (false) return'),
   mutacao('MUT-132', CASOS, 'if (!comDiferenca) return', 'if (false) return'),
   mutacao('MUT-133', CASOS, 'if (saldo === item.quantidadeContada) return;', ''),
-  mutacao('MUT-134', CASOS, 'const saldo = estado.saldos.get(item.sku) || 0;', 'const saldo = 0;'),
+  mutacao('MUT-134', CASOS, 'const saldo = estado.saldos.get(item.sku) || 0;\n          if (saldo === item.quantidadeContada) return;', 'const saldo = 0;\n          if (saldo === item.quantidadeContada) return;'),
+  // Fase 2: vendas e estorno.
+  mutacao('MUT-135', VEN, "if (vistos.has(item.sku)) return falha('DADOS_INVALIDOS', 'O SKU ' + item.sku + ' aparece mais de uma vez na venda", "if (false) return falha('DADOS_INVALIDOS', 'O SKU ' + item.sku + ' aparece mais de uma vez na venda"),
+  mutacao('MUT-136', VEN, 'itens.sort(function (a, b) { return a.sku < b.sku ? -1 : 1; });', ''),
+  mutacao('MUT-137', VEN, 'FORMAS_PAGAMENTO.indexOf(request.formaPagamentoFicticia) === -1', 'false'),
+  mutacao('MUT-138', VEN, 'if (!v.inteiroPositivo(item.quantidade))', 'if (!v.inteiroNaoNegativo(item.quantidade))'),
+  mutacao('MUT-139', VEN, 'const subtotal = itens[i].quantidade * capturas[i].precoUnitCentavos;', 'const subtotal = capturas[i].precoUnitCentavos;'),
+  mutacao('MUT-140', VEN, 'delta_unidades: -item.quantidade,', 'delta_unidades: item.quantidade,'),
+  mutacao('MUT-141', VEN, 'operador_simulado: dados.operadorSimulado, custo_unit_centavos: item.custoUnitCentavos,', 'operador_simulado: dados.operadorSimulado, custo_unit_centavos: 0,'),
+  mutacao('MUT-142', VEN, 'request.itens.length > LIMITE_ITENS', 'false'),
+  mutacao('MUT-143', CASOS, "if (!produto.ativo) return PULSO.erros.falha('SKU_INATIVO', 'O SKU ' + item.sku", "if (false) return PULSO.erros.falha('SKU_INATIVO', 'O SKU ' + item.sku"),
+  mutacao('MUT-144', CASOS, 'if (item.quantidade > saldo) {', 'if (item.quantidade > saldo + 1) {'),
+  mutacao('MUT-145', CASOS, "if (registro.estorno) return PULSO.erros.falha('VENDA_JA_ESTORNADA'", "if (false) return PULSO.erros.falha('VENDA_JA_ESTORNADA'"),
+  mutacao('MUT-146', CASOS, 'return { precoUnitCentavos: produto.preco_venda_centavos, custoUnitCentavos: produto.custo_ref_centavos };', 'return { precoUnitCentavos: produto.preco_venda_centavos, custoUnitCentavos: 0 };'),
+  mutacao('MUT-147', CASOS, '.reverse()\n        .slice(', '.slice('),
+  mutacao('MUT-148', CASOS, "estado: registro.estorno ? 'ESTORNADA' : 'CONFIRMADA'", "estado: 'CONFIRMADA'"),
+  mutacao('MUT-149', CASOS, 'r.venda.registrado_em < consulta.ate', 'r.venda.registrado_em <= consulta.ate'),
+  mutacao('MUT-150', REPO, "if (!produto.ativo) throw inconsistente('venda de produto inativo '", "if (false) throw inconsistente('venda de produto inativo '"),
+  mutacao('MUT-151', REPO, 'item.preco_unit_centavos !== produto.preco_venda_centavos || item.custo_unit_est_centavos !== produto.custo_ref_centavos', 'false'),
+  mutacao('MUT-152', REPO, "if (registro.estorno) throw inconsistente('venda '", "if (false) throw inconsistente('venda '"),
+  mutacao('MUT-153', REPO, 'return m.sku !== item.sku || m.delta_unidades !== item.quantidade || m.custo_unit_centavos !== item.custo_unit_est_centavos;', 'return m.sku !== item.sku;'),
+  mutacao('MUT-154', REPO, "conferirOrigem('ITENS_VENDA', linhasItens, dobra.operacoes);", ''),
+  mutacao('MUT-155', REPO, "if ((saldos.get(item.sku) || 0) < item.quantidade) throw inconsistente('venda acima do saldo", "if (false) throw inconsistente('venda acima do saldo",
+    'A conferência de todos os movimentos recusa o mesmo saldo negativo após reproduzir a venda canônica; defesa redundante.'),
+  mutacao('MUT-156', REPO, 'if (evento.referencia_id !== /** @type {LinhaVenda} */ (esperados[0].linha).venda_id) throw', 'if (false) throw'),
+  mutacao('MUT-157', REPO, "if (linha.tipo === 'VENDA' || linha.tipo === 'ESTORNO') vendas.get(linha.referencia_id).movimentos.push(linha);", ''),
+  mutacao('MUT-158', REPO, "if (operacao.tipo === 'ESTORNO_VENDA') conferirEstornoNoEstado(operacao, vendas);", ''),
+  mutacao('MUT-159', CASOS, 'if (excedente) return PULSO.erros.falha(', 'if (false) return PULSO.erros.falha('),
+  mutacao('MUT-160', CASOS, 'if (!PULSO.venda.totais(dados.itens, capturasDe(estado, dados)))', 'if (false)'),
+  mutacao('MUT-161', VEN, 'const custoItem = itens[i].quantidade * capturas[i].custoUnitCentavos;', 'const custoItem = capturas[i].custoUnitCentavos;'),
+  mutacao('MUT-162', CASOS, 'consulta.desde >= consulta.ate', 'false'),
+  mutacao('MUT-163', CASOS, 'new Date(valor).toISOString() === valor', 'true'),
 ];
 
 function executarMutacao(m) {

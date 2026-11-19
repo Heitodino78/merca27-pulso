@@ -138,16 +138,19 @@ test('falha de leitura em consulta não fala em gravação', () => {
   }
 });
 
-test('entrada nova faz oito leituras e repetição idempotente faz apenas o carregamento inicial', () => {
+test('entrada nova lê cada tabela uma vez mais três releituras de conferência; a repetição só carrega', () => {
   const { pulso, armazenamento } = ambienteComProduto();
+  // Uma leitura por tabela no carregamento (8 desde a Fase 2; eram 5) e três releituras após gravar.
+  const TABELAS = Object.keys(armazenamento.tabelas).length;
+  assert.equal(TABELAS, 8);
   const ler = armazenamento.ler;
   let leituras = 0;
   armazenamento.ler = (tabela) => { leituras++; return ler(tabela); };
   assert.equal(pulso.registrarEntrada(ENTRADA).saldoAtual, 10);
-  assert.equal(leituras, 8);
+  assert.equal(leituras, TABELAS + 3);
   leituras = 0;
   assert.equal(pulso.registrarEntrada(ENTRADA).duplicada, true);
-  assert.equal(leituras, 5);
+  assert.equal(leituras, TABELAS);
 });
 
 test('reaproveitar leituras não dispensa a conferência da gravação', () => {

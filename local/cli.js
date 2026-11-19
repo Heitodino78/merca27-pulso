@@ -24,12 +24,18 @@ Comandos:
   ajuste --sku MER-001 --contada 4 --motivo "Contagem fictícia"
   contagem --item MER-001=4 --item MER-002=0 --motivo "Inventário fictício"
                             Contagem de vários SKUs: tudo ou nada, um ajuste por SKU com diferença
+  venda --item MER-001=2 --item MER-002=1 --pagamento PIX [--observacao "Texto"]
+                            Venda com vários itens: tudo ou nada (DINHEIRO, PIX ou CARTAO, só informativo)
+  vendas                    Lista as vendas, mais recentes primeiro
+  venda --id VEN-...        Itens, movimentos e estorno (também: ver-venda --id)
+  estorno --venda VEN-... --motivo "Devolução fictícia"
+                            Estorno total e único, devolvendo as unidades ao estoque
   reposicao                 Lista alertas e sugestões para revisão humana
   historico-produto --sku MER-001   Mostra as versões do cadastro
 
 Valores em centavos. Dados em ./data (ou na pasta definida em PULSO_DADOS).`;
 
-const OPCOES_COM_VALOR = ['sku', 'nome', 'categoria', 'preco', 'custo', 'minimo', 'alvo', 'quantidade', 'referencia', 'motivo', 'requisicao', 'fornecedor', 'prazo', 'categoria-perda', 'contada'];
+const OPCOES_COM_VALOR = ['sku', 'nome', 'categoria', 'preco', 'custo', 'minimo', 'alvo', 'quantidade', 'referencia', 'motivo', 'requisicao', 'fornecedor', 'prazo', 'categoria-perda', 'contada', 'pagamento', 'observacao', 'id', 'venda'];
 
 function lerOpcoes(argumentos) {
   const opcoes = {};
@@ -166,6 +172,38 @@ comandos.contagem = (pulso, o) => {
   console.log(`Requisição: ${requisicaoId}${r.duplicada ? ' (já confirmada)' : ''}`);
   return 0;
 };
+/** Cada --item é SKU=quantidade; formato inválido segue como texto e o domínio recusa. */
+const itensDe = (o, campo) => (o.item ?? []).map((texto) => {
+  const separador = texto.indexOf('=');
+  return separador < 0 ? { sku: texto } : { sku: texto.slice(0, separador), [campo]: numero(texto.slice(separador + 1)) };
+});
+comandos.venda = (pulso, o) => {
+  if (o.id !== undefined) return comandos['ver-venda'](pulso, o);
+  const requisicaoId = requisicao(o);
+  const r = pulso.confirmarVenda({ requisicaoId, itens: itensDe(o, 'quantidade'), formaPagamentoFicticia: o.pagamento, observacao: o.observacao });
+  if (!r.ok) return imprimirErro(r, requisicaoId);
+  console.log(`OK: ${r.mensagem} Total ${reais(r.totalCentavos)} (${r.formaPagamento}, informativo).`);
+  for (const i of r.itens) console.log(`  ${i.sku}  ${i.quantidade} un × ${reais(i.precoUnitCentavos)} = ${reais(i.subtotalCentavos)}  saldo ${i.saldoAtual}`);
+  console.log(`Requisição: ${requisicaoId}${r.duplicada ? ' (já confirmada)' : ''}`);
+  return 0;
+};
+comandos.vendas = (pulso) => {
+  const r = pulso.listarVendas({});
+  if (!r.ok) return imprimirErro(r);
+  if (!r.vendas.length) console.log('Nenhuma venda registrada.');
+  for (const v of r.vendas) console.log(`${v.vendaId}  ${dataHora(v.registradoEm)}  ${reais(v.totalCentavos).padStart(12)}  ${v.quantidadeItens} item(ns)  ${v.formaPagamento}  ${v.estado}`);
+  return 0;
+};
+comandos['ver-venda'] = (pulso, o) => {
+  const r = pulso.consultarVenda({ vendaId: o.id });
+  if (!r.ok) return imprimirErro(r);
+  console.log(`${r.venda.vendaId} — ${r.venda.estado} — ${dataHora(r.venda.registradoEm)} — total ${reais(r.venda.totalCentavos)} — custo estimado ${reais(r.venda.custoEstCentavos)}`);
+  for (const i of r.itens) console.log(`  ${i.sku}  ${i.quantidade} un × ${reais(i.precoUnitCentavos)} = ${reais(i.subtotalCentavos)}`);
+  for (const m of r.movimentos) console.log(`  movimento ${m.tipo} ${m.sku} ${m.deltaUnidades > 0 ? '+' : ''}${m.deltaUnidades}`);
+  if (r.estorno) console.log(`  Estornada em ${dataHora(r.estorno.registradoEm)}: ${r.estorno.motivo}`);
+  return 0;
+};
+comandos.estorno = (pulso, o) => executarEscrita(pulso, 'estornarVenda', o, { vendaId: o.venda, motivo: o.motivo });
 comandos.reposicao = (pulso) => {
   const r = pulso.consultarReposicao();
   if (!r.ok) return imprimirErro(r);

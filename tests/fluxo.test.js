@@ -146,6 +146,6 @@ test('rejeições ficam registradas no log sem criar movimento', () => {
 test('a interface pública não oferece edição direta de saldo nem exclusão', () => {
   const { pulso } = criarAmbiente();
   assert.deepEqual(Object.keys(pulso).sort(), [
-    'ajustarPorContagem', 'alterarProduto', 'cadastrarFornecedor', 'cadastrarProduto', 'consultarEstoque', 'consultarHistoricoProduto', 'consultarReposicao', 'desativarProduto', 'listarFornecedores', 'listarProdutos', 'reativarProduto', 'reconciliarPendencias', 'registrarContagem', 'registrarEntrada', 'registrarPerda', 'registrarSaldoInicial',
+    'ajustarPorContagem', 'alterarProduto', 'cadastrarFornecedor', 'cadastrarProduto', 'confirmarVenda', 'consultarEstoque', 'consultarHistoricoProduto', 'consultarReposicao', 'consultarVenda', 'desativarProduto', 'estornarVenda', 'listarFornecedores', 'listarProdutos', 'listarVendas', 'reativarProduto', 'reconciliarPendencias', 'registrarContagem', 'registrarEntrada', 'registrarPerda', 'registrarSaldoInicial',
   ]);
 });

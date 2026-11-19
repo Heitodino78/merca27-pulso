@@ -63,8 +63,12 @@ function medirDesempenho(rotulo = 'atual') {
           sku: 'MER-001', quantidade: 1, custoUnitCentavos: 160, fornecedorId: 'FOR-001' })),
         // M-03: cinco SKUs por contagem; a quantidade muda a cada chamada para sempre haver diferença.
         medir('registrarContagem', () => pulso.registrarContagem({ requisicaoId: `MED-CONT-${++req}`, motivo: 'Inventário fictício',
-          itens: ['MER-010', 'MER-011', 'MER-012', 'MER-013', 'MER-014'].map((sku, i) => ({ sku, quantidadeContada: 100 + ((req + i) % 2) })) }))],
-      limites: 'Ambiente local JSONL, dados sintéticos e volume declarado; não mede Google, vendas nem uma operação comercial real.' };
+          itens: ['MER-010', 'MER-011', 'MER-012', 'MER-013', 'MER-014'].map((sku, i) => ({ sku, quantidadeContada: 100 + ((req + i) % 2) })) })),
+        // Fase 2: as contagens acima deixam 100 ou 101 unidades nesses SKUs; cada venda leva 1 de três deles.
+        medir('confirmarVenda', () => pulso.confirmarVenda({ requisicaoId: `MED-VENDA-${++req}`, formaPagamentoFicticia: 'PIX',
+          itens: [{ sku: 'MER-010', quantidade: 1 }, { sku: 'MER-011', quantidade: 1 }, { sku: 'MER-012', quantidade: 1 }] })),
+        medir('listarVendas', () => pulso.listarVendas({}))],
+      limites: 'Ambiente local JSONL, dados sintéticos e volume declarado; vendas medidas após o cenário de estoque. Não mede Google nem uma operação comercial real.' };
   } finally { fs.rmSync(pasta, { recursive: true, force: true }); }
 }
 if (require.main === module) console.log(JSON.stringify(medirDesempenho(process.argv[2] || 'atual'), null, 2));

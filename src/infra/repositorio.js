@@ -26,7 +26,7 @@ function pulsoCriarRepositorio() {
     return linhas;
   }
 
-  const TABELAS_DE_DADOS = ['PRODUTOS', 'MOVIMENTOS_ESTOQUE', 'FORNECEDORES', 'PRODUTOS_ALTERACOES'];
+  const TABELAS_DE_DADOS = ['PRODUTOS', 'MOVIMENTOS_ESTOQUE', 'FORNECEDORES', 'PRODUTOS_ALTERACOES', 'VENDAS', 'ITENS_VENDA', 'ESTORNOS_VENDA'];
   const LIMITE_REGISTROS = 200;
   /** Tipos que já existiam quando o payload era { tabela, linha }; tipos novos só usam o formato atual. */
   const TIPOS_LEGADOS = ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE'];
@@ -117,8 +117,64 @@ function pulsoCriarRepositorio() {
     }
   }
 
+  /** Os registros da intenção precisam ser exatamente os que as regras de domínio construiriam. */
+  function conferirIguais(evento, registros, esperados) {
+    if (registros.length !== esperados.length) throw inconsistente('operação ' + evento.operacao_id + ' com quantidade de registros divergente');
+    esperados.forEach(function (esperado, i) {
+      const registro = registros[i];
+      if (registro.tabela !== esperado.tabela ||
+          PULSO.esquema.canonica(esperado.tabela, registro.linha) !== PULSO.esquema.canonica(esperado.tabela, esperado.linha)) {
+        throw inconsistente('operação ' + evento.operacao_id + ' com registro ' + (i + 1) + ' divergente da intenção');
+      }
+    });
+  }
+
+  function intencaoDe(evento, normalizar) {
+    let normalizado;
+    try { normalizado = normalizar(JSON.parse(evento.assinatura)); }
+    catch (erro) { throw inconsistente('operação ' + evento.operacao_id + ' com assinatura ilegível'); }
+    if (!normalizado.ok || evento.assinatura !== JSON.stringify(normalizado.dados) || evento.tentativas !== 1 || evento.erro_cod !== null) {
+      throw inconsistente('operação ' + evento.operacao_id + ' com intenção incompatível com as regras de domínio');
+    }
+    return normalizado.dados;
+  }
+
+  /** Venda: VENDAS, itens e movimentos reconstruídos a partir do pedido e dos valores capturados. */
+  function conferirVenda(evento, registros) {
+    const dados = intencaoDe(evento, PULSO.venda.normalizarVenda);
+    const n = dados.itens.length;
+    if (registros.length !== 1 + 2 * n || registros[0].tabela !== 'VENDAS') throw inconsistente('venda com registros fora do formato');
+    const capturas = registros.slice(1, 1 + n).map(function (r) {
+      return { precoUnitCentavos: r.linha.preco_unit_centavos, custoUnitCentavos: r.linha.custo_unit_est_centavos };
+    });
+    if (!capturas.every(function (c) { return PULSO.validacao.inteiroNaoNegativo(c.precoUnitCentavos) && PULSO.validacao.inteiroNaoNegativo(c.custoUnitCentavos); }) ||
+        !PULSO.venda.totais(dados.itens, capturas)) {
+      throw inconsistente('venda com valores capturados inválidos');
+    }
+    const esperados = PULSO.venda.construirRegistrosVenda(dados, evento.operacao_id, evento.requisicao_id, registros[0].linha.registrado_em, capturas);
+    conferirIguais(evento, registros, esperados);
+    if (evento.referencia_id !== /** @type {LinhaVenda} */ (esperados[0].linha).venda_id) throw inconsistente('venda com referência divergente');
+  }
+
+  /** Estorno: ESTORNOS_VENDA e um ESTORNO por item; o espelho dos itens é conferido na reprodução. */
+  function conferirEstorno(evento, registros) {
+    const dados = intencaoDe(evento, PULSO.venda.normalizarEstorno);
+    if (registros.length < 2 || registros[0].tabela !== 'ESTORNOS_VENDA') throw inconsistente('estorno com registros fora do formato');
+    const itens = registros.slice(1).map(function (r) {
+      return { sku: r.linha.sku, quantidade: r.linha.delta_unidades, custoUnitCentavos: r.linha.custo_unit_centavos };
+    });
+    if (!itens.every(function (i) { return PULSO.validacao.inteiroPositivo(i.quantidade) && PULSO.validacao.inteiroNaoNegativo(i.custoUnitCentavos); })) {
+      throw inconsistente('estorno com quantidades ou custos inválidos');
+    }
+    const esperados = PULSO.venda.construirRegistrosEstorno(dados, evento.operacao_id, evento.requisicao_id, registros[0].linha.registrado_em, itens);
+    conferirIguais(evento, registros, esperados);
+    if (evento.referencia_id !== /** @type {LinhaEstornoVenda} */ (esperados[0].linha).estorno_id) throw inconsistente('estorno com referência divergente');
+  }
+
   /** A intenção recuperável precisa respeitar as mesmas regras do pedido original. */
   function conferirIntencao(evento, registros) {
+    if (evento.tipo === 'VENDA') return conferirVenda(evento, registros);
+    if (evento.tipo === 'ESTORNO_VENDA') return conferirEstorno(evento, registros);
     if (evento.tipo === 'CONTAGEM_INVENTARIO') return conferirContagem(evento, registros);
     if (registros.length !== 1) throw inconsistente('operação ' + evento.operacao_id + ' do tipo ' + evento.tipo + ' com mais de um registro');
     const payload = registros[0];
@@ -181,7 +237,7 @@ function pulsoCriarRepositorio() {
     const rejeitadas = new Set();
     eventos.forEach(function (evento) {
       if (['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1 ||
-          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE', 'CONTAGEM_INVENTARIO'].indexOf(evento.tipo) === -1) {
+          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE', 'CONTAGEM_INVENTARIO', 'VENDA', 'ESTORNO_VENDA'].indexOf(evento.tipo) === -1) {
         throw inconsistente('operação ' + evento.operacao_id + ' com evento inválido');
       }
       if (evento.estado === 'REJEITADA') {
@@ -257,6 +313,35 @@ function pulsoCriarRepositorio() {
     });
   }
 
+  /** No instante da venda: produto existente e ativo, preço e custo do cadastro vigente e saldo suficiente. */
+  function conferirVendaNoEstado(operacao, produtos, saldos) {
+    operacao.registros.filter(function (r) { return r.tabela === 'ITENS_VENDA'; }).forEach(function (r) {
+      const item = r.linha;
+      const produto = produtos.get(item.sku);
+      if (!produto) throw inconsistente('venda de SKU inexistente ' + item.sku);
+      if (!produto.ativo) throw inconsistente('venda de produto inativo ' + item.sku);
+      if (item.preco_unit_centavos !== produto.preco_venda_centavos || item.custo_unit_est_centavos !== produto.custo_ref_centavos) {
+        throw inconsistente('venda com preço ou custo divergente do cadastro vigente em ' + item.sku);
+      }
+      if ((saldos.get(item.sku) || 0) < item.quantidade) throw inconsistente('venda acima do saldo de ' + item.sku);
+    });
+  }
+
+  /** Estorno total, uma única vez, espelhando exatamente os itens da venda. */
+  function conferirEstornoNoEstado(operacao, vendas) {
+    const estorno = operacao.registros[0].linha;
+    const registro = vendas.get(estorno.venda_id);
+    if (!registro) throw inconsistente('estorno de venda inexistente ' + estorno.venda_id);
+    if (registro.estorno) throw inconsistente('venda ' + estorno.venda_id + ' estornada mais de uma vez');
+    const movimentos = operacao.registros.slice(1).map(function (r) { return r.linha; });
+    if (movimentos.length !== registro.itens.length || registro.itens.some(function (item, i) {
+      const m = movimentos[i];
+      return m.sku !== item.sku || m.delta_unidades !== item.quantidade || m.custo_unit_centavos !== item.custo_unit_est_centavos;
+    })) {
+      throw inconsistente('estorno diferente dos itens da venda ' + estorno.venda_id);
+    }
+  }
+
   /** @param {ArmazenamentoPulso} armazenamento */
   function criar(armazenamento) {
     // Vale só na continuação da mesma seção crítica: auxilia existe() e a resposta
@@ -279,13 +364,21 @@ function pulsoCriarRepositorio() {
       const linhasMovimentos = ler('MOVIMENTOS_ESTOQUE');
       const linhasFornecedores = ler('FORNECEDORES');
       const linhasAlteracoes = ler('PRODUTOS_ALTERACOES');
+      // Bases anteriores à Fase 2 não têm estas tabelas: a leitura vazia vale zero vendas.
+      const linhasVendas = ler('VENDAS');
+      const linhasItens = ler('ITENS_VENDA');
+      const linhasEstornos = ler('ESTORNOS_VENDA');
       conferirOrigem('PRODUTOS', linhasProdutos, dobra.operacoes);
       conferirOrigem('MOVIMENTOS_ESTOQUE', linhasMovimentos, dobra.operacoes);
       conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);
       conferirOrigem('PRODUTOS_ALTERACOES', linhasAlteracoes, dobra.operacoes);
+      conferirOrigem('VENDAS', linhasVendas, dobra.operacoes);
+      conferirOrigem('ITENS_VENDA', linhasItens, dobra.operacoes);
+      conferirOrigem('ESTORNOS_VENDA', linhasEstornos, dobra.operacoes);
 
       // Operação confirmada precisa ter TODOS os registros da sua lista gravados.
-      const linhasPorTabela = { PRODUTOS: linhasProdutos, MOVIMENTOS_ESTOQUE: linhasMovimentos, FORNECEDORES: linhasFornecedores, PRODUTOS_ALTERACOES: linhasAlteracoes };
+      const linhasPorTabela = { PRODUTOS: linhasProdutos, MOVIMENTOS_ESTOQUE: linhasMovimentos, FORNECEDORES: linhasFornecedores, PRODUTOS_ALTERACOES: linhasAlteracoes,
+        VENDAS: linhasVendas, ITENS_VENDA: linhasItens, ESTORNOS_VENDA: linhasEstornos };
       const presentes = {};
       Object.keys(linhasPorTabela).forEach(function (tabela) {
         const chave = PULSO.esquema.TABELAS[tabela].chave;
@@ -306,12 +399,27 @@ function pulsoCriarRepositorio() {
       const movimentos = [];
       const saldos = new Map();
       const movimentados = new Set();
+      /** venda_id -> { venda, itens, movimentos, estorno } */
+      const vendas = new Map();
       // Reproduz a ordem das operações, incluindo o cadastro vigente em cada instante.
       dobra.operacoes.forEach(function (operacao) {
         if (operacao.estado !== 'CONFIRMADA') return;
         if (operacao.tipo === 'CONTAGEM_INVENTARIO') conferirItensContados(operacao, produtos, saldos);
-        operacao.registros.forEach(function (registro) { reproduzir(operacao, registro.linha); });
+        if (operacao.tipo === 'VENDA') conferirVendaNoEstado(operacao, produtos, saldos);
+        if (operacao.tipo === 'ESTORNO_VENDA') conferirEstornoNoEstado(operacao, vendas);
+        operacao.registros.forEach(function (registro) { reproduzirRegistro(operacao, registro); });
       });
+
+      function reproduzirRegistro(operacao, registro) {
+        const linha = registro.linha;
+        if (registro.tabela === 'VENDAS') vendas.set(linha.venda_id, { venda: linha, itens: [], movimentos: [], estorno: null });
+        else if (registro.tabela === 'ITENS_VENDA') vendas.get(linha.venda_id).itens.push(linha);
+        else if (registro.tabela === 'ESTORNOS_VENDA') vendas.get(linha.venda_id).estorno = linha;
+        else {
+          reproduzir(operacao, linha);
+          if (linha.tipo === 'VENDA' || linha.tipo === 'ESTORNO') vendas.get(linha.referencia_id).movimentos.push(linha);
+        }
+      }
 
       function reproduzir(operacao, linha) {
         if (operacao.tipo === 'CADASTRO_FORNECEDOR') {
@@ -354,6 +462,7 @@ function pulsoCriarRepositorio() {
         produtos: produtos,
         fornecedores: fornecedores,
         versoes: versoes,
+        vendas: vendas,
         movimentos: movimentos,
         saldos: saldos,
         operacoesPorRequisicao: dobra.porRequisicao,
