@@ -9,7 +9,7 @@
 | 1 | M-07 | Checagem de tipos | Bloco 2 da Fase 01 | [x] Concluída |
 | 2 | M-01 | Custo unitário na entrada | Bloco 3 da Fase 01 | [x] Concluída |
 | 3 | M-02 | Alteração e desativação de produto | Bloco 4 da Fase 01 | [x] Concluída |
-| 4 | M-04 | Reconciliação automática | Início da Fase 1 | [ ] Pendente |
+| 4 | M-04 | Reconciliação automática | Bloco 5 da Fase 01 | [x] Concluída |
 | 5 | M-05 | Desempenho e leituras sem trava | Antes da integração com o Sheets | [ ] Pendente |
 | 6 | M-06 | Interface compatível com Apps Script | Depois de M-01 e M-02 | [ ] Pendente |
 | 7 | M-03 | Operações com vários registros | Antes da Fase 2 (vendas) | [ ] Pendente |

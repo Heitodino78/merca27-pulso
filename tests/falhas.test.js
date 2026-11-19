@@ -52,22 +52,42 @@ test('confirmação gravada com erro de retorno: repetição apenas devolve a op
   assert.equal(saldo(pulso), 10);
 });
 
-test('operação interrompida bloqueia novos lançamentos até a reconciliação', () => {
+test('novo lançamento conclui pendência automaticamente e valida o estado atualizado', () => {
   const { pulso, armazenamento } = ambienteComProduto();
   armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
-  pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA });
+  assert.equal(pulso.registrarEntrada({ ...ENTRADA }).ok, false);
   assert.equal(eventos(armazenamento, 'PENDENTE_RECONCILIACAO').length, 1);
-
-  const bloqueada = pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'REQ-F2', sku: 'MER-001', quantidade: 1 });
-  assert.equal(bloqueada.erro.codigo, 'RECONCILIACAO_PENDENTE');
-  assert.equal(pulso.consultarEstoque({ sku: 'MER-001' }).operacoesPendentes, 1);
-
-  const reconciliacao = pulso.reconciliarPendencias();
-  assert.equal(reconciliacao.ok, true);
-  assert.deepEqual(Array.from(reconciliacao.reconciliadas), ['REQ-F1']);
-  assert.equal(saldo(pulso), 10);
-  assert.equal(pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'REQ-F2', sku: 'MER-001', quantidade: 1 }).saldoAtual, 11);
+  const nova = { custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'REQ-F2', sku: 'MER-001', quantidade: 1 };
+  assert.equal(pulso.registrarEntrada(nova).saldoAtual, 11);
+  assert.equal(pulso.consultarEstoque({ sku: 'MER-001' }).operacoesPendentes, 0);
+  assert.equal(armazenamento.tabelas.MOVIMENTOS_ESTOQUE.length, 2);
+  assert.ok(eventos(armazenamento, 'CONFIRMADA').some((e) => /automática/.test(e.resumo)));
+  assert.equal(pulso.registrarEntrada(nova).duplicada, true);
+  assert.equal(saldo(pulso), 11);
   assert.equal(pulso.reconciliarPendencias().reconciliadas.length, 0);
+});
+
+test('falha na reconciliação automática não inicia a nova operação', () => {
+  const { pulso, armazenamento } = ambienteComProduto();
+  armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
+  pulso.registrarEntrada(ENTRADA);
+  armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
+  const quantidadeEventos = armazenamento.tabelas.OPERACOES_LOG.length;
+  const nova = { ...ENTRADA, requisicaoId: 'REQ-F2', quantidade: 1 };
+  assert.equal(pulso.registrarEntrada(nova).erro.codigo, 'RECONCILIACAO_PENDENTE');
+  assert.equal(armazenamento.tabelas.OPERACOES_LOG.length, quantidadeEventos);
+  assert.equal(armazenamento.tabelas.MOVIMENTOS_ESTOQUE.length, 0);
+  assert.equal(pulso.reconciliarPendencias().ok, true);
+  assert.equal(pulso.registrarEntrada(nova).saldoAtual, 11);
+});
+
+test('validação após reconciliação usa o novo saldo e rejeita excesso', () => {
+  const { pulso, armazenamento } = ambienteComProduto();
+  armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
+  pulso.registrarEntrada({ ...ENTRADA, quantidade: Number.MAX_SAFE_INTEGER });
+  assert.equal(pulso.registrarEntrada({ ...ENTRADA, requisicaoId: 'REQ-NOVA', quantidade: 1 }).erro.codigo, 'QTD_INVALIDA');
+  assert.equal(saldo(pulso), Number.MAX_SAFE_INTEGER);
+  assert.equal(armazenamento.tabelas.MOVIMENTOS_ESTOQUE.length, 1);
 });
 
 test('reconciliação que também falha mantém a operação pendente e pode ser repetida', () => {

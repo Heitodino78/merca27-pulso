@@ -13,6 +13,9 @@ Ambiente: Node 22.23.5, npm 10.9.9, runtime temporário já conferido na Fase 00
 | 2 | `npm run typecheck`, `npm test`, `npm run check`, `npm run demo` | Duas configurações de tipos sem erro; 141 testes; sintaxe em 25 arquivos; demo aprovada |
 | 3 | Mesmos quatro comandos e regeneração da seed | 169 testes; tipos sem erro; 27 arquivos sem erro de sintaxe; demo aprovada |
 | 4 | `npm test`, `npm run check`, `npm run typecheck`, `npm run demo` | 193 testes; tipos sem erro; 29 arquivos sem erro de sintaxe; demo aprovada |
+| 5 | Mesmos quatro comandos | 195 testes; tipos sem erro; 29 arquivos sem erro de sintaxe; demo aprovada |
+
+M-04 substituiu o teste de bloqueio até reconciliação manual por três casos: conclusão automática antes do novo lançamento, falha sem criar intenção nova e validação com o saldo atualizado. O log identifica a conclusão automática. D-017 substitui D-007; o comando manual continua disponível.
 
 M-07: o comando experimental `node node_modules/typescript/lib/tsc.js -p tsconfig.src.json --strict` encontrou 126 erros adicionais. Esse resultado motivou D-027; não é uma checagem aprovada. As configurações versionadas usam `strict: false`, sem suprimir erros.
 

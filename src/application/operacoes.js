@@ -56,7 +56,7 @@ function pulsoCriarOperacoes() {
   }
 
   /** Conclui uma operação pendente sem duplicar o dado, mesmo que ele já tenha sido gravado. */
-  function concluir(ctx, operacao) {
+  function concluir(ctx, operacao, automatica) {
     const chave = PULSO.esquema.TABELAS[operacao.tabela].chave;
     if (!ctx.repositorio.existe(operacao.tabela, operacao.linha[chave])) {
       ctx.repositorio.anexarVerificado(operacao.tabela, operacao.linha);
@@ -66,7 +66,7 @@ function pulsoCriarOperacoes() {
       requisicaoId: operacao.requisicaoId,
       tipo: operacao.tipo,
       estado: 'CONFIRMADA',
-      resumo: 'Operação concluída por reconciliação.',
+      resumo: automatica ? 'Operação concluída por reconciliação automática.' : 'Operação concluída por reconciliação.',
       referenciaId: operacao.linha[chave],
       tentativas: operacao.tentativas + 1,
     }));
@@ -163,10 +163,13 @@ function pulsoCriarOperacoes() {
       }
 
       if (estado.pendentes.length) {
-        return rejeitar(ctx, def.tipo, requisicaoId, PULSO.erros.falha(
-          'RECONCILIACAO_PENDENTE', 'Existe operação interrompida. Execute a reconciliação antes de novos lançamentos.',
-          { requisicoes: estado.pendentes.map(function (p) { return p.requisicaoId; }) }
-        ));
+        try {
+          estado.pendentes.forEach(function (operacao) { concluir(ctx, operacao, true); });
+          estado = ctx.repositorio.carregarEstado();
+          if (estado.pendentes.length) throw new Error('Reconciliação não confirmada.');
+        } catch (erro) {
+          return PULSO.erros.falha('RECONCILIACAO_PENDENTE', 'A pendência anterior não pôde ser concluída. Nenhum novo lançamento foi iniciado. Repita ou execute reconciliar.');
+        }
       }
 
       const recusa = def.verificar(estado, normalizado.dados);

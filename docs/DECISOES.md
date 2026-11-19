@@ -67,6 +67,8 @@ T-01 (sidebar ou formulário), T-03 (método de custo), T-04 (tipo de lock no Ap
 
 ## Fase 01
 
+- **D-030 — M-04:** D-017 passa a substituir D-007. Pendências são concluídas automaticamente, em ordem, dentro da mesma trava, antes de verificar um lançamento novo. O estado é recarregado após concluir; falha retorna `RECONCILIACAO_PENDENTE` e não inicia a nova intenção. Conflito de uma requisição já existente continua sendo rejeitado sem recuperar dados conflitantes. A reconciliação manual permanece disponível.
+
 - **D-029 — M-02:** criação de produto imutável e alterações em `PRODUTOS_ALTERACOES`. A assinatura conserva o pedido normalizado completo; `campos_json` guarda somente mudanças efetivas em ordem canônica. Isso permite repetir um pedido que inclua campos sem mudança sem perder idempotência. Na leitura, o estado inteiro é validado em cada versão e o efeito é confrontado com a intenção original. Desativar e reativar usam o mesmo tipo auditável de alteração, com o campo `ativo` obrigatório nesses atalhos. SKU e unidade não podem mudar.
 
 - **D-028 — M-01 e fornecedores:** movimentos ganham, ao final, custo unitário, fornecedor, categoria de perda e saldos de ajuste, exatamente na ordem do prompt. Entrada exige custo e fornecedor existente e ativo. O fornecedor opcional do produto deve existir. A seed passa a cadastrar seis fornecedores antes dos seis produtos atuais; a expansão fica no Bloco 8. Nenhum dado existente foi apagado: bases da Fase 00 têm formato incompatível e devem ser preservadas como arquivo histórico, usando outro `PULSO_DADOS` para a Fase 01. Não há migração automática nem descarte silencioso de colunas antigas. A comparação canônica e a validação da intenção foram ampliadas, sem retirar verificações.
