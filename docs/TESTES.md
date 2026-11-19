@@ -16,6 +16,9 @@ Ambiente: Node 22.23.5, npm 10.9.9, runtime temporário já conferido na Fase 00
 | 5 | Mesmos quatro comandos | 195 testes; tipos sem erro; 29 arquivos sem erro de sintaxe; demo aprovada |
 | 6 | Mesmos quatro comandos | 254 testes; tipos sem erro; 30 arquivos sem erro de sintaxe; demo aprovada |
 | 7 | Mesmos quatro comandos | 260 testes; tipos sem erro; 31 arquivos sem erro de sintaxe; demo aprovada |
+| 8 | Mesmos quatro comandos e regeneração do catálogo | 263 testes; tipos sem erro; 32 arquivos sem erro de sintaxe; demo aprovada |
+
+Bloco 8: 40 produtos, seis fornecedores e os valores originais dos seis primeiros SKUs fixados por teste. A jornada CLI cobriu todos os comandos novos e repetição de entrada. Um recálculo independente leu os JSONL, filtrou as operações confirmadas e coincidiu com todos os 40 saldos consultados.
 
 Bloco 6: o teste de saldo negativo forjado agora contém uma PERDA bem formada, com assinatura, custo e categoria válidos, e exige mensagem `saldo negativo`. Ele alcança a regra pretendida. Há falhas antes, depois e silenciosas nas três etapas para saldo inicial, perda e ajuste; idempotência e conflito em cada caso; contagens para baixo, para cima e zero; produto inativo; custo histórico após mudança de cadastro. Oito processos tentaram perder duas unidades cada sobre saldo sete: somente três perdas confirmaram e o saldo final ficou em uma unidade.
 

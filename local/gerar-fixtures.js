@@ -16,6 +16,16 @@ const MODELOS = [
   { nome: 'Detergente Fictício 500 ml', categoria: 'LIMPEZA', custo: [170, 330] },
 ];
 
+const NOVOS_NOMES = [
+  'Suco Demonstração 200 ml', 'Feijão Fictício 500 g', 'Iogurte Demonstração 170 g', 'Salgadinho Fictício 50 g', 'Creme Dental Demonstração 90 g', 'Sabão em Barra Fictício 200 g',
+  'Água com Gás Demonstração 500 ml', 'Macarrão Fictício 500 g', 'Queijo Demonstração 200 g', 'Biscoito Doce Fictício 100 g', 'Escova Dental Demonstração', 'Água Sanitária Fictícia 1 L',
+  'Chá Gelado Fictício 300 ml', 'Açúcar Demonstração 1 kg', 'Manteiga Fictícia 200 g', 'Pipoca Demonstração 100 g', 'Shampoo Fictício 200 ml', 'Limpador Demonstração 500 ml',
+  'Bebida de Fruta Fictícia 1 L', 'Farinha Demonstração 1 kg', 'Requeijão Fictício 200 g', 'Barra de Cereal Demonstração 25 g', 'Condicionador Fictício 200 ml', 'Esponja Demonstração',
+  'Água de Coco Fictícia 200 ml', 'Óleo Demonstração 900 ml', 'Leite Fermentado Fictício 80 g', 'Amendoim Demonstração 100 g', 'Papel Higiênico Fictício 4 UN', 'Sabão em Pó Demonstração 500 g',
+  'Refresco Fictício 300 ml', 'Sal Demonstração 1 kg', 'Creme de Leite Fictício 200 g', 'Torrada Demonstração 120 g',
+];
+MODELOS.push(...NOVOS_NOMES.map((nome, indice) => ({ nome, categoria: MODELOS[indice % 6].categoria, custo: MODELOS[indice % 6].custo })));
+
 function criarGerador(semente) {
   let estado = semente >>> 0;
   return function proximo() {
@@ -42,6 +52,7 @@ function gerarCatalogo(semente = SEMENTE_PADRAO) {
       custoRefCentavos,
       estoqueMinimo,
       estoqueAlvo: estoqueMinimo + entre(6, 14),
+      fornecedorId: `FOR-${String(indice % 6 + 1).padStart(3, '0')}`,
       ativo: true,
     };
   });

@@ -48,13 +48,13 @@ test('catálogo: gerador determinístico e arquivo versionado idêntico', () => 
   assert.notEqual(serializar(gerarCatalogo(1)), serializar(gerarCatalogo(2)));
 });
 
-test('catálogo: seis produtos válidos, um por categoria, sem campos de dados pessoais', (t) => {
+test('catálogo: quarenta produtos válidos, um por categoria, sem campos de dados pessoais', (t) => {
   const pulso = criarPulsoLocal(pastaTemporaria(t));
   const resultados = aplicarCatalogo(pulso);
-  assert.equal(resultados.length, 6);
+  assert.equal(resultados.length, 40);
   assert.ok(resultados.every((r) => r.ok && !r.duplicada));
   const { produtos } = pulso.listarProdutos();
-  assert.deepEqual(Array.from(produtos, (p) => p.sku), ['MER-001', 'MER-002', 'MER-003', 'MER-004', 'MER-005', 'MER-006']);
+  assert.deepEqual(Array.from(produtos, (p) => p.sku), Array.from({ length: 40 }, (_, i) => `MER-${String(i + 1).padStart(3, '0')}`));
   assert.equal(new Set(Array.from(produtos, (p) => p.categoria)).size, 6);
   assert.doesNotMatch(fs.readFileSync(CAMINHO_CATALOGO, 'utf8'), /cpf|cnpj|telefone|e-?mail|endere[cç]o|barras/i);
 });
@@ -64,7 +64,7 @@ test('catálogo: reaplicar não duplica', (t) => {
   aplicarCatalogo(criarPulsoLocal(pasta));
   const resultados = aplicarCatalogo(criarPulsoLocal(pasta));
   assert.ok(resultados.every((r) => r.ok && r.duplicada));
-  assert.equal(lerJsonl(pasta, 'PRODUTOS').length, 6);
+  assert.equal(lerJsonl(pasta, 'PRODUTOS').length, 40);
 });
 
 test('persistência: o saldo sobrevive à reabertura e é igual à soma dos arquivos', (t) => {
@@ -122,17 +122,17 @@ test('concorrência real: processos com requisições distintas somam sem perda'
 test('CLI: jornada cadastro, entrada e saldo de ponta a ponta', (t) => {
   const pasta = pastaTemporaria(t);
   assert.equal(cli(pasta, 'seed').status, 0);
-  const cadastro = cli(pasta, 'cadastrar', '--sku', 'MER-007', '--nome', 'Produto de Teste', '--categoria', 'MERCEARIA',
+  const cadastro = cli(pasta, 'cadastrar', '--sku', 'MER-041', '--nome', 'Produto de Teste', '--categoria', 'MERCEARIA',
     '--preco', '990', '--custo', '600', '--minimo', '5', '--alvo', '12');
   assert.equal(cadastro.status, 0, cadastro.stderr);
 
-  const entrada = cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-007', '--quantidade', '10', '--requisicao', 'CLI-1');
+  const entrada = cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-041', '--quantidade', '10', '--requisicao', 'CLI-1');
   assert.equal(entrada.status, 0, entrada.stderr);
   assert.match(entrada.stdout, /saldo atual 10/);
 
-  assert.match(cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-007', '--quantidade', '10', '--requisicao', 'CLI-1').stdout, /saldo atual 10/);
+  assert.match(cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-041', '--quantidade', '10', '--requisicao', 'CLI-1').stdout, /saldo atual 10/);
 
-  const saldo = cli(pasta, 'saldo', '--sku', 'MER-007');
+  const saldo = cli(pasta, 'saldo', '--sku', 'MER-041');
   assert.match(saldo.stdout, /Saldo atual: 10 UN \| mínimo 5 \| alvo 12/);
   assert.match(saldo.stdout, /ENTRADA {2}\+10 {2}saldo 10/);
 });

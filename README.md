@@ -2,7 +2,7 @@
 
 > **Demonstração educacional.** A MERCA 27 é um mercado fictício e todos os dados são sintéticos. O PULSO não é sistema fiscal, contábil nem produto pronto para uso empresarial real.
 
-**Estado atual: Fase 00 concluída e revisada localmente.** O fluxo **cadastro → entrada → consulta de saldo** funciona por linha de comando, com 130 testes automatizados aprovados. A integração operacional com Google Sheets e Apps Script **ainda não foi feita**.
+**Estado atual: Fase 01 local, blocos 0 a 8 concluídos.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI, com 263 testes aprovados. M-05 está em execução. Interface visual e integração Google continuam pendentes.
 
 ## Requisitos
 
@@ -17,13 +17,24 @@ Nesta máquina, Node/npm não estão no PATH padrão. A revisão usou um runtime
 ```bash
 npm test            # testes automatizados
 npm run check       # verificação de sintaxe
+npm run typecheck   # contratos JSDoc; exige npm ci
+npm run mutacao     # 42 defeitos em cópias temporárias; exige alguns minutos
 npm run demo        # demonstração do primeiro marco, em pasta temporária
 
 npm run -s pulso -- seed
 npm run -s pulso -- produtos
 npm run -s pulso -- entrada --sku MER-001 --quantidade 10 --custo 600 --fornecedor FOR-001 --referencia NF-TESTE-1 --requisicao EXEMPLO-ENTRADA-001
 npm run -s pulso -- saldo --sku MER-001
-npm run -s pulso -- cadastrar --sku MER-007 --nome "Produto Teste" --categoria MERCEARIA --preco 990 --custo 600 --minimo 5 --alvo 12
+npm run -s pulso -- cadastrar --sku MER-041 --nome "Produto Teste" --categoria MERCEARIA --preco 990 --custo 600 --minimo 5 --alvo 12 --fornecedor FOR-001
+npm run -s pulso -- fornecedores
+npm run -s pulso -- cadastrar-fornecedor --fornecedor FOR-007 --nome "Distribuidora Fictícia" --categoria MERCEARIA --prazo 3
+npm run -s pulso -- alterar-produto --sku MER-001 --preco 1200 --motivo "Revisão fictícia"
+npm run -s pulso -- desativar --sku MER-001 --motivo "Pausa fictícia"
+npm run -s pulso -- reativar --sku MER-001 --motivo "Retorno fictício"
+npm run -s pulso -- saldo-inicial --sku MER-041 --quantidade 7 --custo 600 --motivo "Inventário fictício"
+npm run -s pulso -- perda --sku MER-041 --quantidade 2 --categoria-perda AVARIA --motivo "Avaria fictícia"
+npm run -s pulso -- ajuste --sku MER-041 --contada 4 --motivo "Contagem fictícia"
+npm run -s pulso -- reposicao
 npm run -s pulso -- reconciliar
 ```
 
@@ -51,7 +62,7 @@ docs/                Documentos-base, decisões, progresso, testes e relatório
 - O armazenamento só oferece `ler` e `anexar`, então o fluxo normal não edita nem apaga histórico.
 - Cada escrita segue a ordem intenção → dado → confirmação, com releitura e comparação de todo o conteúdo após cada gravação.
 - Repetir a mesma requisição não duplica. Reutilizá-la com dados diferentes é rejeitado.
-- Operação interrompida bloqueia novos lançamentos até ser concluída por repetição ou `reconciliar`.
+- Antes de novo lançamento, a pendência anterior é reconciliada automaticamente dentro da trava; falha impede iniciar a nova operação. Repetição com a mesma chave e `reconciliar` também continuam disponíveis.
 - Divergências entre registros e intenções, duplicidades, referências e estados inválidos são detectados na leitura (`DADOS_INCONSISTENTES`). A reconciliação relê o estado final antes de anunciar conclusão.
 - Quantidades e saldos devem permanecer no intervalo de inteiros exatos do JavaScript. Uma entrada que ultrapassaria esse limite é rejeitada antes de criar intenção.
 
@@ -62,7 +73,8 @@ Na revisão de 18/11/2026, o conector Google Drive respondeu às buscas `MERCA` 
 ## Limitações
 
 - Sem Google Sheets, Apps Script, sidebar ou menu nesta fase; a interface é a CLI.
-- Sem venda, perda, ajuste, alerta de reposição, fornecedores ou dashboard.
+- Sem vendas, estornos, dashboard, lotes, validade, automações periódicas ou compra automática. Reversão de perdas e ajustes foi adiada para a Fase 2.
+- Bases da Fase 00 não são migradas nem apagadas automaticamente. Preserve o histórico antigo e escolha uma pasta nova com `PULSO_DADOS` para o esquema da Fase 01.
 - Alterações coerentes de todo o histórico podem não ser detectadas: as comparações não são uma assinatura criptográfica. Não há cadeia de hashes nem cópia externa de auditoria.
 - Uma interrupção real durante a escrita pode deixar uma linha incompleta. Ela é detectada e bloqueia a operação; não há reparo automático de arquivo truncado.
 - Se um processo for encerrado à força durante uma operação, o arquivo `.pulso.lock` precisa ser removido manualmente. A mensagem de erro indica o caminho.
