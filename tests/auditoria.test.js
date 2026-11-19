@@ -102,21 +102,39 @@ test('executor não responde sucesso se a releitura devolve operação pendente'
   };
   const r = nucleo.operacoes.executar(ctx, {
     tipo: 'ENTRADA', normalizar: () => ({ ok: true, dados: {} }), assinatura: (d) => d,
-    verificar: () => null, construir: () => ({ tabela: 'MOVIMENTOS_ESTOQUE', linha: { movimento_id: 'MOV-TESTE' } }),
+    verificar: () => null, construir: () => [{ tabela: 'MOVIMENTOS_ESTOQUE', linha: { movimento_id: 'MOV-TESTE' } }],
     responder: () => ({ ok: true }),
   }, ENTRADA);
   assert.equal(r.ok, false);
   assert.equal(r.erro.codigo, 'FALHA_GRAVACAO');
+  assert.match(r.erro.mensagem, /continua pendente/, 'falha pela releitura pendente, não por erro de forma');
+});
+
+test('executor recusa operação cujo construir não devolve uma lista de registros', () => {
+  const nucleo = carregarNucleo();
+  const gravadas = [];
+  const ctx = {
+    lock: { executar: (fn) => fn() }, relogio: () => '2026-11-18T12:00:00.000Z', gerarId: (p) => p + '-TESTE',
+    repositorio: { anexarVerificado: (t, l) => gravadas.push(l),
+      carregarEstado: () => ({ produtos: new Map(), movimentos: [], pendentes: [], operacoesPorRequisicao: new Map() }) },
+  };
+  for (const construido of [{ tabela: 'MOVIMENTOS_ESTOQUE', linha: { movimento_id: 'MOV-X' } }, []]) {
+    const r = nucleo.operacoes.executar(ctx, { tipo: 'ENTRADA', normalizar: () => ({ ok: true, dados: {} }), assinatura: (d) => d,
+      verificar: () => null, construir: () => construido, responder: () => ({ ok: true }) }, ENTRADA);
+    assert.equal(r.erro.codigo, 'FALHA_GRAVACAO');
+  }
+  assert.equal(gravadas.length, 0, 'nada é gravado, nem a intenção');
 });
 
 test('reconciliação não responde sucesso se ainda houver pendência na releitura final', () => {
   const nucleo = carregarNucleo();
   const r = nucleo.operacoes.reconciliar({
     lock: { executar: (fn) => fn() },
-    repositorio: { carregarEstado: () => ({ pendentes: [{ requisicaoId: 'AUD-1', tabela: 'PRODUTOS', linha: { sku: 'MER-001' }, tentativas: 1 }] }),
+    repositorio: { carregarEstado: () => ({ pendentes: [{ requisicaoId: 'AUD-1', registros: [{ tabela: 'PRODUTOS', linha: { sku: 'MER-001' } }], referenciaId: 'MER-001', tentativas: 1 }] }),
       existe: () => true, anexarVerificado() {} },
     relogio: () => '2026-11-18T12:00:00.000Z', gerarId: (p) => p + '-TESTE',
   });
   assert.equal(r.ok, false);
   assert.equal(r.erro.codigo, 'FALHA_GRAVACAO');
+  assert.match(r.erro.mensagem, /reconciliação não foi confirmada/, 'falha pela pendência final, não por erro de forma');
 });
