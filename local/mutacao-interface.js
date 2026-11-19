@@ -84,9 +84,11 @@ function executar(mutacao, esbuild) {
     });
     if (r.error || r.signal) return 'ERRO_EXECUCAO';
     if (r.status === 0) return 'SOBREVIVEU';
+    // O Vitest colore o resumo mesmo com FORCE_COLOR=0; sem remover o ANSI, toda detecção virava erro.
+    const saida = (r.stdout + r.stderr).replace(/\x1b\[[0-9;]*m/g, '');
     // Falha de compilação não prova que os testes detectam o defeito.
-    if (/bundle generation failed/i.test(r.stdout + r.stderr)) return 'ERRO_COMPILACAO';
-    if (!/Tests\s+\d+ failed/.test(r.stdout + r.stderr)) return 'ERRO_EXECUCAO';
+    if (/bundle generation failed/i.test(saida)) return 'ERRO_COMPILACAO';
+    if (!/Tests\s+\d+ failed/.test(saida)) return 'ERRO_EXECUCAO';
     return 'DETECTADA';
   } finally {
     fs.rmSync(COPIA, { recursive: true, force: true });

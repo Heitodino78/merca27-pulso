@@ -194,7 +194,7 @@ Não foi feita comparação de preços ou testes de ERPs específicos nesta pesq
 9. Quais números o proprietário realmente consulta toda manhã?
 10. Que falha tornaria uma solução inaceitável?
 
-Este roteiro é para aprendizagem de produto; **não pressupõe venda ou prestação de trabalho pelo usuário menor de idade**.
+Este roteiro é para aprendizagem de produto; **não pressupõe venda ou prestação de trabalho**.
 
 ## 10. Fontes consultadas e como usá-las
 

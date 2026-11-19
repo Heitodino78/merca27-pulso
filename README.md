@@ -2,7 +2,13 @@
 
 > **Demonstração educacional.** A MERCA 27 é um mercado fictício e todos os dados são sintéticos. O PULSO não é sistema fiscal, contábil nem produto pronto para uso empresarial real.
 
-**Estado atual: Fase 2 local, com vendas de vários itens e estorno total.** Produtos, fornecedores, entradas, perdas, contagens, versões e reposição continuam disponíveis. Vendas, histórico e estornos funcionam pela CLI e pela interface Angular + Tailwind. A validação em navegador real de M-06 e a integração Google continuam pendentes ([relatório da Fase 2](docs/RELATORIO_FASE_02.md)). Resultados executados em [TESTES.md](docs/TESTES.md).
+**Estado atual: Fase 3 local (indicadores e visão geral).** Produtos, fornecedores, entradas, perdas, contagens, versões, reposição, vendas e estornos continuam disponíveis. A interface abre numa visão geral com indicadores por período, gráfico diário interativo, ranking de produtos, perdas e reposição, e ganhou menu lateral, paleta de comandos (Ctrl+K) e animações discretas. O resumo diário existe como consulta e pela CLI, sem agenda nem envio. A validação em navegador real de M-06 e a integração Google continuam pendentes ([relatório da Fase 3](docs/RELATORIO_FASE_03.md)). Resultados executados em [TESTES.md](docs/TESTES.md).
+
+## Demonstração online (GitHub Pages)
+
+Depois que o repositório estiver no GitHub com o Pages habilitado, a demonstração abre direto pelo navegador, sem instalar nada. O núcleo roda dentro da página, e os dados ficam só no navegador de quem visita (há um botão "Restaurar exemplo"). A página já vem com um histórico fictício de 30 dias, sempre terminando no dia de hoje. Não é integração com o Google nem um servidor (D-069).
+
+Para gerar o mesmo site localmente: `npm run interface:build && npm run site:estatico` (saída em `interface/dist/github-pages/`). A cada push em `main`, o workflow `.github/workflows/pages.yml` roda os testes, compila e publica.
 
 ## Requisitos
 
@@ -53,6 +59,8 @@ npm run -s pulso -- estorno --venda VEN-... --motivo "Devolução fictícia" --r
 npm run -s pulso -- reposicao
 npm run -s pulso -- historico-produto --sku MER-001
 npm run -s pulso -- reconciliar
+npm run -s pulso -- indicadores --de 2026-11-01 --ate 2026-11-19   # dias de São Paulo, ambos inclusivos
+npm run -s pulso -- resumo --dia 2026-11-19                        # só prepara o texto; não envia nada
 ```
 
 Preço, custo de referência e custo unitário de entrada são informados em centavos. Entrada exige `--custo` (zero para bonificação) e `--fornecedor`. Os dados ficam em `data/`, que não é versionada; use `PULSO_DADOS` para escolher outra pasta. Para repetir uma entrada, use o mesmo `--requisicao ID` e os mesmos dados. Uma entrada nova usa outra chave. O custo da entrada não altera automaticamente o custo de referência.
@@ -63,13 +71,17 @@ Venda aceita de 1 a 50 itens, cada SKU uma única vez, com quantidade inteira po
 
 No núcleo, `listarVendas({ desde?, ate?, limite? })` usa ISO UTC, início inclusivo e fim exclusivo, e retorna até 100 vendas por padrão (máximo 500). `consultarVenda` aceita exatamente um de `vendaId` ou `requisicaoId`. A busca da interface filtra a lista carregada; para um ID fora dela, abra `/#/vendas/ID` ou consulte pelo núcleo/CLI.
 
+**Indicadores (Fase 3):** `consultarIndicadores({ desde, ate })` recebe instantes ISO UTC `[desde, ate)`, até 366 dias, e lê o estado completo validado. Vendas contam pela data da venda; devoluções, pela data do estorno, com os valores da venda original; a receita após devoluções pode ficar negativa. Ticket e margem % sem denominador positivo são N/D. Valores são estimativas gerenciais em centavos: não são lucro, caixa nem apuração contábil. O valor de estoque é um retrato atual. Política completa em D-063 a D-065.
+
+**Interface:** a página inicial é a visão geral. `Ctrl+K` (ou `⌘K`, ou `/` fora de campos) abre a busca de páginas, ações e produtos. Animações respeitam `prefers-reduced-motion`.
+
 `npm run demo` valida os próprios resultados e termina com erro se alguma expectativa falhar. Usa uma pasta temporária, sem alterar `data/`. A seed e os resultados esperados estão em [fixtures/SEED_README.md](fixtures/SEED_README.md).
 
 ## Estrutura
 
 ```text
 src/                 Núcleo portável, sem APIs do Node (destino: Apps Script)
-  domain/            Regras puras: validação, Produto, Movimento, saldo
+  domain/            Regras puras: validação, Produto, Movimento, Venda, saldo e indicadores
   application/       Casos de uso e protocolo de gravação
   infra/             Esquema das tabelas e repositório
   pulso.js           Montagem do núcleo a partir das portas do ambiente
@@ -103,11 +115,12 @@ Em 19/11/2026 (M-06), o conector Drive exigia autorização nesta sessão e cont
 ## Limitações
 
 - Sem Google Sheets, Apps Script, sidebar ou menu. A interface roda só na pré-visualização local e ainda não foi verificada em navegador real nem no HTML Service.
-- Sem dashboard, lotes, validade, automações periódicas ou compra automática. A reversão compensatória de perdas e ajustes continua adiada, com justificativa em D-058.
+- Sem lotes, validade, automação periódica real (trigger), envio de resumo ou compra automática. O resumo diário só é gerado sob demanda (D-066). A reversão compensatória de perdas e ajustes continua adiada, com justificativa em D-058.
+- O HTML único tem cerca de 488 KiB, acima do aviso de 450 kB do orçamento de build (D-067).
 - A contagem de inventário com vários SKUs existe no núcleo e na CLI, ainda sem tela na interface.
 - Bases da Fase 00 não são migradas nem apagadas automaticamente. Preserve o histórico antigo e escolha uma pasta nova com `PULSO_DADOS` para o esquema da Fase 01.
 - Alterações coerentes de todo o histórico podem não ser detectadas: as comparações não são uma assinatura criptográfica. Não há cadeia de hashes nem cópia externa de auditoria.
 - Uma interrupção real durante a escrita pode deixar uma linha incompleta. Ela é detectada e bloqueia a operação; não há reparo automático de arquivo truncado.
 - Se um processo for encerrado à força durante uma operação, o arquivo `.pulso.lock` precisa ser removido manualmente. A mensagem de erro indica o caminho.
 
-Detalhes atuais em [docs/RELATORIO_FASE_02.md](docs/RELATORIO_FASE_02.md) e [docs/RELATORIO_INTERFACE.md](docs/RELATORIO_INTERFACE.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). Os relatórios de [M-03](docs/RELATORIO_M03.md), [Fase 01](docs/RELATORIO_FASE_01.md) e [Fase 00](docs/RELATORIO_FASE_00.md) permanecem como registros históricos.
+Detalhes atuais em [docs/RELATORIO_FASE_03.md](docs/RELATORIO_FASE_03.md), [docs/RELATORIO_FASE_02.md](docs/RELATORIO_FASE_02.md) e [docs/RELATORIO_INTERFACE.md](docs/RELATORIO_INTERFACE.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). Os relatórios de [M-03](docs/RELATORIO_M03.md), [Fase 01](docs/RELATORIO_FASE_01.md) e [Fase 00](docs/RELATORIO_FASE_00.md) permanecem como registros históricos.

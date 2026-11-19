@@ -2,6 +2,10 @@
 
 **Data:** 19/11/2026 · **Branch:** `interface-angular` (criada a partir de `fase-01`) · **Ambiente:** exclusivamente local.
 
+## Atualização da Fase 3 (branch `fase-03-dashboard`)
+
+A página inicial passou a ser `/visao-geral`, com indicadores por período vindos de `consultarIndicadores`, gráfico SVG diário com teclado e tabela alternativa, ranking, reposição e perdas por motivo. O layout ganhou menu lateral (desktop), gaveta (celular), paleta de comandos (Ctrl+K, ⌘K ou "/"), ícones SVG próprios, esqueletos de carregamento, KPIs com número animado e cartões com elevação. Nenhuma biblioteca foi adicionada, e o movimento respeita `prefers-reduced-motion`. A lista de vendas aceita o período do painel (`?desde&ate`). São 74 testes de interface, e o HTML único tem 499.269 bytes, acima do aviso de 450 kB do orçamento (D-067). **M-06 continua parcial**: nada foi verificado em navegador real (D-068). Detalhes em [RELATORIO_FASE_03.md](RELATORIO_FASE_03.md).
+
 ## Atualização da Fase 2 (branch `fase-02-vendas`)
 
 Acrescentadas as telas `/vendas`, `/vendas/nova` e `/vendas/:id`: busca de produtos, itens, revisão, confirmação com total oficial, histórico, detalhe e estorno total com motivo. O despacho tem 18 ações. O HTML único passou a 434.763 bytes (424,6 KiB); tipos strict, 51 testes de interface e build aprovados. Os resultados das mutações estão na seção atual de [TESTES.md](TESTES.md).

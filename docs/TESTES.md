@@ -1,5 +1,31 @@
 # Evidências de testes
 
+## Fase 3 — indicadores, visão geral e site estático (19/11/2026)
+
+Estado atual na branch `fase-03-dashboard`, exclusivamente local. Relatório em [RELATORIO_FASE_03.md](RELATORIO_FASE_03.md); decisões D-063 a D-071. **Navegador real e Google não foram executados** (D-068).
+
+Runtime: o Node temporário tinha sido apagado de `/tmp`. Foi baixado de novo de `nodejs.org` (v22.23.5), e o SHA-256 conferiu com o registrado abaixo (`cdeb8670…40f8`). Linha de base antes de alterar: 507 testes do núcleo, 51 da interface, HTML de 434.763 bytes; todos aprovados.
+
+| Verificação | Resultado executado |
+|---|---|
+| `npm test` | 548 aprovados (36 em `indicadores.test.js` e 5 em `site-estatico.test.js` novos), 0 falhas |
+| `npm run check` / `npm run typecheck` | 49 arquivos sem erro; duas configurações aprovadas |
+| `npm run demo` | Saldo e recálculo independente 10 |
+| `npm run interface:typecheck` / `interface:test` | strict aprovado; 74 testes em 9 arquivos (23 novos) |
+| `npm run interface:build` | HTML único de 499.269 bytes; aviso de orçamento (450 kB), sem erro (D-067) |
+| `npm run site:estatico` | `index.html` de 1.526.566 bytes, 1.589 linhas de exemplo, 188 vendas (D-069) |
+| `npm run mutacao -- --verificar-alvos` / `interface:mutacao -- --verificar-alvos` | 179 e 37 alvos, cada um uma única vez |
+| `npm run mutacao` | 179 defeitos: 173 detectados e 6 equivalentes já justificados (MUT-10, 11, 37, 115, 123, 155); os 16 novos (MUT-164 a MUT-179) detectados; saída 0. [Evidência](evidencias/mutacao-fase03.txt) |
+| `npm run interface:mutacao` | 37 defeitos, 37 detectados por falha de teste; os 11 novos (MUI-27 a MUI-37) incluídos; saída 0. [Evidência](evidencias/mutacao-interface-fase03.txt) |
+| `npm run medir` | Isolado; `consultarIndicadores` sobre um ano com mediana de 32,9 ms e 8 leituras. [Evidência](evidencias/desempenho-fase03.json) |
+| Fumaça HTTP da pré-visualização | GET 200 com CSP, 0 referências externas; indicadores pelo shim: 2 vendas, bruta 800, devoluções 600, resultado 200 |
+| Fumaça do site estático (jsdom) | Bundle Angular real executado como script estrito (o jsdom não roda `type="module"`; o bundle não tem `import`/`export`). Visão geral renderizada: R$ 493,80, 37 vendas em 7 dias, 7 barras, 10 itens no ranking, 0 erros; venda nova salva no `localStorage`; indicadores de 30 dias em 41 ms |
+
+**Defeito da ferramenta encontrado (D-070):** a primeira bateria da interface marcou toda mutação como `ERRO_EXECUCAO`, porque o resumo colorido do Vitest não casava com o texto esperado. Nada foi contado como detecção. O executor passou a remover os códigos ANSI; a bateria foi interrompida e refeita do zero, e só a segunda vale. As duas baterias rodaram sem testes, builds ou medições concorrentes.
+
+**Não testado:** layout, foco visível e animações num navegador real nas quatro larguras; GitHub Pages publicado (depende do envio ao GitHub); HTML Service e Apps Script.
+
+
 ## Fase 2 — vendas e estorno (19/11/2026)
 
 Estado atual na branch `fase-02-vendas`, exclusivamente local. Os registros seguintes são marcos históricos. Relatório e política de dados em [RELATORIO_FASE_02.md](RELATORIO_FASE_02.md), decisões D-055–D-062. **Navegador real e Google não foram executados** (D-061).

@@ -1,6 +1,6 @@
 # Progresso do A-002 — MERCA 27 / PULSO
 
-Última atualização: 19/11/2026. Funcionalidades da Fase 2 na branch `fase-02-vendas`; M-06 continua sem verificação em navegador real. Relatório atual: [RELATORIO_FASE_02.md](RELATORIO_FASE_02.md).
+Última atualização: 19/11/2026. Fase 3 (indicadores e visão geral) na branch `fase-03-dashboard`; M-06 continua sem verificação em navegador real. Relatório atual: [RELATORIO_FASE_03.md](RELATORIO_FASE_03.md).
 
 ## Implementado e testado localmente
 
@@ -15,6 +15,9 @@
 - [x] Histórico/detalhe de venda e estorno total único com movimentos compensatórios.
 - [x] CLI e interface Angular para vendas, revisão, confirmação e estorno.
 - [x] CLI para todos os fluxos, sem regras de negócio na interface.
+- [x] Indicadores por período (D-063 a D-065): vendas brutas, devoluções pela data do estorno, receita após devoluções, CMV e margem estimados, ticket, perdas por categoria, ajustes, entradas, série diária, ranking e estoque atual, com fórmulas e IDs de origem.
+- [x] Visão geral na interface: períodos, KPIs animados, gráfico SVG com teclado e tabela, ranking, reposição e perdas; menu lateral, gaveta no celular e paleta Ctrl+K.
+- [x] Resumo diário sob demanda (consulta e CLI), reconciliável com os indicadores; sem agenda, persistência nem envio (D-066).
 - [x] Saldo derivado dos movimentos confirmados.
 - [x] Idempotência por `requisicaoId` e rejeição de requisição conflitante.
 - [x] Protocolo de gravação com recuperação de falhas parciais.
@@ -26,8 +29,8 @@
 - [x] Verificação do estado final da reconciliação e tratamento de retorno ambíguo.
 - [x] Escrita parcial de bytes tratada no adaptador JSONL.
 - [x] Demonstração com asserções e recálculo independente; guia da seed em `fixtures/SEED_README.md`.
-- [x] 507 testes do núcleo e 51 da interface aprovados, checagem de tipos e sintaxe válida em 45 arquivos.
-- [x] Executores de mutação em cópias: 163 alvos no núcleo e 26 na interface. Resultados concluídos em TESTES.md.
+- [x] 548 testes do núcleo e 74 da interface aprovados, checagem de tipos e sintaxe válida em 49 arquivos.
+- [x] Executores de mutação em cópias: 179 alvos no núcleo e 37 na interface. Resultados em TESTES.md.
 - [x] Medição local de 90 dias sintéticos e testes de leitores concorrentes com gravações.
 
 ## Melhorias aprovadas
@@ -56,8 +59,9 @@ O acesso foi verificado na revisão da Fase 00, sem execução de Apps Script. A
 ## Fases
 
 - [x] Fase 1: 40 SKUs, 6 fornecedores, perda, ajuste por contagem, alerta e reposição.
-- [ ] Próxima execução: Fase 3 (dashboard e automações); concluir M-06 no navegador quando autorizado/disponível. Google somente com acesso efetivo.
+- [x] Fase 3, parte local: indicadores, visão geral e resumo diário sob demanda.
+- [ ] Fase 3, restante: execução programada do resumo com log de tentativas e porta de entrega falsa (D-066).
+- [ ] Próxima execução: ver `PROMPT_PROXIMA_EXECUCAO.md`. Concluir M-06 no navegador quando autorizado; Google somente com acesso efetivo.
 - [x] Fase 2 local: vendas com múltiplos itens, histórico, estorno total, CLI e interface. M-06/navegador e Google continuam pendentes.
 - [ ] Reversão de perdas, ajustes e contagens: fatia própria ainda adiada (D-058).
-- [ ] Fase 3: dashboard e automações.
 - [ ] Fase 4: refino e case de portfólio.

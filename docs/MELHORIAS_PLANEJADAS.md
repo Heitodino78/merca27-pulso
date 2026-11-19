@@ -2,6 +2,8 @@
 
 **Status em 19/11/2026:** M-01, M-02, M-04, M-05 e M-07 concluídas, com evidência em `docs/TESTES.md`. M-06 implementada e testada localmente, mas sem os critérios de navegador e capturas (ver `docs/RELATORIO_INTERFACE.md`). M-03 concluída em 19/11/2026.
 
+**Fase 3:** indicadores por período, visão geral interativa e resumo diário sob demanda, com 548 testes do núcleo e 74 da interface. Relatório em [RELATORIO_FASE_03.md](RELATORIO_FASE_03.md). M-06 segue parcial (sem navegador); o HTML único passou para cerca de 488 KiB (D-067).
+
 **Fase 2:** vendas de vários itens, histórico e estorno total implementados no núcleo, CLI e interface, com 507 testes do núcleo e 51 da interface. Relatório em [RELATORIO_FASE_02.md](RELATORIO_FASE_02.md). M-06 continua parcial, sem navegador. Reversões administrativas de perda/ajuste/contagem continuam adiadas para uma fatia própria (D-058). Oito tabelas agora exigem oito leituras por consulta, com medição em D-060 e TESTES.md; nenhuma verificação pós-escrita foi retirada.
 
 ## Ordem de execução
