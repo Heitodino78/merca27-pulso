@@ -1,9 +1,9 @@
 ---
 title: "A-002 / MERCA 27 — Comece aqui"
 project: "Agência / Plano A / Projeto A-002"
-status: "Planejamento documentado; implementação ainda não iniciada"
-version: "1.0.0"
-date: "2026-11-18"
+status: "Fases 00 e 01 concluídas localmente; interface M-06 (Angular + Tailwind) planejada"
+version: "1.1.0"
+date: "2026-11-19"
 tags: [a002, automacoes, varejo, mercearia, portfolio, documento-base]
 ---
 
@@ -19,6 +19,8 @@ tags: [a002, automacoes, varejo, mercearia, portfolio, documento-base]
 
 **Decisão inicial da stack:** Google Sheets + Google Apps Script + formulários/interface leve. Código versionado localmente, preferencialmente via `clasp` quando conveniente. Python é opcional para geração de dados sintéticos e testes; não é requisito operacional do MVP. Sem backend dedicado, sem PDV real, sem API de WhatsApp, sem emissão fiscal.
 
+**Decisão de interface (v1.1.0, 19/11/2026):** as telas do PULSO serão feitas com **Angular + Tailwind CSS**, num projeto isolado em `interface/`, empacotado como um único HTML autocontido e servido pelo HTML Service do Apps Script. O núcleo de regras (`src/`) continua em JavaScript puro, sem build e sem dependências. Ver A002-ADR-011 no Documento Mestre e D-040 em `DECISOES.md`.
+
 ## Arquivos e ordem de leitura
 
 1. **`01_DOCUMENTO_MESTRE_A002.md`** — visão, cenário empresarial, requisitos, identidade, objetivos, limites, experiência e critérios de aceite. **Fonte de verdade de produto.**
@@ -28,9 +30,10 @@ tags: [a002, automacoes, varejo, mercearia, portfolio, documento-base]
 
 ## Regras para todas as IAs
 
-- **Ler os quatro arquivos antes de implementar.** Não criar outra empresa fictícia, não mudar a stack ou o escopo sem documentar o motivo.
+- **Ler os documentos-base antes de implementar.** Não criar outra empresa fictícia, não mudar a stack ou o escopo sem documentar o motivo.
 - **O que está marcado como `DECIDIDO` é proposta de referência aprovada neste planejamento;** se o proprietário do projeto mudar uma decisão, registrar um ADR. O que está `PLANEJADO` não está pronto.
-- **Nenhum código do A-002 foi implementado nesta entrega.** Os arquivos são arquitetura e planejamento, não relatórios de testes executados.
+- **Estes documentos são arquitetura e planejamento, não relatórios de testes executados.** O que já foi implementado e testado está em `PROGRESSO.md`, `TESTES.md` e nos relatórios de fase.
+- A interface usa Angular + Tailwind, mas não contém regras de negócio: valida apenas para orientar o usuário, e o domínio em `src/` continua decidindo tudo.
 - Tratar os dados sintéticos como **fictícios**, inclusive valores, fornecedores, margens e volume de transações.
 - Não misturar dinheiro que entra, faturamento, margem bruta, lucro e saldo de caixa.
 - Não produzir dashboards que insinuem métricas reais ou números garantidos.
@@ -49,13 +52,15 @@ Na versão inicial, uma pessoa deve conseguir: cadastrar um produto, registrar u
 |---|---|
 | Setor e cliente fictício | **Definido** |
 | Pesquisa setorial e técnica | **Compilada, com links** |
-| Requisitos e arquitetura-alvo | **Definidos como proposta inicial** |
-| Dados de demonstração | **Especificados, ainda não gerados** |
+| Requisitos e arquitetura-alvo | **Definidos; atualizados em v1.1.0** |
+| Dados de demonstração | **Seed determinística: 40 SKUs e 6 fornecedores** |
+| Núcleo de regras (local) | **Fases 00 e 01 concluídas, branch `fase-01`** |
+| Testes realizados | **Locais: 343 testes, checagem de tipos e 108 mutações** |
+| Interface (Angular + Tailwind) | **Planejada (M-06); ainda não implementada** |
 | Google Sheets criado | **Não** |
-| Apps Script implementado | **Não** |
-| Testes realizados | **Não** |
+| Apps Script implementado | **Não; depende de acesso autorizado** |
 | Publicação | **Fora do escopo inicial** |
 
 ## Próximo passo concreto
 
-Abrir uma pasta local `A002-MERCA27`, salvar estes quatro arquivos em `docs/`, iniciar o desenvolvimento pela **Fase 0 — ambiente e modelo mínimo de dados**, seguindo `04_ROTEIRO_EXECUCAO_E_PROMPT.md`. Não criar todas as abas e automações antes de validar o primeiro fluxo de estoque.
+Executar `PROMPT_PROXIMA_EXECUCAO.md`: implementar M-06, a interface Angular + Tailwind com pré-visualização local, e integrar ao Google somente se houver acesso efetivo. Depois, M-03 e a Fase 2 (vendas). Não criar dashboard antes de vendas confiáveis.

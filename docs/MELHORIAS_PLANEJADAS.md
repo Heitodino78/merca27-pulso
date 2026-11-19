@@ -114,7 +114,7 @@ Os dados de `data/` são sintéticos e descartáveis. Mudanças de esquema podem
 **Problema:** a CLI prova a lógica, mas não demonstra a experiência do produto no portfólio.
 
 **Alterações:**
-- Criar telas em HTML, CSS e JavaScript sem framework, compatíveis com HTML Service.
+- Criar as telas com Angular e Tailwind CSS em `interface/`, empacotadas num único HTML autocontido compatível com HTML Service (D-040). O núcleo `src/` continua sem build.
 - Cobrir: lista de produtos, cadastro, alteração de produto, registro de entrada e consulta de saldo com histórico.
 - Criar um servidor de pré-visualização local, acessível só em `127.0.0.1`, que simule `google.script.run` e chame os mesmos casos de uso.
 - Aplicar a paleta do Documento Mestre, conferindo contraste. O âmbar `#DCA44C` deve ser usado como fundo ou destaque com texto escuro, nunca como texto sobre fundo claro.

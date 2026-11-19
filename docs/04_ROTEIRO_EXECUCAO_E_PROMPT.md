@@ -1,15 +1,15 @@
 ---
 title: "A-002 — Roteiro de Execução e Prompt Inicial"
 project: "MERCA 27 / PULSO"
-status: "Pronto para iniciar Fase 0; nada implementado"
-version: "1.0.0"
-date: "2026-11-18"
+status: "Fases 00 e 01 concluídas localmente; próxima execução: M-06 com Angular + Tailwind"
+version: "1.1.0"
+date: "2026-11-19"
 tags: [roadmap, prompt, execucao, codex, claude-code, checklist]
 ---
 
 # A-002 — Do documento ao código
 
-> **Objetivo:** repetir o método da BRASA 47: documentação → primeira execução controlada → relatório de resultados → prompt de continuidade. **Não** repetir a stack de Angular automaticamente: o novo caso é automação de pequenos negócios com Google Sheets + Apps Script.
+> **Objetivo:** repetir o método da BRASA 47: documentação → primeira execução controlada → relatório de resultados → prompt de continuidade. O núcleo é automação de pequenos negócios com Google Sheets + Apps Script. **Atualização v1.1.0:** por decisão do proprietário, a interface usa Angular + Tailwind CSS (A002-ADR-011), isolada do núcleo e empacotada para o HTML Service.
 
 ## 1. Regras de trabalho
 
@@ -95,7 +95,7 @@ Tarefas:
 
 **Objetivo:** produto de demonstração bem apresentado, documentado e utilizável.
 
-- [ ] Refinar design system e operação mobile quando pertinente.
+- [ ] Refinar o design system (tokens do tema Tailwind e componentes Angular) e a operação mobile quando pertinente.
 - [ ] Mensagens de erro, ajuda breve, tutorial e estados vazios.
 - [ ] Testes exploratórios com pessoas de confiança, registrando observações.
 - [ ] Revisar acesso, backup, segurança e custos/cotas.
@@ -126,7 +126,8 @@ Tarefas:
 
 ## 4. Condições para não ampliar escopo
 
-- Não incluir Angular no A-002 só porque foi usado no A-001.
+- Angular + Tailwind só na camada de interface (`interface/`), nunca no núcleo `src/`, e sem regras de negócio nos componentes.
+- Sem bibliotecas de componentes prontas, CDN no HTML final ou backend próprio para servir a interface.
 - Não criar chatbot, IA de demanda, integração com WhatsApp ou ERP fiscal na primeira execução.
 - Não criar login próprio se ainda não há sistema web externo.
 - Não adicionar validade por lote ao mesmo tempo que venda multi-itens.
@@ -135,6 +136,8 @@ Tarefas:
 - Não apresentar análise financeira do painel como apuração contábil.
 
 ## 5. Prompt inicial para Codex ou Claude Code
+
+> **Histórico:** este é o prompt da Fase 0, já executado. A execução atual está em `PROMPT_PROXIMA_EXECUCAO.md`.
 
 Copiar **apenas o bloco abaixo** e executar na pasta do novo projeto (com os quatro MD em `docs/`).
 

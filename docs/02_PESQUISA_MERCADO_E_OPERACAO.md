@@ -2,8 +2,9 @@
 title: "A-002 — Pesquisa de Mercado e Operação do Mercadinho"
 project: "MERCA 27 / PULSO"
 status: "Pesquisa documental concluída; entrevistas e validação empírica pendentes"
-version: "1.0.0"
+version: "1.1.0"
 research_date: "2026-11-18"
+updated: "2026-11-19"
 tags: [pesquisa, sebrae, minimercados, estoque, processos, validacao]
 ---
 
@@ -117,6 +118,8 @@ O interesse não é replicar módulos genéricos de grandes softwares, mas escol
 **[FONTE]** Google Apps Script permite estender Sheets com menus, caixas de diálogo, sidebars, funções e integrações (G1). As boas práticas recomendam operações em lotes e menos chamadas externas (G2). Existem cotas e limites que podem interromper execuções; dependem da conta e podem mudar (G3).
 
 **[DECISÃO]** Validaremos a lógica antes da sofisticação da UI. No projeto, a planilha é camada de armazenamento/apresentação; as regras vivem em funções testáveis e operações explicitamente controladas.
+
+**[DECISÃO — v1.1.0]** Com a lógica validada nas Fases 00 e 01, a interface passa a ser feita com **Angular + Tailwind CSS**, empacotada como HTML único dentro do Apps Script. Isso não muda o veredito da tabela: continua sendo Sheets + Apps Script, sem backend nem banco remoto. Custo da escolha: etapa de build e pacote maior que HTML puro, aceitos pelo ganho de consistência visual e manutenção dos componentes.
 
 ## 5. Pesquisa técnica: riscos e escolhas
 

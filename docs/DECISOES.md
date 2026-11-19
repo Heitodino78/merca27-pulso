@@ -1,6 +1,6 @@
 # Decisões técnicas do A-002
 
-Complementa as ADRs do Documento Mestre. Os documentos-base não foram alterados.
+Complementa as ADRs do Documento Mestre. Os documentos-base ficaram inalterados até a v1.1.0 (19/11/2026), quando foram atualizados para refletir o estado real e a decisão D-040.
 
 | ID | Decisão | Motivo | Consequência |
 |---|---|---|---|
@@ -64,6 +64,10 @@ A demonstração passou a usar asserções e recálculo independente do JSONL. N
 ## Decisões ainda abertas
 
 T-01 (sidebar ou formulário), T-03 (método de custo), T-04 (tipo de lock no Apps Script), T-06 (implantação e teste no Google) e T-07 (proteção da planilha).
+
+## Planejamento de M-06
+
+- **D-040 — Interface com Angular e Tailwind CSS (19/11/2026):** por decisão do proprietário, a interface de M-06 usará Angular e Tailwind CSS no lugar de HTML/CSS/JS sem framework. Isso supera, para a interface, a orientação do roteiro de não repetir Angular automaticamente. Motivo: interface mais rica e consistente para o case de portfólio. Restrições: o projeto Angular fica isolado em `interface/`, com dependências e lockfile próprios. O núcleo `src/` segue sem build e sem dependências (D-002, D-027). O build final precisa virar um único HTML autocontido servido pelo HTML Service, com roteamento por hash. A interface não reimplementa regras de domínio. Consequências: etapa de build e tamanho de pacote maiores que na alternativa sem framework, além de um script de empacotamento. Os cinco documentos-base foram atualizados para a v1.1.0 com essa decisão (A002-ADR-011 no Documento Mestre).
 
 ## Revisão independente da Fase 01
 

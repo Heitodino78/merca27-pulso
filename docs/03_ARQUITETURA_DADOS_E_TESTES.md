@@ -1,10 +1,10 @@
 ---
 title: "A-002 — Arquitetura Técnica, Dados e Estratégia de Testes"
 project: "MERCA 27 / PULSO"
-status: "Especificação proposta — não implementada"
-version: "1.0.0"
-date: "2026-11-18"
-tags: [arquitetura, apps-script, google-sheets, dados, testes, regras-de-negocio]
+status: "Núcleo implementado localmente; interface Angular + Tailwind especificada; Sheets pendente"
+version: "1.1.0"
+date: "2026-11-19"
+tags: [arquitetura, apps-script, google-sheets, angular, tailwind, dados, testes, regras-de-negocio]
 ---
 
 # A-002 — Arquitetura, dados, operações e testes
@@ -26,7 +26,8 @@ tags: [arquitetura, apps-script, google-sheets, dados, testes, regras-de-negocio
 ```text
                  OPERADOR / GESTOR (fictício)
                            |
-              Menu + formulário/Sidebar
+     Menu na planilha -> Interface Angular + Tailwind
+                 (HTML único via HTML Service)
                            |
                  Apps Script Controller
                            |
@@ -48,7 +49,7 @@ tags: [arquitetura, apps-script, google-sheets, dados, testes, regras-de-negocio
                    Dashboard/Relatórios
 ```
 
-**Camadas:** UI apenas coleta inputs e exibe feedback; controladores convertem requests; domínio valida e calcula; repositório lê/grava; planilha guarda os registros; relatórios projetam valores calculados. Evitar lógica crítica espalhada em fórmulas de células, `onEdit` e funções de interface ao mesmo tempo.
+**Camadas:** UI (Angular + Tailwind) apenas coleta inputs e exibe feedback, falando com o servidor por um gateway sobre `google.script.run`; controladores convertem requests; domínio valida e calcula; repositório lê/grava; planilha guarda os registros; relatórios projetam valores calculados. Evitar lógica crítica espalhada em fórmulas de células, `onEdit` e funções de interface ao mesmo tempo.
 
 ## 3. Ferramentas — decisão inicial
 
@@ -58,7 +59,8 @@ tags: [arquitetura, apps-script, google-sheets, dados, testes, regras-de-negocio
 - **`clasp` + Git local:** editar scripts de modo versionável, quando autorizado e disponível.
 - **Node.js (opcional):** testes locais de funções puras; não exigir implantação de servidor.
 - **Python (opcional):** preparar CSV e fixtures sintéticas, sem acoplamento obrigatório.
-- **Google Forms/HTML Service (opcional):** avaliar interface mínima antes de construir um frontend separado.
+- **Angular + Tailwind CSS (v1.1.0):** interface em `interface/`, com dependências e lockfile próprios. O build gera um único HTML autocontido (JS e CSS embutidos, roteamento por hash, sem chunks externos) servido por `HtmlService`. Localmente, um servidor em `127.0.0.1` simula `google.script.run` para pré-visualização.
+- **TypeScript:** obrigatório em `interface/` (strict). O núcleo `src/` continua em JavaScript com JSDoc e checagem de tipos, sem build.
 - **Sem WhatsApp API, backend novo ou banco remoto no MVP.**
 
 Documentação oficial: Sheets em Apps Script (https://developers.google.com/apps-script/guides/sheets); boas práticas (https://developers.google.com/apps-script/guides/support/best-practices); `clasp` (https://developers.google.com/apps-script/guides/clasp).
@@ -310,7 +312,8 @@ Fontes oficiais: https://developers.google.com/apps-script/guides/support/best-p
 - Histórico de vendas e busca por ID.
 - Dashboard por período com indicadores rastreáveis.
 - Planilha sem fórmulas expostas para edição casual no fluxo principal.
-- Layout legível a 360, 390, 768 e 1440 px, se houver HTML Service/visual web.
+- Layout legível a 360, 390, 768 e 1440 px, verificado no HTML único empacotado (não apenas no servidor de desenvolvimento do Angular).
+- Testes unitários dos componentes e do gateway com o executor padrão do Angular adotado.
 - Confirmação de ação não acontece antes da gravação real.
 
 ### 12.3. Testes de dados e reconciliação
@@ -343,19 +346,21 @@ A002-MERCA27/
 ├── src/
 │   ├── domain/                   # regras puras (JS/TS)
 │   ├── application/              # casos de uso
-│   ├── infra/                    # Sheets, locks, logs, gatilhos
-│   └── ui/                       # menu, sidebar/formulários
+│   └── infra/                    # Sheets, locks, logs, gatilhos
+├── interface/                     # Angular + Tailwind (package.json próprio)
+│   └── src/app/                  # componentes, gateway, tokens de tema
+├── local/                         # adaptadores locais, CLI, pré-visualização e empacotamento
 ├── fixtures/                      # dados 100% sintéticos
 ├── scripts/                       # ferramentas locais opcionais
 ├── README.md
-└── package.json                   # somente se testes/build locais exigirem
+└── package.json                   # testes e tipos do núcleo; scripts que chamam interface/
 ```
 
 Não criar diretórios vazios nem arquivos desnecessários na primeira sessão. A estrutura precisa se adaptar às limitações de `clasp` e à integração escolhida, sem perder separação conceitual.
 
 ## 14. Registro de decisões técnicas em aberto
 
-- **T-01:** interface: Sidebar HTML Service ou formulários simples; validar por protótipo.
+- **T-01:** ~~interface: Sidebar HTML Service ou formulários simples~~ **Resolvida em v1.1.0:** Angular + Tailwind via HTML Service (A002-ADR-011, D-040). Resta escolher sidebar ou diálogo modal no protótipo.
 - **T-02:** estratégia detalhada de commit/reconciliação de múltiplas abas, dado que Sheets não tem transação ACID.
 - **T-03:** método de custo gerencial (custo de referência capturado ou custo médio): MVP simplificado; documentar antes do dashboard.
 - **T-04:** lock de documento ou script conforme o contexto de execução.

@@ -1,9 +1,9 @@
 ---
 title: "A-002 — MERCA 27 / Documento Mestre"
 project: "Agência Digital / Plano A / Projeto A-002"
-status: "Planejado — código não iniciado"
-version: "1.0.0"
-date: "2026-11-18"
+status: "Núcleo local implementado (Fases 00 e 01); interface e Google pendentes"
+version: "1.1.0"
+date: "2026-11-19"
 source_of_truth: true
 tags: [a002, merca27, documento-mestre, estoque, financeiro, automacao]
 ---
@@ -23,6 +23,8 @@ tags: [a002, merca27, documento-mestre, estoque, financeiro, automacao]
 O A-001, **BRASA 47**, foi desenvolvido como demonstração de site gastronômico com Angular e experiência de pedido e foi encerrado pelo criador como projeto local de portfólio, sem publicação. Agora o **A-002** deve demonstrar uma competência **diferente**: automação de processos, consistência dos dados, regras de negócio, indicadores úteis e organização de rotinas empresariais.
 
 Este projeto pertence ao **Plano A — Soluções Digitais para Negócios**, e não ao Plano B de edição/distribuição de vídeos. A meta aqui não é construir uma interface imponente vazia; é demonstrar que conseguimos transformar um problema operacional em um fluxo confiável.
+
+A partir da v1.1.0, o Angular volta a aparecer, desta vez acompanhado de Tailwind CSS e apenas na camada de interface (A002-ADR-011). O diferencial do A-002 continua sendo a automação e a integridade dos dados: a interface é uma vitrine dessas regras, não o lugar onde elas vivem.
 
 ### 2. Empresa fictícia escolhida — DECIDIDO
 
@@ -204,7 +206,8 @@ O design não precisa compartilhar a estética escura/gastronômica da BRASA 47.
 - **Personalidade:** utilitária, editorial, moderna, calorosa, sóbria.
 - **Base:** superfícies claras, textos carvão, acento verde-petróleo e tom âmbar reservado a alertas.
 - **Paleta proposta (ajustável mediante contraste):** `#F5F5F0` fundo; `#1B2725` texto; `#17685B` ação principal; `#DCA44C` atenção; `#DCEAE4` destaque sutil; `#FFFFFF` superfícies.
-- **Tipografia:** títulos com personalidade discreta; corpo prioritariamente funcional. Estudar uma família de interface como `Inter` ou `Manrope` e uma display complementar, sem excesso de fontes.
+- **Tipografia:** títulos com personalidade discreta; corpo prioritariamente funcional. Estudar uma família de interface como `Inter` ou `Manrope` e uma display complementar, sem excesso de fontes. Fontes devem ser embutidas no build ou usar pilha do sistema; nada de CDN no HTML final.
+- **Implementação visual (v1.1.0):** Angular + Tailwind CSS. A paleta acima vira tokens do tema Tailwind (`@theme`), e componentes usam esses tokens em vez de cores soltas. Sem bibliotecas de componentes prontas, para manter a identidade própria.
 - **Visualização:** números grandes com contexto, sparklines só quando úteis, rótulos completos, filtros visíveis, tabelas legíveis; cores nunca como única forma de comunicar estado.
 - **Layout:** desktop otimizado para operação; responsivo para revisão no celular. Não forçar uma interface complexa de lançamento a ser realizada por microcontroles mobile.
 - **Motion:** feedback breve na confirmação, destaque de alerta, transições leves; respeitar movimento reduzido.
@@ -313,10 +316,11 @@ Uma funcionalidade só está concluída quando:
 | A002-ADR-008 | PLANEJADO | Interface de lançamento sem editar células críticas | UX e integridade |
 | A002-ADR-009 | PLANEJADO | Logs, idempotência e bloqueio concorrente | Minimizar duplicidades |
 | A002-ADR-010 | PLANEJADO | Validade por lote posterior | Evitar modelo incompleto e enganoso |
+| A002-ADR-011 | DECIDIDO (19/11/2026) | Interface em Angular + Tailwind CSS, isolada em `interface/` e empacotada como HTML único para o HTML Service | Decisão do proprietário: interface mais rica e consistente para o portfólio; o núcleo continua sem build (D-040) |
 
 ### 26. Questões ainda abertas
 
-- Interface inicial: sidebar HTML Service do Apps Script ou formulários/menus na própria planilha? Proposta: começar com menu+formulário simples; decidir após primeiro protótipo.
+- ~~Interface inicial: sidebar HTML Service ou formulários/menus na planilha?~~ **Resolvida em v1.1.0:** menu na planilha abrindo a interface Angular + Tailwind via HTML Service (A002-ADR-011). Falta decidir, no protótipo, entre sidebar e caixa de diálogo modal.
 - O melhor método gerencial de custo para vendas e estoque, além do custo corrente de referência: decidir antes de relatório de margem avançado.
 - Publicação: não planejada, seguindo o uso local/pessoal do portfólio A-001.
 - Nome MERCA 27/PULSO: são nomes de projeto, não validados para registro de marca.
@@ -327,13 +331,14 @@ Uma funcionalidade só está concluída quando:
 - [x] Setor e empresa fictícia selecionados.
 - [x] Requisitos e pesquisa de base elaborados.
 - [x] Escopo, arquitetura e fases propostos.
-- [ ] Dados fictícios gerados e revisados.
+- [x] Dados fictícios gerados e revisados (40 SKUs e 6 fornecedores, semente 27).
 - [ ] Planilha-base criada.
-- [ ] Código implementado.
-- [ ] Testes executados.
-- [ ] Interface auditada.
+- [x] Código do núcleo implementado localmente (Fases 00 e 01).
+- [x] Testes locais executados (343 testes, tipos e 108 mutações); testes no Google pendentes.
+- [x] Stack da interface decidida: Angular + Tailwind CSS (A002-ADR-011).
+- [ ] Interface implementada e auditada.
 - [ ] Case de portfólio concluído.
 
 ### 28. Próxima ação
 
-Siga `04_ROTEIRO_EXECUCAO_E_PROMPT.md`: abra o diretório do A-002 no VS Code/Codex/Claude Code, leia os quatro documentos e inicie **somente a Fase 0 e a primeira fatia funcional de estoque**. Não avançar para dashboard antes de provar que o saldo é correto.
+Siga `PROMPT_PROXIMA_EXECUCAO.md`: implementar a interface Angular + Tailwind (M-06) sobre os casos de uso já testados, com pré-visualização local. Não avançar para dashboard antes de vendas confiáveis (M-03 e Fase 2).
