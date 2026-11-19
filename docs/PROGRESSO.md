@@ -1,6 +1,6 @@
 # Progresso do A-002 — MERCA 27 / PULSO
 
-Última atualização: 18/11/2026, ao final da Fase 00.
+Última atualização: 18/11/2026, revisão da Fase 00. A execução atual preservou o escopo de cadastro → entrada → saldo.
 
 ## Implementado e testado localmente
 
@@ -12,6 +12,13 @@
 - [x] Protocolo de gravação com recuperação de falhas parciais.
 - [x] Detecção de adulteração dos registros na leitura.
 - [x] Armazenamento local somente-acréscimo, trava entre processos e CLI.
+- [x] Comparação integral dos dados após cada escrita e validação dos eventos do log.
+- [x] Intenções recuperáveis validadas pelas regras do domínio.
+- [x] Proteção contra saldo acima do limite de inteiros exatos.
+- [x] Verificação do estado final da reconciliação e tratamento de retorno ambíguo.
+- [x] Escrita parcial de bytes tratada no adaptador JSONL.
+- [x] Demonstração com asserções e recálculo independente; guia da seed em `fixtures/SEED_README.md`.
+- [x] 130 testes aprovados no Node.js 22.23.5 e sintaxe válida em 23 arquivos.
 
 ## Melhorias aprovadas (nenhuma implementada)
 
@@ -26,6 +33,8 @@ Detalhes e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADA
 - [ ] M-03: operações com vários registros, antes da Fase 2.
 
 ## Pendente no Google (nada disto foi executado)
+
+O conector Google Drive foi consultado nesta revisão e respondeu sem arquivos MERCA/PULSO. Não há execução de Apps Script disponível pelos conectores nem `clasp`/configuração local nos caminhos verificados. Essa consulta não equivale a integração operacional nem demonstra ausência de conta Google.
 
 - [ ] Criar a planilha com as abas `PRODUTOS`, `MOVIMENTOS_ESTOQUE` e `OPERACOES_LOG`.
 - [ ] Autenticar o `clasp` em conta autorizada e enviar `src/`.

@@ -4,7 +4,7 @@ Complementa as ADRs do Documento Mestre. Os documentos-base não foram alterados
 
 | ID | Decisão | Motivo | Consequência |
 |---|---|---|---|
-| D-001 | Fase 00 local, sem Google | Não há `clasp`, sessão autenticada nem conector Google ativo nesta máquina | Integração continua pendente e não é declarada como concluída |
+| D-001 | Fase 00 local, sem execução no Google | Na entrega inicial não havia acesso Google disponível; a revalidação de acesso está em D-022 | Integração operacional continua pendente e não é declarada como concluída |
 | D-002 | `src/` escrito como scripts globais (`var PULSO`), sem módulos | O Apps Script não usa `require` nem `import` | Os testes carregam `src/` em contexto isolado, sem APIs do Node e em ordem direta e inversa |
 | D-003 | Porta de armazenamento com apenas `ler` e `anexar` | Impede por construção a reescrita do histórico | Mudanças futuras de cadastro exigirão eventos próprios |
 | D-004 | Gravação em três passos: `PENDENTE` → dado → `CONFIRMADA` (resolve T-02) | Sheets não tem transação entre abas | Falha parcial é recuperada por repetição idempotente ou reconciliação |
@@ -33,6 +33,19 @@ Aprovadas pelo proprietário em 18/11/2026. Escopo e critérios de aceite em [ME
 | D-020 | M-07 | Checar tipos com JSDoc e TypeScript apenas em desenvolvimento | Mantém D-002 |
 
 **Stack:** Google Sheets e Apps Script continuam como decisão do MVP. Reavaliar a troca por SQLite ou PostgreSQL somente se houver cliente real, vários operadores simultâneos ou resultado insuficiente nas medições de M-05.
+
+## Revisão da Fase 00 — 18/11/2026
+
+| ID | Decisão | Motivo e consequência | Validação |
+|---|---|---|---|
+| D-021 | O prompt atual rege a execução: revisar e concluir somente a Fase 00 | Os documentos de continuidade descrevem melhorias aprovadas para a execução seguinte. Mantidas M-01 a M-07 e Fase 1 como pendentes, sem alterar o esquema | Cinco documentos-base e catálogo preservados; 112 testes originais mantidos |
+| D-022 | Distinguir conector Drive acessível de execução autorizada em Apps Script | As buscas `MERCA` e `PULSO` responderam sem resultados. Não há ferramenta para executar Apps Script, `clasp` no PATH ou configuração dele nos dois caminhos verificados. Nenhum recurso Google foi alterado; não se conclui que o usuário não tem conta Google | Verificação de ferramentas e buscas realizadas; nenhum teste Google declarado |
+| D-023 | Conferir a linha completa após cada escrita, incluindo unicidade da chave | Encontrar apenas o ID não prova que os dados foram gravados corretamente. Um conteúdo divergente impede a etapa de confirmação | Injeção de corrupção em entrada nova e em reconciliação |
+| D-024 | Validar a intenção pelas regras do domínio e conferir a sequência completa do log | Estados, tipo, requisição, referência, número de tentativas e assinatura devem ser coerentes; payload só aponta para as duas tabelas de domínio implementadas | Testes de adulteração e recuperação; novos tipos futuros precisarão ampliar explicitamente essa validação |
+| D-025 | Rejeitar saldo fora de `Number.MAX_SAFE_INTEGER` e reler após reconciliar | Entradas individualmente válidas podem produzir soma inexata; a reconciliação também precisa comprovar consistência antes de responder | Limite de saldo, histórico incoerente e corrupção durante a confirmação |
+| D-026 | Completar escritas parciais em bytes e evitar promessa falsa após retorno ambíguo | `fs.writeSync` pode escrever menos bytes; erro de retorno pode ocorrer depois de uma confirmação persistida | Testes com escrita de cinco bytes por vez, escrita sem progresso e erro posterior à confirmação |
+
+A demonstração passou a usar asserções e recálculo independente do JSONL. Nenhuma dependência foi adicionada. As comparações de intenção e assinatura são verificações de coerência, não proteção criptográfica contra alguém que reescreva todos os arquivos de forma consistente.
 
 ## Acréscimos ao esquema do documento 03
 

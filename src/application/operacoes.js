@@ -10,7 +10,7 @@ PULSO.operacoes = (function () {
 
   function traduzirExcecao(excecao) {
     if (excecao && excecao.codigo) return PULSO.erros.falha(excecao.codigo, excecao.message);
-    return PULSO.erros.falha('FALHA_GRAVACAO', 'Não foi possível concluir a operação. Nada foi confirmado; tente novamente.');
+    return PULSO.erros.falha('FALHA_GRAVACAO', 'Não foi possível verificar a conclusão. Consulte o estado e repita com o mesmo identificador de requisição.');
   }
 
   function comLock(ctx, funcao) {
@@ -120,6 +120,14 @@ PULSO.operacoes = (function () {
     }
   }
 
+  function responderConfirmada(def, estado, requisicaoId, situacao) {
+    const operacao = estado.operacoesPorRequisicao.get(requisicaoId);
+    if (!operacao || operacao.estado !== 'CONFIRMADA') {
+      return PULSO.erros.falha('FALHA_GRAVACAO', 'A operação continua pendente. Repita com o mesmo identificador de requisição.');
+    }
+    return def.responder(estado, operacao, situacao);
+  }
+
   /**
    * def: { tipo, normalizar(request), assinatura(dados), verificar(estado, dados),
    *        construir(dados, operacaoId, agora), responder(estado, operacao, situacao) }
@@ -149,7 +157,7 @@ PULSO.operacoes = (function () {
         if (anterior.estado === 'CONFIRMADA') return def.responder(estado, anterior, { duplicada: true, recuperada: false });
         concluir(ctx, anterior);
         estado = ctx.repositorio.carregarEstado();
-        return def.responder(estado, estado.operacoesPorRequisicao.get(requisicaoId), { duplicada: false, recuperada: true });
+        return responderConfirmada(def, estado, requisicaoId, { duplicada: false, recuperada: true });
       }
 
       if (estado.pendentes.length) {
@@ -166,7 +174,7 @@ PULSO.operacoes = (function () {
       if (falhaGravacao) return falhaGravacao;
 
       estado = ctx.repositorio.carregarEstado();
-      return def.responder(estado, estado.operacoesPorRequisicao.get(requisicaoId), { duplicada: false, recuperada: false });
+      return responderConfirmada(def, estado, requisicaoId, { duplicada: false, recuperada: false });
     });
   }
 
@@ -174,6 +182,10 @@ PULSO.operacoes = (function () {
     return comLock(ctx, function () {
       const estado = ctx.repositorio.carregarEstado();
       estado.pendentes.forEach(function (operacao) { concluir(ctx, operacao); });
+      const estadoFinal = ctx.repositorio.carregarEstado();
+      if (estadoFinal.pendentes.length) {
+        return PULSO.erros.falha('FALHA_GRAVACAO', 'A reconciliação não foi confirmada. Repita o comando reconciliar.');
+      }
       return {
         ok: true,
         reconciliadas: estado.pendentes.map(function (operacao) { return operacao.requisicaoId; }),

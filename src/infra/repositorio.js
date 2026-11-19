@@ -32,14 +32,16 @@ PULSO.repositorio = (function () {
     } catch (e) {
       throw inconsistente('operação ' + evento.operacao_id + ' com payload ilegível');
     }
-    if (!PULSO.validacao.eObjeto(payload) || !PULSO.esquema.TABELAS[payload.tabela]) {
+    if (!PULSO.validacao.eObjeto(payload) || Object.keys(payload).length !== 2 ||
+        ['PRODUTOS', 'MOVIMENTOS_ESTOQUE'].indexOf(payload.tabela) === -1) {
       throw inconsistente('operação ' + evento.operacao_id + ' com payload inválido');
     }
     const problema = PULSO.esquema.problemaLinha(payload.tabela, payload.linha);
     if (problema) throw inconsistente('operação ' + evento.operacao_id + ': ' + problema);
-    if (!evento.requisicao_id || !evento.assinatura) {
+    if (!PULSO.validacao.requisicaoValida(evento.requisicao_id) || !evento.assinatura) {
       throw inconsistente('operação ' + evento.operacao_id + ' sem requisição ou assinatura');
     }
+    conferirIntencao(evento, payload);
     return {
       operacaoId: evento.operacao_id,
       requisicaoId: evento.requisicao_id,
@@ -52,12 +54,54 @@ PULSO.repositorio = (function () {
     };
   }
 
+  /** A intenção recuperável precisa respeitar as mesmas regras do pedido original. */
+  function conferirIntencao(evento, payload) {
+    const linha = payload.linha;
+    let normalizado;
+    let reconstruida;
+    if (payload.tabela === 'PRODUTOS' && evento.tipo === 'CADASTRO_PRODUTO') {
+      normalizado = PULSO.produto.normalizarCadastro({
+        sku: linha.sku, nome: linha.nome, categoria: linha.categoria_id, unidade: linha.unidade,
+        precoVendaCentavos: linha.preco_venda_centavos, custoRefCentavos: linha.custo_ref_centavos,
+        estoqueMinimo: linha.estoque_minimo, estoqueAlvo: linha.estoque_alvo,
+        fornecedorId: linha.fornecedor_id, ativo: linha.ativo,
+      });
+      if (normalizado.ok) reconstruida = PULSO.produto.construirLinha(normalizado.dados, evento.operacao_id, linha.criado_em);
+    } else if (payload.tabela === 'MOVIMENTOS_ESTOQUE' && evento.tipo === 'ENTRADA') {
+      normalizado = PULSO.movimento.normalizarEntrada({
+        sku: linha.sku, quantidade: linha.delta_unidades, referenciaFornecedor: linha.referencia_id,
+        motivo: linha.motivo, operadorSimulado: linha.operador_simulado,
+      });
+      if (normalizado.ok) reconstruida = PULSO.movimento.construirEntrada(normalizado.dados, linha.movimento_id, evento.operacao_id, linha.registrado_em);
+    }
+    const chave = PULSO.esquema.TABELAS[payload.tabela].chave;
+    if (!reconstruida || evento.tentativas !== 1 || evento.erro_cod !== null ||
+        evento.referencia_id !== linha[chave] ||
+        evento.assinatura !== JSON.stringify(normalizado.dados) ||
+        PULSO.esquema.canonica(payload.tabela, linha) !== PULSO.esquema.canonica(payload.tabela, reconstruida)) {
+      throw inconsistente('operação ' + evento.operacao_id + ' com intenção incompatível com as regras de domínio');
+    }
+  }
+
   /** O log é uma sequência de eventos; o estado de cada operação é o último evento dela. */
   function dobrarOperacoes(eventos) {
     const operacoes = new Map();
     const porRequisicao = new Map();
+    const rejeitadas = new Set();
     eventos.forEach(function (evento) {
-      if (evento.estado === 'REJEITADA') return;
+      if (['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1 ||
+          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA'].indexOf(evento.tipo) === -1) {
+        throw inconsistente('operação ' + evento.operacao_id + ' com evento inválido');
+      }
+      if (evento.estado === 'REJEITADA') {
+        if (operacoes.has(evento.operacao_id) || rejeitadas.has(evento.operacao_id) ||
+            evento.erro_cod === null || evento.assinatura !== null || evento.payload !== null) {
+          throw inconsistente('operação ' + evento.operacao_id + ' com rejeição inválida');
+        }
+        rejeitadas.add(evento.operacao_id);
+        return;
+      }
+      if (rejeitadas.has(evento.operacao_id)) throw inconsistente('identificador de operação reutilizado');
       const operacao = operacoes.get(evento.operacao_id);
       if (!operacao) {
         if (evento.estado !== 'PENDENTE') throw inconsistente('operação ' + evento.operacao_id + ' sem intenção registrada');
@@ -69,6 +113,13 @@ PULSO.repositorio = (function () {
       }
       if (operacao.estado === 'CONFIRMADA' || evento.estado === 'PENDENTE') {
         throw inconsistente('operação ' + evento.operacao_id + ' com sequência de estados inválida');
+      }
+      const chave = PULSO.esquema.TABELAS[operacao.tabela].chave;
+      if (evento.tipo !== operacao.tipo || evento.requisicao_id !== operacao.requisicaoId ||
+          evento.referencia_id !== operacao.linha[chave] || evento.tentativas < operacao.tentativas ||
+          evento.assinatura !== null || evento.payload !== null ||
+          (evento.estado === 'CONFIRMADA' ? evento.erro_cod !== null : evento.erro_cod !== 'FALHA_GRAVACAO')) {
+        throw inconsistente('operação ' + evento.operacao_id + ' com evento divergente da intenção');
       }
       operacao.estado = evento.estado;
       operacao.tentativas = evento.tentativas;
@@ -106,6 +157,7 @@ PULSO.repositorio = (function () {
       }
       const saldo = (saldos.get(movimento.sku) || 0) + movimento.delta_unidades;
       if (saldo < 0) throw inconsistente('saldo negativo em ' + movimento.sku);
+      if (!PULSO.validacao.inteiroSeguro(saldo)) throw inconsistente('saldo fora do limite de inteiros exatos em ' + movimento.sku);
       saldos.set(movimento.sku, saldo);
     });
   }
@@ -145,10 +197,13 @@ PULSO.repositorio = (function () {
       return armazenamento.ler(tabela).some(function (linha) { return linha[chave] === valorChave; });
     }
 
-    /** Só retorna depois de reler a tabela e encontrar a linha gravada. */
+    /** Só retorna depois de reler a tabela e conferir o conteúdo completo da linha. */
     function anexarVerificado(tabela, linha) {
       armazenamento.anexar(tabela, linha);
-      if (!existe(tabela, linha[PULSO.esquema.TABELAS[tabela].chave])) {
+      const esquema = PULSO.esquema;
+      const chave = esquema.TABELAS[tabela].chave;
+      const gravadas = lerTabela(armazenamento, tabela).filter(function (gravada) { return gravada[chave] === linha[chave]; });
+      if (gravadas.length !== 1 || esquema.canonica(tabela, gravadas[0]) !== esquema.canonica(tabela, linha)) {
         throw PULSO.erros.criarExcecao('FALHA_GRAVACAO', 'A gravação em ' + tabela + ' não foi confirmada na releitura.');
       }
     }

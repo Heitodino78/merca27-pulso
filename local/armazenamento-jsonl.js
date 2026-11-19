@@ -30,7 +30,13 @@ function criarArmazenamentoJsonl(diretorio) {
     anexar(tabela, linha) {
       const descritor = fs.openSync(arquivo(tabela), 'a');
       try {
-        fs.writeSync(descritor, `${JSON.stringify(linha)}\n`);
+        const bytes = Buffer.from(`${JSON.stringify(linha)}\n`, 'utf8');
+        let offset = 0;
+        while (offset < bytes.length) {
+          const escritos = fs.writeSync(descritor, bytes, offset, bytes.length - offset);
+          if (escritos <= 0) throw excecao('FALHA_GRAVACAO', `A escrita em ${tabela} foi interrompida.`);
+          offset += escritos;
+        }
         fs.fsyncSync(descritor);
       } finally {
         fs.closeSync(descritor);

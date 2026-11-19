@@ -42,6 +42,10 @@ PULSO.casosDeUso = (function () {
         const produto = estado.produtos.get(dados.sku);
         if (!produto) return PULSO.erros.falha('SKU_INEXISTENTE', 'O SKU ' + dados.sku + ' não está cadastrado.');
         if (!produto.ativo) return PULSO.erros.falha('SKU_INATIVO', 'O SKU ' + dados.sku + ' está inativo e não aceita entrada.');
+        const saldoResultante = PULSO.estoque.calcularSaldo(estado.movimentos, dados.sku) + dados.quantidade;
+        if (!PULSO.validacao.inteiroNaoNegativo(saldoResultante)) {
+          return PULSO.erros.falha('QTD_INVALIDA', 'A entrada ultrapassa o limite de unidades que o sistema calcula com exatidão.');
+        }
         return null;
       },
       construir: function (dados, operacaoId, agora) {

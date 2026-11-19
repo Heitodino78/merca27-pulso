@@ -1,10 +1,14 @@
 # Relatório de execução — Fase 00
 
-**Data:** 18/11/2026 · **Versão:** 0.1.0 · **Branch:** `fase-00`
+**Data da revisão:** 18/11/2026 · **Versão do projeto:** 0.1.0 · **Branch:** `fase-00`
 
 ## 1. Resumo
 
-A Fase 00 foi concluída **no ambiente local**. O fluxo **cadastro → entrada → consulta de saldo** funciona de ponta a ponta pela linha de comando, com 112 testes aprovados. A integração com Google Sheets e Apps Script **não foi realizada**, porque não há conta autorizada nesta máquina.
+A Fase 00 foi concluída e revisada **no ambiente local**. A execução começou com a leitura integral dos 37 arquivos versionados e do prompt anexado, em um repositório sem alterações locais. A implementação da Fase 00 já existia; foi preservada e corrigida nos pontos de integridade encontrados. O fluxo **cadastro → entrada → consulta de saldo** funciona pela CLI, com **130 testes aprovados**.
+
+A integração com Google Sheets e Apps Script **não foi realizada**. O conector Drive respondeu às buscas `MERCA` e `PULSO` sem arquivos correspondentes, mas não há ferramenta de execução de Apps Script, `clasp` no PATH nem configuração local dele nos caminhos verificados. Não se conclui que o usuário não tenha conta Google. Nenhum recurso externo foi criado, alterado ou publicado.
+
+Os cinco documentos-base e o catálogo foram preservados. O prompt atual limita a execução à Fase 00; as melhorias aprovadas para a próxima sessão e as demais fases seguem pendentes.
 
 ## 2. Funcionalidades desenvolvidas
 
@@ -14,6 +18,12 @@ A Fase 00 foi concluída **no ambiente local**. O fluxo **cadastro → entrada �
 - Listagem de produtos com saldo derivado.
 - Reconciliação de operações interrompidas.
 - Catálogo sintético reproduzível com 6 produtos, um por categoria.
+- Comparação do conteúdo completo após cada gravação, antes da confirmação.
+- Validação da intenção pelas regras de domínio e dos vínculos entre eventos do log.
+- Saldo limitado ao intervalo de inteiros exatos, na entrada e na leitura.
+- Releitura do estado final da reconciliação e mensagem correta em caso de retorno ambíguo.
+- Tratamento de escritas parciais em bytes no JSONL.
+- Demonstração com asserções e recálculo independente dos arquivos.
 
 ## 3. Arquitetura implementada
 
@@ -35,28 +45,37 @@ Domínio (src/domain)      Repositório e esquema (src/infra)
 
 | Situação | Arquivos |
 |---|---|
-| Movidos sem alteração de conteúdo (checksums conferidos) | Cinco documentos-base, da raiz para `docs/` |
-| Criados: núcleo | `src/pulso.js`, `src/domain/*`, `src/application/*`, `src/infra/*` |
-| Criados: local | `local/*`, `fixtures/catalogo-seed.json` |
-| Criados: testes | `tests/*` |
-| Criados: projeto | `README.md`, `package.json`, `.gitignore` |
-| Criados: documentação | `docs/PROGRESSO.md`, `docs/DECISOES.md`, `docs/TESTES.md`, este relatório e `docs/PROMPT_PROXIMA_EXECUCAO.md` |
+| Preservados nesta revisão | Cinco documentos-base, `package.json`, `.gitignore`, catálogo e demais fontes/testes existentes |
+| Modificados: núcleo | `src/application/casos-de-uso.js`, `src/application/operacoes.js`, `src/infra/repositorio.js` |
+| Modificados: local | `local/armazenamento-jsonl.js`, `local/demo.js` |
+| Criados | `tests/integridade.test.js`, `fixtures/SEED_README.md` |
+| Atualizados: documentação | `README.md`, `docs/PROGRESSO.md`, `docs/DECISOES.md`, `docs/TESTES.md`, este relatório e `docs/PROMPT_PROXIMA_EXECUCAO.md` |
+
+Não foram feitos commits, alterações de branch nem envios remotos. O histórico local existente foi preservado; as mudanças ficam disponíveis no diretório de trabalho para revisão.
 
 ## 5. Ferramentas e versões
 
 | Ferramenta | Versão | Observação |
 |---|---|---|
-| Node.js / npm | 24.22.3 / 11.19.1 | **Não está instalado no sistema.** Foi usada uma cópia oficial temporária, com checksum conferido |
+| Node.js / npm | 22.23.5 / 10.9.9 | Fora do PATH padrão; cópia oficial temporária em `/tmp/merca27-runtime`, com SHA-256 conferido |
 | Git | 2.56.0 | Repositório local, sem remoto |
-| Python | 3.13.16 | Usado só no script temporário de mutação |
-| clasp | Ausente | Não instalado, pois não há conta autorizada |
+| Python | 3.13.16 | Conferência do checksum e extração segura do runtime temporário |
+| curl | 8.21.0 | Download oficial do Node.js e dos checksums |
+| clasp | Ausente | Sem instalação ou autenticação nesta revisão |
+
+Nenhuma dependência de produção ou desenvolvimento foi adicionada. O sandbox padrão não iniciou por restrição do sistema a namespaces; os comandos locais necessários foram executados após aprovação automática da ferramenta.
 
 ## 6. Testes e resultados
 
-- Sintaxe: 22 arquivos, 0 erros.
-- Automatizados: 112 de 112 aprovados, em três execuções seguidas.
-- Mutação: 32 de 35 defeitos detectados; os outros 3 não alteram o comportamento.
-- Concorrência real: 8 processos simultâneos sem duplicidade nem perda.
+- Antes das alterações: `npm test`, 112 testes aprovados; `npm run check` e `npm run demo` também passaram.
+- Regressões reproduzidas antes da correção: 14 falhas em 15 testes novos; um teste já passava. Depois das primeiras correções, os 15 passaram.
+- Após todas as alterações: `npm test`, **130 de 130 aprovados**, sem falhas, cancelados ou ignorados. Os 112 originais foram mantidos e outros três testes completaram a nova cobertura.
+- `npm run check`: 23 arquivos, 0 erros de sintaxe.
+- `npm run demo`: saldo final 10, um movimento e recálculo independente igual a 10, com asserções aprovadas.
+- `npm run fixtures`: catálogo regenerado idêntico ao versionado.
+- A suíte incluiu CLI ponta a ponta, reabertura do armazenamento e dois testes de concorrência real com oito processos cada.
+- `git diff --check`: sem erros de espaços em branco.
+- Testes de mutação da entrega anterior não foram repetidos; sua evidência foi mantida como histórica.
 
 Detalhes em [TESTES.md](TESTES.md).
 
@@ -64,22 +83,28 @@ Detalhes em [TESTES.md](TESTES.md).
 
 | Problema | Resolução |
 |---|---|
-| Node.js ausente | Cópia oficial temporária usada apenas para os testes |
-| Log bloqueado quando a confirmação era gravada com erro de retorno | Corrigido e coberto por teste (D-006) |
-| Duas lacunas de teste reveladas por mutação: saldo com vários SKUs e saldo negativo forjado | Testes adicionados |
+| Node.js fora do PATH | Runtime oficial temporário, com checksum conferido, sem instalação global |
+| Quantidades individualmente válidas podiam gerar soma inexata | Entrada rejeitada antes da intenção e limite conferido na leitura |
+| A releitura conferia apenas a existência da chave | Comparação de todos os campos e validação de unicidade antes de confirmar |
+| A reconciliação não relia o estado final | Releitura obrigatória e erro em caso de inconsistência |
+| Eventos divergentes do log e intenções inválidas podiam ser aceitos | Validação da sequência, dos vínculos e das regras do domínio |
+| Escrita curta em JSONL não era completada | Escrita em bytes até completar; ausência de progresso retorna erro |
+| Mensagem genérica prometia que nada havia sido confirmado | Mensagem orienta consulta e repetição com a mesma chave, inclusive após retorno ambíguo |
 
 ## 8. Decisões
 
-As 13 decisões e os acréscimos ao esquema estão em [DECISOES.md](DECISOES.md). As centrais são o núcleo portável (D-002), o armazenamento somente-acréscimo (D-003) e o protocolo de gravação em três passos (D-004).
+As decisões estão em [DECISOES.md](DECISOES.md). Foram mantidos o núcleo portável (D-002), o armazenamento somente-acréscimo (D-003) e o protocolo de três passos (D-004). D-021 a D-026 registram o escopo desta revisão, a situação Google e os reforços de integridade. Nenhuma mudança de esquema foi necessária.
 
 ## 9. Limitações
 
 - O código de `src/` nunca rodou no Apps Script. A portabilidade foi simulada com contexto isolado.
 - Não existe adaptador de Sheets, menu nem sidebar. A identidade visual do PULSO ainda não foi aplicada a nenhuma tela.
 - Não há edição nem desativação de produto após o cadastro.
-- A exclusão coerente de uma operação inteira não é detectável.
+- Alteração coerente de todos os registros de uma operação pode não ser detectada; não existe proteção criptográfica ou auditoria externa.
 - Cada operação lê todas as tabelas, o que deve ser revisto antes do histórico de 90 dias.
 - Trava local órfã exige remoção manual.
+- Arquivo truncado é detectado e bloqueado, mas não reparado automaticamente.
+- Checagem de tipos, custo por entrada, edição de produto e reconciliação automática continuam em M-01 a M-07, sem implementação nesta revisão.
 
 ## 10. Estado atual
 
@@ -99,10 +124,10 @@ As 13 decisões e os acréscimos ao esquema estão em [DECISOES.md](DECISOES.md)
 
 ## 11. Próxima prioridade
 
-Instalar o Node.js 22 ou superior e, com uma conta Google autorizada, validar o núcleo no Apps Script antes de ampliar o domínio. Sem essa conta, seguir com a Fase 1 local.
+Seguir a ordem aprovada em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADAS.md): começar por M-07 (JSDoc e checagem de tipos), depois M-01, M-02, M-04 e M-05. Confirmar um runtime Node.js disponível na nova sessão. Validar a integração somente quando houver acesso para executar Apps Script; a mera presença do conector Drive não basta.
 
-**Critério de aceite:** repetir o cenário obrigatório na planilha real com o mesmo resultado dos testes locais.
+**Critério da próxima melhoria:** `npm run typecheck` aprovado em `src/` e `local/`, núcleo sem dependência de Node e toda a suíte preservada. Quando houver integração Google, repetir o cenário obrigatório na planilha real e registrar evidência separada.
 
 ## 12. Adendo pós-entrega
 
-Após esta entrega, o proprietário aprovou sete melhorias, descritas em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADAS.md). Elas ainda não foram implementadas e passam a definir a ordem da próxima execução, em [PROMPT_PROXIMA_EXECUCAO.md](PROMPT_PROXIMA_EXECUCAO.md).
+As sete melhorias aprovadas na entrega anterior continuam descritas em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADAS.md), sem itens marcados como concluídos nesta revisão. [PROMPT_PROXIMA_EXECUCAO.md](PROMPT_PROXIMA_EXECUCAO.md) foi atualizado com o estado real, os 130 testes e os pontos que precisarão ser ampliados na validação do repositório ao introduzir novos tipos de operação.

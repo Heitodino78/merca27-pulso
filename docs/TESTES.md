@@ -1,15 +1,29 @@
 # Evidências de testes
 
-**Execução:** 18/11/2026, Linux x86_64, Node.js 24.22.3, npm 11.19.1. **Ambiente exclusivamente local.** Nenhum teste foi executado em Google Sheets, Apps Script ou navegador.
+**Revisão executada:** 18/11/2026, Linux x86_64, Node.js 22.23.5, npm 10.9.9. **Ambiente exclusivamente local.** Nenhum teste foi executado em Google Sheets, Apps Script ou navegador.
+
+Node/npm não estão no PATH padrão. Foi baixado o arquivo oficial `node-v22.23.5-linux-x64.tar.xz` de `https://nodejs.org/dist/latest-v22.x/`, com SHA-256 comparado ao `SHASUMS256.txt` do mesmo diretório antes de extrair:
+
+```text
+cdeb8670a0c81f51b4dc4ac61919f9b1ad917b304bf8221eb939570663d240f8
+```
+
+O runtime ficou em `/tmp/merca27-runtime/node-v22.23.5-linux-x64`. Os comandos npm abaixo foram executados com o `bin/` dessa pasta no PATH. Nenhuma ferramenta foi instalada globalmente e nenhuma dependência foi adicionada ao projeto.
 
 ## Resultados
 
 | Comando | Resultado |
 |---|---|
-| `npm run check` | 22 arquivos, 0 erros de sintaxe |
-| `npm test` (3 execuções seguidas) | 112 testes, 112 aprovados, 0 falhas, 0 ignorados |
-| `npm run demo` | Saldo final 10 e 1 movimento confirmado |
-| Jornada manual pela CLI | `seed`, `produtos`, `entrada`, repetição, entrada inválida e `saldo` com o resultado esperado |
+| `npm test`, antes das alterações | 112 testes, 112 aprovados, 0 falhas |
+| `node --test --test-reporter=spec tests/integridade.test.js`, antes das correções | 15 testes novos: 14 falharam reproduzindo lacunas; um já passou |
+| Mesmo comando após as primeiras correções | 15 testes, 15 aprovados |
+| `npm test`, após todas as alterações de código | 130 testes, 130 aprovados, 0 falhas, 0 cancelados, 0 ignorados |
+| `npm run check` | 23 arquivos, 0 erros de sintaxe |
+| `npm run demo` | Asserções aprovadas, saldo final 10, recálculo independente 10 e um movimento confirmado |
+| `npm run fixtures` e `git diff --exit-code -- fixtures/catalogo-seed.json` | Arquivo regenerado idêntico ao versionado |
+| `git diff --check` | Sem erros de espaços em branco |
+
+Os 112 testes originais foram preservados. A suíte completa também executou as jornadas CLI, persistência entre instâncias e os dois testes de concorrência real, cada um com oito processos. A versão final inclui 18 novos testes em `tests/integridade.test.js`.
 
 ## Cenário obrigatório
 
@@ -32,10 +46,27 @@
 | `tests/fluxo.test.js` | Cenário obrigatório, conflito, produto inativo, SKU duplicado, consulta e log |
 | `tests/falhas.test.js` | Falha em cada etapa da gravação, reconciliação e 12 formas de adulteração |
 | `tests/local.test.js` | Portabilidade do núcleo, catálogo, persistência, trava, concorrência real com 8 processos e CLI |
+| `tests/integridade.test.js` | Limite da soma de unidades, conteúdo divergente após escrita, validação da intenção e do log, estado final da reconciliação, retorno ambíguo e escrita parcial de bytes |
+
+## Correções verificadas nesta revisão
+
+- Entrada que excederia `Number.MAX_SAFE_INTEGER` é rejeitada sem novo movimento nem intenção; o histórico carregado também precisa ter soma exata.
+- Registro relido com mesmo ID e conteúdo diferente impede a confirmação, tanto em operação nova quanto na reconciliação.
+- Reconciliação que sofre corrupção ao confirmar retorna erro depois da releitura final.
+- Estados desconhecidos e divergências de tipo, requisição, referência ou tentativas no log são recusados antes de novos lançamentos.
+- Intenção com tabela imprópria, assinatura divergente ou entrada negativa não é recuperada nem confirmada.
+- Erro de retorno depois de uma confirmação persistida não afirma que nada foi gravado. Consulta e repetição mostram a conclusão, sem duplicação.
+- Escrita limitada a cinco bytes por chamada produz um JSONL completo, inclusive com caracteres acentuados; escrita sem progresso retorna `FALHA_GRAVACAO`.
+
+O comportamento de bloqueio por pendências continua o mesmo (D-007). M-04, reconciliação automática, não foi implementada nem teve seus testes antecipados.
+
+## Verificação de acesso Google
+
+As buscas `MERCA` e `PULSO` pelo conector Google Drive responderam com listas vazias. Não há ferramenta de execução de Apps Script entre os conectores, `clasp` no PATH, `.clasprc.json` na raiz do usuário nem em `.config/`. Somente a existência desses arquivos foi verificada, sem ler credenciais. Não houve criação, alteração ou execução no Google. Essa checagem não prova ausência de conta Google.
 
 ## Testes de mutação
 
-Foram introduzidos 35 defeitos deliberados, um por vez, numa cópia temporária do projeto. **32 foram detectados pela suíte.** Os 3 restantes não alteram o comportamento, porque outra verificação barra o mesmo caso:
+**Registro histórico da entrega anterior (Node.js 24.22.3 / npm 11.19.1); não repetido nesta revisão.** Naquela execução foram relatados 35 defeitos deliberados, um por vez, numa cópia temporária do projeto. **32 foram detectados pela suíte anterior.** Os 3 restantes foram classificados como equivalentes:
 
 | Mutação sobrevivente | Por que não muda o resultado |
 |---|---|
@@ -45,12 +76,14 @@ Foram introduzidos 35 defeitos deliberados, um por vez, numa cópia temporária 
 
 O script de mutação foi ferramenta temporária e não faz parte do repositório.
 
-## Defeito encontrado e corrigido
+## Defeito corrigido na entrega anterior
 
 Quando a confirmação era gravada, mas a escrita acusava erro, o sistema anexava um evento depois de `CONFIRMADA` e o log passava a ser recusado como inconsistente. A correção está registrada em D-006 e o caso tem teste próprio.
 
 ## Não testado
 
 - Execução real no Apps Script, cotas, `LockService` e comportamento de células do Sheets.
-- Versões do Node diferentes da 24.22.3.
+- Versões do Node diferentes da 22.23.5 nesta revisão; a versão 24.22.3 tem somente evidência histórica.
 - Volumes grandes de dados.
+- Interrupção por queda de energia, reparo automático de arquivos truncados ou alteração coerente de todo o histórico.
+- Checagem de tipos: M-07 segue pendente; nenhuma checagem TypeScript foi declarada.
