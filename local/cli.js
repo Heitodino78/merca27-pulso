@@ -12,13 +12,13 @@ Comandos:
   produtos                  Lista produtos e saldos
   cadastrar --sku MER-007 --nome "Produto Teste" --categoria MERCEARIA
             --preco 990 --custo 600 --minimo 5 --alvo 12 [--inativo] [--requisicao ID]
-  entrada   --sku MER-001 --quantidade 10 [--referencia NF-TESTE] [--motivo "Texto"] [--requisicao ID]
+  entrada   --sku MER-001 --quantidade 10 --custo 600 --fornecedor FOR-001 [--referencia NF-TESTE] [--motivo "Texto"] [--requisicao ID]
   saldo     --sku MER-001   Mostra saldo e histórico
   reconciliar               Conclui operações interrompidas
 
 Valores em centavos. Dados em ./data (ou na pasta definida em PULSO_DADOS).`;
 
-const OPCOES_COM_VALOR = ['sku', 'nome', 'categoria', 'preco', 'custo', 'minimo', 'alvo', 'quantidade', 'referencia', 'motivo', 'requisicao'];
+const OPCOES_COM_VALOR = ['sku', 'nome', 'categoria', 'preco', 'custo', 'minimo', 'alvo', 'quantidade', 'referencia', 'motivo', 'requisicao', 'fornecedor'];
 
 function lerOpcoes(argumentos) {
   const opcoes = {};
@@ -76,6 +76,7 @@ const comandos = {
     const resultado = pulso.registrarEntrada({
       requisicaoId, sku: o.sku, quantidade: numero(o.quantidade),
       referenciaFornecedor: o.referencia, motivo: o.motivo,
+      custoUnitCentavos: numero(o.custo), fornecedorId: o.fornecedor,
     });
     if (!resultado.ok) return imprimirErro(resultado, requisicaoId);
     console.log(`OK: ${resultado.mensagem} ${resultado.sku}: saldo atual ${resultado.saldoAtual}.`);

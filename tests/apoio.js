@@ -3,7 +3,7 @@
 const { carregarNucleo } = require('../local/nucleo');
 
 function criarArmazenamentoMemoria() {
-  const tabelas = { PRODUTOS: [], MOVIMENTOS_ESTOQUE: [], OPERACOES_LOG: [] };
+  const tabelas = { PRODUTOS: [], MOVIMENTOS_ESTOQUE: [], OPERACOES_LOG: [], FORNECEDORES: [] };
   const falhas = [];
   return {
     tabelas,
@@ -32,6 +32,7 @@ function criarAmbiente() {
     relogio: () => new Date(Date.UTC(2026, 10, 18, 12, 0, sequencia)).toISOString(),
     gerarId: (prefixo) => `${prefixo}-${String(++sequencia).padStart(6, '0')}`,
   });
+  pulso.cadastrarFornecedor({ requisicaoId: 'REQ-FOR-001', fornecedorId: 'FOR-001', nomeFicticio: 'Fornecedor Fictício', categoriaPrincipal: 'MERCEARIA', prazoEstimadoDias: 2 });
   return { pulso, armazenamento };
 }
 

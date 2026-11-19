@@ -27,6 +27,10 @@ function pulsoCriarEstoque() {
           referenciaId: movimento.referencia_id,
           registradoEm: movimento.registrado_em,
           operadorSimulado: movimento.operador_simulado,
+          custoUnitCentavos: movimento.custo_unit_centavos,
+          fornecedorId: movimento.fornecedor_id,
+          categoriaPerda: movimento.categoria_perda,
+          saldoAnterior: movimento.saldo_anterior, saldoNovo: movimento.saldo_novo,
         };
       });
   }

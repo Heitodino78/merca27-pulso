@@ -11,6 +11,7 @@ Ambiente: Node 22.23.5, npm 10.9.9, runtime temporário já conferido na Fase 00
 | 1 | `npm run mutacao`, 42 defeitos em cópias temporárias | Primeira medição: 37 detectados, cinco sobreviventes; os dois sem justificativa motivaram mais testes |
 | 1 | `npm run mutacao -- MUT-30` e `-- MUT-40` | Detectados após adicionar rejeição com tentativas negativas e linha completa sem terminador |
 | 2 | `npm run typecheck`, `npm test`, `npm run check`, `npm run demo` | Duas configurações de tipos sem erro; 141 testes; sintaxe em 25 arquivos; demo aprovada |
+| 3 | Mesmos quatro comandos e regeneração da seed | 169 testes; tipos sem erro; 27 arquivos sem erro de sintaxe; demo aprovada |
 
 M-07: o comando experimental `node node_modules/typescript/lib/tsc.js -p tsconfig.src.json --strict` encontrou 126 erros adicionais. Esse resultado motivou D-027; não é uma checagem aprovada. As configurações versionadas usam `strict: false`, sem suprimir erros.
 

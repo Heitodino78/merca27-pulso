@@ -6,6 +6,11 @@ function pulsoCriarEsquema() {
   const INSTANTE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
   const TABELAS = {
+    FORNECEDORES: {
+      chave: 'fornecedor_id',
+      colunas: [['fornecedor_id', 'texto'], ['nome_ficticio', 'texto'], ['categoria_principal', 'texto'],
+        ['prazo_estimado_dias', 'inteiro'], ['ativo', 'booleano'], ['criado_em', 'instante'], ['operacao_id', 'texto']],
+    },
     PRODUTOS: {
       chave: 'sku',
       colunas: [
@@ -22,6 +27,8 @@ function pulsoCriarEsquema() {
         ['movimento_id', 'texto'], ['operacao_id', 'texto'], ['sku', 'texto'], ['tipo', 'texto'],
         ['delta_unidades', 'inteiro'], ['motivo', 'texto?'], ['referencia_id', 'texto?'],
         ['registrado_em', 'instante'], ['operador_simulado', 'texto'],
+        ['custo_unit_centavos', 'inteiro?'], ['fornecedor_id', 'texto?'], ['categoria_perda', 'texto?'],
+        ['saldo_anterior', 'inteiro?'], ['saldo_novo', 'inteiro?'],
       ],
     },
     OPERACOES_LOG: {
@@ -39,6 +46,7 @@ function pulsoCriarEsquema() {
       case 'texto': return typeof valor === 'string' && valor.length > 0;
       case 'texto?': return valor === null || (typeof valor === 'string' && valor.length > 0);
       case 'inteiro': return PULSO.validacao.inteiroSeguro(valor);
+      case 'inteiro?': return valor === null || PULSO.validacao.inteiroSeguro(valor);
       case 'booleano': return typeof valor === 'boolean';
       case 'instante': return typeof valor === 'string' && INSTANTE.test(valor) && !isNaN(Date.parse(valor));
       default: return false;

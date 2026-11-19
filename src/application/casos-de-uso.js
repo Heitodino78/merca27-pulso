@@ -5,12 +5,36 @@ var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 function pulsoCriarCasosDeUso() {
   const LIMITE_HISTORICO_PADRAO = 20;
 
+  function cadastrarFornecedor(ctx, request) {
+    return PULSO.operacoes.executar(ctx, {
+      tipo: 'CADASTRO_FORNECEDOR', normalizar: PULSO.fornecedor.normalizarCadastro,
+      assinatura: function (dados) { return dados; },
+      verificar: function (estado, dados) {
+        return estado.fornecedores.has(dados.fornecedorId) ? PULSO.erros.falha('FORNECEDOR_DUPLICADO', 'Fornecedor já cadastrado.') : null;
+      },
+      construir: function (dados, operacaoId, agora) {
+        return { tabela: 'FORNECEDORES', linha: PULSO.fornecedor.construirLinha(dados, operacaoId, agora) };
+      },
+      responder: function (estado, operacao, situacao) {
+        return { ok: true, operacaoId: operacao.operacaoId, fornecedorId: operacao.linha.fornecedor_id,
+          duplicada: situacao.duplicada, recuperada: situacao.recuperada, mensagem: 'Fornecedor cadastrado.' };
+      },
+    }, request);
+  }
+
+  function listarFornecedores(ctx) {
+    return PULSO.operacoes.consultar(ctx, function (estado) {
+      return { ok: true, fornecedores: Array.from(estado.fornecedores.values()), operacoesPendentes: estado.pendentes.length };
+    });
+  }
+
   function cadastrarProduto(ctx, request) {
     return PULSO.operacoes.executar(ctx, {
       tipo: 'CADASTRO_PRODUTO',
       normalizar: PULSO.produto.normalizarCadastro,
       assinatura: function (dados) { return dados; },
       verificar: function (estado, dados) {
+        if (dados.fornecedorId && !estado.fornecedores.has(dados.fornecedorId)) return PULSO.erros.falha('FORNECEDOR_INEXISTENTE', 'Fornecedor não cadastrado.');
         if (estado.produtos.has(dados.sku)) {
           return PULSO.erros.falha('SKU_DUPLICADO', 'O SKU ' + dados.sku + ' já está cadastrado.');
         }
@@ -43,6 +67,9 @@ function pulsoCriarCasosDeUso() {
         const produto = estado.produtos.get(dados.sku);
         if (!produto) return PULSO.erros.falha('SKU_INEXISTENTE', 'O SKU ' + dados.sku + ' não está cadastrado.');
         if (!produto.ativo) return PULSO.erros.falha('SKU_INATIVO', 'O SKU ' + dados.sku + ' está inativo e não aceita entrada.');
+        const fornecedor = estado.fornecedores.get(dados.fornecedorId);
+        if (!fornecedor) return PULSO.erros.falha('FORNECEDOR_INEXISTENTE', 'Fornecedor não cadastrado.');
+        if (!fornecedor.ativo) return PULSO.erros.falha('FORNECEDOR_INATIVO', 'Fornecedor inativo não aceita novas entradas.');
         const saldoResultante = PULSO.estoque.calcularSaldo(estado.movimentos, dados.sku) + dados.quantidade;
         if (!PULSO.validacao.inteiroNaoNegativo(saldoResultante)) {
           return PULSO.erros.falha('QTD_INVALIDA', 'A entrada ultrapassa o limite de unidades que o sistema calcula com exatidão.');
@@ -62,6 +89,8 @@ function pulsoCriarCasosDeUso() {
           movimentoId: operacao.linha.movimento_id,
           sku: operacao.linha.sku,
           quantidade: operacao.linha.delta_unidades,
+          custoUnitCentavos: operacao.linha.custo_unit_centavos,
+          fornecedorId: operacao.linha.fornecedor_id,
           saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, operacao.linha.sku),
           mensagem: situacao.duplicada
             ? 'Entrada já registrada por esta requisição; o saldo não mudou.'
@@ -124,6 +153,7 @@ function pulsoCriarCasosDeUso() {
   }
 
   return {
+    cadastrarFornecedor: cadastrarFornecedor, listarFornecedores: listarFornecedores,
     cadastrarProduto: cadastrarProduto,
     registrarEntrada: registrarEntrada,
     consultarEstoque: consultarEstoque,

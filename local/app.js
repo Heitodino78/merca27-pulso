@@ -20,7 +20,10 @@ function criarPulsoLocal(diretorio) {
 
 /** Reaplicar é seguro: cada produto usa uma requisição fixa e idempotente. */
 function aplicarCatalogo(pulso, caminho = CAMINHO_CATALOGO) {
-  const { produtos } = JSON.parse(fs.readFileSync(caminho, 'utf8'));
+  const { produtos, fornecedores } = JSON.parse(fs.readFileSync(caminho, 'utf8'));
+  const cadastros = fornecedores.map((fornecedor) => pulso.cadastrarFornecedor({ requisicaoId: `SEED-FORNECEDOR-${fornecedor.fornecedorId}`, ...fornecedor }));
+  const falha = cadastros.find((r) => !r.ok);
+  if (falha) return [falha];
   return produtos.map((produto) => pulso.cadastrarProduto({ requisicaoId: `SEED-CADASTRO-${produto.sku}`, ...produto }));
 }
 

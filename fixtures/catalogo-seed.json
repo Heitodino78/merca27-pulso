@@ -68,5 +68,49 @@
       "estoqueAlvo": 14,
       "ativo": true
     }
+  ],
+  "fornecedores": [
+    {
+      "fornecedorId": "FOR-001",
+      "nomeFicticio": "Distribuidora Demonstração 01",
+      "categoriaPrincipal": "BEBIDAS",
+      "prazoEstimadoDias": 1,
+      "ativo": true
+    },
+    {
+      "fornecedorId": "FOR-002",
+      "nomeFicticio": "Distribuidora Demonstração 02",
+      "categoriaPrincipal": "MERCEARIA",
+      "prazoEstimadoDias": 2,
+      "ativo": true
+    },
+    {
+      "fornecedorId": "FOR-003",
+      "nomeFicticio": "Distribuidora Demonstração 03",
+      "categoriaPrincipal": "LATICINIOS",
+      "prazoEstimadoDias": 3,
+      "ativo": true
+    },
+    {
+      "fornecedorId": "FOR-004",
+      "nomeFicticio": "Distribuidora Demonstração 04",
+      "categoriaPrincipal": "SNACKS",
+      "prazoEstimadoDias": 4,
+      "ativo": true
+    },
+    {
+      "fornecedorId": "FOR-005",
+      "nomeFicticio": "Distribuidora Demonstração 05",
+      "categoriaPrincipal": "HIGIENE",
+      "prazoEstimadoDias": 5,
+      "ativo": true
+    },
+    {
+      "fornecedorId": "FOR-006",
+      "nomeFicticio": "Distribuidora Demonstração 06",
+      "categoriaPrincipal": "LIMPEZA",
+      "prazoEstimadoDias": 6,
+      "ativo": true
+    }
   ]
 }

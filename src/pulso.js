@@ -17,6 +17,8 @@ function pulsoCriar(portas) {
     gerarId: portas.gerarId,
   };
   return {
+    cadastrarFornecedor: function (request) { return PULSO.casosDeUso.cadastrarFornecedor(ctx, request); },
+    listarFornecedores: function () { return PULSO.casosDeUso.listarFornecedores(ctx); },
     cadastrarProduto: /** @param {PedidoCadastro} request */ function (request) { return PULSO.casosDeUso.cadastrarProduto(ctx, request); },
     registrarEntrada: /** @param {PedidoEntrada} request */ function (request) { return PULSO.casosDeUso.registrarEntrada(ctx, request); },
     consultarEstoque: function (request) { return PULSO.casosDeUso.consultarEstoque(ctx, request); },

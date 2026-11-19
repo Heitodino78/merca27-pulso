@@ -21,13 +21,13 @@ npm run demo        # demonstração do primeiro marco, em pasta temporária
 
 npm run -s pulso -- seed
 npm run -s pulso -- produtos
-npm run -s pulso -- entrada --sku MER-001 --quantidade 10 --referencia NF-TESTE-1 --requisicao EXEMPLO-ENTRADA-001
+npm run -s pulso -- entrada --sku MER-001 --quantidade 10 --custo 600 --fornecedor FOR-001 --referencia NF-TESTE-1 --requisicao EXEMPLO-ENTRADA-001
 npm run -s pulso -- saldo --sku MER-001
 npm run -s pulso -- cadastrar --sku MER-007 --nome "Produto Teste" --categoria MERCEARIA --preco 990 --custo 600 --minimo 5 --alvo 12
 npm run -s pulso -- reconciliar
 ```
 
-Preço e custo do cadastro são informados em centavos. Os dados ficam em `data/`, que não é versionada; use a variável `PULSO_DADOS` para escolher outra pasta. Para repetir uma entrada com segurança, informe o mesmo `--requisicao ID` e os mesmos dados. Uma entrada nova usa outra chave. O custo unitário por entrada é uma melhoria futura (M-01).
+Preço, custo de referência e custo unitário de entrada são informados em centavos. Entrada exige `--custo` (zero para bonificação) e `--fornecedor`. Os dados ficam em `data/`, que não é versionada; use `PULSO_DADOS` para escolher outra pasta. Para repetir uma entrada, use o mesmo `--requisicao ID` e os mesmos dados. Uma entrada nova usa outra chave. O custo da entrada não altera automaticamente o custo de referência.
 
 `npm run demo` valida os próprios resultados e termina com erro se alguma expectativa falhar. Usa uma pasta temporária, sem alterar `data/`. A seed e os resultados esperados estão em [fixtures/SEED_README.md](fixtures/SEED_README.md).
 

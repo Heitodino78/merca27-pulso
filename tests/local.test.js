@@ -71,10 +71,10 @@ test('persistência: o saldo sobrevive à reabertura e é igual à soma dos arqu
   const pasta = pastaTemporaria(t);
   const primeira = criarPulsoLocal(pasta);
   aplicarCatalogo(primeira);
-  primeira.registrarEntrada({ requisicaoId: 'P-1', sku: 'MER-001', quantidade: 10 });
+  primeira.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'P-1', sku: 'MER-001', quantidade: 10 });
   const segunda = criarPulsoLocal(pasta);
-  assert.equal(segunda.registrarEntrada({ requisicaoId: 'P-1', sku: 'MER-001', quantidade: 10 }).duplicada, true);
-  segunda.registrarEntrada({ requisicaoId: 'P-2', sku: 'MER-001', quantidade: 3 });
+  assert.equal(segunda.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'P-1', sku: 'MER-001', quantidade: 10 }).duplicada, true);
+  segunda.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'P-2', sku: 'MER-001', quantidade: 3 });
   const soma = lerJsonl(pasta, 'MOVIMENTOS_ESTOQUE').reduce((total, m) => total + m.delta_unidades, 0);
   assert.equal(segunda.consultarEstoque({ sku: 'MER-001' }).saldoAtual, 13);
   assert.equal(soma, 13);
@@ -86,7 +86,7 @@ test('persistência: arquivo com linha cortada é detectado, sem confirmar nada'
   aplicarCatalogo(pulso);
   fs.appendFileSync(path.join(pasta, 'MOVIMENTOS_ESTOQUE.jsonl'), '{"movimento_id":"cortado');
   assert.equal(pulso.consultarEstoque({ sku: 'MER-001' }).erro.codigo, 'DADOS_INCONSISTENTES');
-  assert.equal(pulso.registrarEntrada({ requisicaoId: 'C-1', sku: 'MER-001', quantidade: 1 }).ok, false);
+  assert.equal(pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'C-1', sku: 'MER-001', quantidade: 1 }).ok, false);
 });
 
 test('lock: trava ocupada gera LOCK_OCUPADO e é liberada mesmo após erro', (t) => {
@@ -103,7 +103,7 @@ test('concorrência real: processos com a mesma requisição geram um único mov
   const pasta = pastaTemporaria(t);
   aplicarCatalogo(criarPulsoLocal(pasta));
   const codigos = await Promise.all(Array.from({ length: 8 }, () =>
-    cliAssincrona(pasta, 'entrada', '--sku', 'MER-001', '--quantidade', '10', '--requisicao', 'CONC-MESMA')));
+    cliAssincrona(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-001', '--quantidade', '10', '--requisicao', 'CONC-MESMA')));
   assert.deepEqual(codigos, Array(8).fill(0));
   assert.equal(lerJsonl(pasta, 'MOVIMENTOS_ESTOQUE').length, 1);
   assert.equal(criarPulsoLocal(pasta).consultarEstoque({ sku: 'MER-001' }).saldoAtual, 10);
@@ -113,7 +113,7 @@ test('concorrência real: processos com requisições distintas somam sem perda'
   const pasta = pastaTemporaria(t);
   aplicarCatalogo(criarPulsoLocal(pasta));
   const codigos = await Promise.all(Array.from({ length: 8 }, (_, i) =>
-    cliAssincrona(pasta, 'entrada', '--sku', 'MER-002', '--quantidade', '3', '--requisicao', `CONC-${i}`)));
+    cliAssincrona(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-002', '--quantidade', '3', '--requisicao', `CONC-${i}`)));
   assert.deepEqual(codigos, Array(8).fill(0));
   assert.equal(lerJsonl(pasta, 'MOVIMENTOS_ESTOQUE').length, 8);
   assert.equal(criarPulsoLocal(pasta).consultarEstoque({ sku: 'MER-002' }).saldoAtual, 24);
@@ -121,15 +121,16 @@ test('concorrência real: processos com requisições distintas somam sem perda'
 
 test('CLI: jornada cadastro, entrada e saldo de ponta a ponta', (t) => {
   const pasta = pastaTemporaria(t);
+  assert.equal(cli(pasta, 'seed').status, 0);
   const cadastro = cli(pasta, 'cadastrar', '--sku', 'MER-007', '--nome', 'Produto de Teste', '--categoria', 'MERCEARIA',
     '--preco', '990', '--custo', '600', '--minimo', '5', '--alvo', '12');
   assert.equal(cadastro.status, 0, cadastro.stderr);
 
-  const entrada = cli(pasta, 'entrada', '--sku', 'MER-007', '--quantidade', '10', '--requisicao', 'CLI-1');
+  const entrada = cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-007', '--quantidade', '10', '--requisicao', 'CLI-1');
   assert.equal(entrada.status, 0, entrada.stderr);
   assert.match(entrada.stdout, /saldo atual 10/);
 
-  assert.match(cli(pasta, 'entrada', '--sku', 'MER-007', '--quantidade', '10', '--requisicao', 'CLI-1').stdout, /saldo atual 10/);
+  assert.match(cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-007', '--quantidade', '10', '--requisicao', 'CLI-1').stdout, /saldo atual 10/);
 
   const saldo = cli(pasta, 'saldo', '--sku', 'MER-007');
   assert.match(saldo.stdout, /Saldo atual: 10 UN \| mínimo 5 \| alvo 12/);
@@ -140,11 +141,11 @@ test('CLI: entradas inválidas terminam com erro e mensagem clara', (t) => {
   const pasta = pastaTemporaria(t);
   cli(pasta, 'seed');
   for (const [quantidade, codigo] of [['-5', 'QTD_INVALIDA'], ['2,5', 'QTD_INVALIDA'], ['2.5', 'QTD_INVALIDA'], ['abc', 'QTD_INVALIDA']]) {
-    const r = cli(pasta, 'entrada', '--sku', 'MER-001', '--quantidade', quantidade);
+    const r = cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-001', '--quantidade', quantidade);
     assert.equal(r.status, 1);
     assert.match(r.stderr, new RegExp(codigo));
   }
-  assert.match(cli(pasta, 'entrada', '--sku', 'MER-999', '--quantidade', '1').stderr, /SKU_INEXISTENTE/);
+  assert.match(cli(pasta, 'entrada', '--custo', '600', '--fornecedor', 'FOR-001', '--sku', 'MER-999', '--quantidade', '1').stderr, /SKU_INEXISTENTE/);
   assert.equal(cli(pasta, 'comando-inexistente').status, 2);
   assert.equal(cli(pasta, 'entrada', '--desconhecida', '1').status, 2);
   assert.match(cli(pasta, 'saldo', '--sku', 'MER-001').stdout, /Saldo atual: 0 UN/);

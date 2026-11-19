@@ -34,7 +34,7 @@ function pulsoCriarRepositorio() {
       throw inconsistente('operação ' + evento.operacao_id + ' com payload ilegível');
     }
     if (!PULSO.validacao.eObjeto(payload) || Object.keys(payload).length !== 2 ||
-        ['PRODUTOS', 'MOVIMENTOS_ESTOQUE'].indexOf(payload.tabela) === -1) {
+        ['PRODUTOS', 'MOVIMENTOS_ESTOQUE', 'FORNECEDORES'].indexOf(payload.tabela) === -1) {
       throw inconsistente('operação ' + evento.operacao_id + ' com payload inválido');
     }
     const problema = PULSO.esquema.problemaLinha(payload.tabela, payload.linha);
@@ -72,8 +72,13 @@ function pulsoCriarRepositorio() {
       normalizado = PULSO.movimento.normalizarEntrada({
         sku: linha.sku, quantidade: linha.delta_unidades, referenciaFornecedor: linha.referencia_id,
         motivo: linha.motivo, operadorSimulado: linha.operador_simulado,
+        custoUnitCentavos: linha.custo_unit_centavos, fornecedorId: linha.fornecedor_id,
       });
       if (normalizado.ok) reconstruida = PULSO.movimento.construirEntrada(normalizado.dados, linha.movimento_id, evento.operacao_id, linha.registrado_em);
+    } else if (payload.tabela === 'FORNECEDORES' && evento.tipo === 'CADASTRO_FORNECEDOR') {
+      normalizado = PULSO.fornecedor.normalizarCadastro({ fornecedorId: linha.fornecedor_id, nomeFicticio: linha.nome_ficticio,
+        categoriaPrincipal: linha.categoria_principal, prazoEstimadoDias: linha.prazo_estimado_dias, ativo: linha.ativo });
+      if (normalizado.ok) reconstruida = PULSO.fornecedor.construirLinha(normalizado.dados, evento.operacao_id, linha.criado_em);
     }
     const chave = PULSO.esquema.TABELAS[payload.tabela].chave;
     if (!normalizado || !('dados' in normalizado)) {
@@ -94,7 +99,7 @@ function pulsoCriarRepositorio() {
     const rejeitadas = new Set();
     eventos.forEach(function (evento) {
       if (['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1 ||
-          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA'].indexOf(evento.tipo) === -1) {
+          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR'].indexOf(evento.tipo) === -1) {
         throw inconsistente('operação ' + evento.operacao_id + ' com evento inválido');
       }
       if (evento.estado === 'REJEITADA') {
@@ -172,10 +177,12 @@ function pulsoCriarRepositorio() {
       const dobra = dobrarOperacoes(lerTabela(armazenamento, 'OPERACOES_LOG'));
       const linhasProdutos = lerTabela(armazenamento, 'PRODUTOS');
       const linhasMovimentos = lerTabela(armazenamento, 'MOVIMENTOS_ESTOQUE');
+      const linhasFornecedores = lerTabela(armazenamento, 'FORNECEDORES');
       conferirOrigem('PRODUTOS', linhasProdutos, dobra.operacoes);
       conferirOrigem('MOVIMENTOS_ESTOQUE', linhasMovimentos, dobra.operacoes);
+      conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);
 
-      const presentes = new Set(linhasProdutos.concat(linhasMovimentos).map(function (l) { return l.operacao_id; }));
+      const presentes = new Set(linhasProdutos.concat(linhasMovimentos, linhasFornecedores).map(function (l) { return l.operacao_id; }));
       const pendentes = [];
       dobra.operacoes.forEach(function (operacao) {
         if (operacao.estado !== 'CONFIRMADA') pendentes.push(operacao);
@@ -186,11 +193,22 @@ function pulsoCriarRepositorio() {
 
       const produtos = new Map();
       confirmadas(linhasProdutos, dobra.operacoes).forEach(function (p) { produtos.set(p.sku, p); });
+      const fornecedores = new Map();
+      confirmadas(linhasFornecedores, dobra.operacoes).forEach(function (f) { fornecedores.set(f.fornecedor_id, f); });
+      produtos.forEach(function (p) {
+        if (p.fornecedor_id && !fornecedores.has(p.fornecedor_id)) throw inconsistente('produto vinculado a fornecedor inexistente');
+      });
       const movimentos = confirmadas(linhasMovimentos, dobra.operacoes);
       conferirMovimentos(movimentos, produtos);
+      movimentos.forEach(function (m) {
+        if (m.tipo === 'ENTRADA' && (!fornecedores.has(m.fornecedor_id) || !fornecedores.get(m.fornecedor_id).ativo)) {
+          throw inconsistente('entrada vinculada a fornecedor inexistente ou inativo');
+        }
+      });
 
       return {
         produtos: produtos,
+        fornecedores: fornecedores,
         movimentos: movimentos,
         operacoesPorRequisicao: dobra.porRequisicao,
         pendentes: pendentes,

@@ -7,15 +7,15 @@ const path = require('node:path');
 const { ambienteComProduto, eventos } = require('./apoio');
 const { criarArmazenamentoJsonl } = require('../local/armazenamento-jsonl');
 
-const ENTRADA = { requisicaoId: 'INTEGRIDADE-1', sku: 'MER-001', quantidade: 10 };
+const ENTRADA = { custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'INTEGRIDADE-1', sku: 'MER-001', quantidade: 10 };
 const confirmacaoEntrada = (armazenamento) => eventos(armazenamento, 'CONFIRMADA')
   .filter((evento) => evento.requisicao_id === ENTRADA.requisicaoId);
 
 test('entrada que excede o limite de saldo exato é rejeitada antes de criar intenção', () => {
   const { pulso, armazenamento } = ambienteComProduto();
-  assert.equal(pulso.registrarEntrada({ ...ENTRADA, quantidade: Number.MAX_SAFE_INTEGER }).ok, true);
+  assert.equal(pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA, quantidade: Number.MAX_SAFE_INTEGER }).ok, true);
   const quantidadeEventos = armazenamento.tabelas.OPERACOES_LOG.length;
-  const r = pulso.registrarEntrada({ ...ENTRADA, requisicaoId: 'INTEGRIDADE-2', quantidade: 1 });
+  const r = pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA, requisicaoId: 'INTEGRIDADE-2', quantidade: 1 });
   assert.equal(r.ok, false);
   assert.equal(r.erro.codigo, 'QTD_INVALIDA');
   assert.equal(armazenamento.tabelas.MOVIMENTOS_ESTOQUE.length, 1);
@@ -25,8 +25,8 @@ test('entrada que excede o limite de saldo exato é rejeitada antes de criar int
 
 test('histórico importado com soma fora do limite exato é detectado na leitura', () => {
   const { pulso, armazenamento } = ambienteComProduto();
-  pulso.registrarEntrada({ ...ENTRADA, quantidade: 1 });
-  pulso.registrarEntrada({ ...ENTRADA, requisicaoId: 'INTEGRIDADE-2', quantidade: 1 });
+  pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA, quantidade: 1 });
+  pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA, requisicaoId: 'INTEGRIDADE-2', quantidade: 1 });
   const movimento = armazenamento.tabelas.MOVIMENTOS_ESTOQUE[1];
   movimento.delta_unidades = Number.MAX_SAFE_INTEGER;
   const intencao = eventos(armazenamento, 'PENDENTE').find((e) => e.requisicao_id === 'INTEGRIDADE-2');
@@ -94,7 +94,7 @@ for (const [nome, alterar] of ALTERACOES_LOG) {
     pulso.registrarEntrada(ENTRADA);
     alterar(confirmacaoEntrada(armazenamento)[0]);
     assert.equal(pulso.consultarEstoque({ sku: 'MER-001' }).erro.codigo, 'DADOS_INCONSISTENTES');
-    assert.equal(pulso.registrarEntrada({ ...ENTRADA, requisicaoId: 'INTEGRIDADE-NOVA' }).erro.codigo, 'DADOS_INCONSISTENTES');
+    assert.equal(pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA, requisicaoId: 'INTEGRIDADE-NOVA' }).erro.codigo, 'DADOS_INCONSISTENTES');
   });
 }
 

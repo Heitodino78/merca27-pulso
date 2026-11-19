@@ -7,7 +7,7 @@ const path = require('node:path');
 const { ambienteComProduto, eventos } = require('./apoio');
 const { carregarNucleo } = require('../local/nucleo');
 const { criarArmazenamentoJsonl } = require('../local/armazenamento-jsonl');
-const ENTRADA = { requisicaoId: 'AUD-1', sku: 'MER-001', quantidade: 10 };
+const ENTRADA = { custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'AUD-1', sku: 'MER-001', quantidade: 10 };
 
 const ADULTERACOES = [
   ['evento depois da confirmação', (t) => {
@@ -50,14 +50,14 @@ for (const [nome, adulterar] of ADULTERACOES) {
 
 test('tipo desconhecido em evento REJEITADA não é ignorado', () => {
   const { pulso, armazenamento } = ambienteComProduto();
-  pulso.registrarEntrada({ ...ENTRADA, quantidade: -1 });
+  pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA, quantidade: -1 });
   eventos(armazenamento, 'REJEITADA')[0].tipo = 'DESCONHECIDA';
   assert.equal(pulso.listarProdutos().erro.codigo, 'DADOS_INCONSISTENTES');
 });
 
 test('tentativas negativas em evento REJEITADA são recusadas', () => {
   const { pulso, armazenamento } = ambienteComProduto();
-  pulso.registrarEntrada({ ...ENTRADA, quantidade: -1 });
+  pulso.registrarEntrada({ custoUnitCentavos: 600, fornecedorId: 'FOR-001', ...ENTRADA, quantidade: -1 });
   eventos(armazenamento, 'REJEITADA')[0].tentativas = -1;
   assert.equal(pulso.listarProdutos().erro.codigo, 'DADOS_INCONSISTENTES');
 });

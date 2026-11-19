@@ -45,7 +45,12 @@ function gerarCatalogo(semente = SEMENTE_PADRAO) {
       ativo: true,
     };
   });
-  return { aviso: 'Dados 100% sintéticos para demonstração.', semente, produtos };
+  const fornecedores = MODELOS.slice(0, 6).map((modelo, indice) => ({
+    fornecedorId: `FOR-${String(indice + 1).padStart(3, '0')}`,
+    nomeFicticio: `Distribuidora Demonstração ${String(indice + 1).padStart(2, '0')}`,
+    categoriaPrincipal: modelo.categoria, prazoEstimadoDias: indice + 1, ativo: true,
+  }));
+  return { aviso: 'Dados 100% sintéticos para demonstração.', semente, produtos, fornecedores };
 }
 
 const serializar = (catalogo) => `${JSON.stringify(catalogo, null, 2)}\n`;

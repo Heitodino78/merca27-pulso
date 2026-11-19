@@ -6,7 +6,7 @@ function pulsoCriarMovimento() {
   const TIPOS = ['SALDO_INICIAL', 'ENTRADA', 'VENDA', 'PERDA', 'AJUSTE', 'ESTORNO'];
   const OPERADOR_PADRAO = 'OPERADOR-DEMO';
   const PADRAO_OPERADOR = /^[A-Z0-9][A-Z0-9-]{2,39}$/;
-  const CAMPOS = ['requisicaoId', 'sku', 'quantidade', 'referenciaFornecedor', 'motivo', 'operadorSimulado'];
+  const CAMPOS = ['requisicaoId', 'sku', 'quantidade', 'referenciaFornecedor', 'motivo', 'operadorSimulado', 'custoUnitCentavos', 'fornecedorId'];
 
   /** @param {PedidoEntrada} request */
   function normalizarEntrada(request) {
@@ -19,6 +19,8 @@ function pulsoCriarMovimento() {
     if (!v.inteiroPositivo(request.quantidade)) {
       return falha('QTD_INVALIDA', 'A quantidade deve ser um número inteiro maior que zero.');
     }
+    if (!v.inteiroNaoNegativo(request.custoUnitCentavos)) return falha('DADOS_INVALIDOS', 'Custo unitário deve ser um inteiro em centavos, zero ou maior.');
+    if (!PULSO.fornecedor.idValido(request.fornecedorId)) return falha('DADOS_INVALIDOS', 'Informe o fornecedor no formato FOR-001.');
     const referencia = request.referenciaFornecedor === undefined ? null : request.referenciaFornecedor;
     if (referencia !== null) {
       const problema = v.problemaTexto(referencia, 'Referência do fornecedor', 1, 40);
@@ -41,6 +43,8 @@ function pulsoCriarMovimento() {
         referenciaFornecedor: referencia,
         motivo: motivo,
         operadorSimulado: operador,
+        custoUnitCentavos: request.custoUnitCentavos,
+        fornecedorId: request.fornecedorId,
       },
     };
   }
@@ -57,6 +61,9 @@ function pulsoCriarMovimento() {
       referencia_id: dados.referenciaFornecedor,
       registrado_em: agora,
       operador_simulado: dados.operadorSimulado,
+      custo_unit_centavos: dados.custoUnitCentavos,
+      fornecedor_id: dados.fornecedorId,
+      categoria_perda: null, saldo_anterior: null, saldo_novo: null,
     };
   }
 

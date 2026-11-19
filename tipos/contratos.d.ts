@@ -6,6 +6,7 @@ interface PedidoCadastro {
 }
 interface PedidoEntrada {
   requisicaoId?: string; sku: string; quantidade: number;
+  custoUnitCentavos: number; fornecedorId: string;
   referenciaFornecedor?: string | null; motivo?: string | null; operadorSimulado?: string;
 }
 interface LinhaProduto {
@@ -17,6 +18,12 @@ interface LinhaProduto {
 interface LinhaMovimento {
   movimento_id: string; operacao_id: string; sku: string; tipo: string; delta_unidades: number;
   motivo: string | null; referencia_id: string | null; registrado_em: string; operador_simulado: string;
+  custo_unit_centavos: number | null; fornecedor_id: string | null; categoria_perda: string | null;
+  saldo_anterior: number | null; saldo_novo: number | null;
+}
+interface LinhaFornecedor {
+  fornecedor_id: string; nome_ficticio: string; categoria_principal: string; prazo_estimado_dias: number;
+  ativo: boolean; criado_em: string; operacao_id: string;
 }
 interface LinhaEvento {
   evento_id: string; operacao_id: string; requisicao_id: string | null; tipo: string; estado: string;
@@ -30,7 +37,7 @@ interface RespostaOperacao {
   operacaoId?: string; movimentoId?: string; sku?: string; quantidade?: number; saldoAtual?: number;
   mensagem?: string; aviso?: string;
 }
-type LinhaPulso = LinhaProduto | LinhaMovimento | LinhaEvento;
+type LinhaPulso = LinhaProduto | LinhaMovimento | LinhaEvento | LinhaFornecedor;
 interface ArmazenamentoPulso {
   ler(tabela: string): LinhaPulso[];
   anexar(tabela: string, linha: LinhaPulso): void;
@@ -45,6 +52,7 @@ interface PulsoNucleo {
   erros: ReturnType<typeof pulsoCriarErros>;
   validacao: ReturnType<typeof pulsoCriarValidacao>;
   produto: ReturnType<typeof pulsoCriarProduto>;
+  fornecedor: ReturnType<typeof pulsoCriarFornecedor>;
   movimento: ReturnType<typeof pulsoCriarMovimento>;
   estoque: ReturnType<typeof pulsoCriarEstoque>;
   esquema: ReturnType<typeof pulsoCriarEsquema>;
