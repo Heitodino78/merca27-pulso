@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { classificarFalhaGravacao, type Certeza } from './classificacao';
 import type {
-  AcaoPulso, ConsultaEstoque, ConsultaReposicao, DetalheVenda, ErroPulso, HistoricoProduto, ListaFornecedores, ListaProdutos,
+  AcaoPulso, ConsultaEstoque, ConsultaReposicao, DetalheVenda, ErroPulso, FiltroVendas, HistoricoProduto, Indicadores, ListaFornecedores, ListaProdutos,
   ListaVendas, PedidoAjuste, PedidoAlteracao, PedidoCadastro, PedidoEntrada, PedidoEstorno, PedidoPerda, PedidoSaldoInicial,
   PedidoStatus, PedidoVenda, RespostaEstorno, RespostaGravacao, RespostaReconciliacao, RespostaVenda,
 } from './contratos';
@@ -82,7 +82,9 @@ export class PulsoApi {
   registrarPerda(p: PedidoPerda) { return this.gravar('registrarPerda', p); }
   ajustarPorContagem(p: PedidoAjuste) { return this.gravar('ajustarPorContagem', p); }
 
-  listarVendas() { return this.consultar<ListaVendas>('listarVendas', {}); }
+  listarVendas(filtro: FiltroVendas = {}) { return this.consultar<ListaVendas>('listarVendas', filtro); }
+  /** Período em instantes UTC [desde, ate); a conversão de dias locais fica em periodo.ts. */
+  consultarIndicadores(desde: string, ate: string) { return this.consultar<Indicadores>('consultarIndicadores', { desde, ate }); }
   consultarVenda(vendaId: string) { return this.consultar<DetalheVenda>('consultarVenda', { vendaId }); }
   confirmarVenda(p: PedidoVenda) { return this.gravar<RespostaVenda>('confirmarVenda', p); }
   estornarVenda(p: PedidoEstorno) { return this.gravar<RespostaEstorno>('estornarVenda', p); }

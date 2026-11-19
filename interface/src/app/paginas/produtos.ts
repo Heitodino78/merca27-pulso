@@ -57,7 +57,7 @@ type Filtro = 'todos' | 'ativos' | 'inativos' | 'repor';
 
             <ul class="grid gap-3 md:hidden">
               @for (p of visiveis(); track p.sku) {
-                <li class="cartao">
+                <li class="cartao cartao-interativo entrar">
                   <a [routerLink]="['/produtos', p.sku]" class="block rounded-sm">
                     <span class="font-mono text-xs text-suave">{{ p.sku }}</span>
                     <span class="block font-semibold text-texto underline decoration-borda underline-offset-4">{{ p.nome }}</span>
@@ -75,7 +75,7 @@ type Filtro = 'todos' | 'ativos' | 'inativos' | 'repor';
               }
             </ul>
 
-            <div class="hidden overflow-x-auto rounded-lg border border-borda bg-superficie md:block">
+            <div class="entrar hidden overflow-x-auto rounded-xl border border-borda bg-superficie shadow-cartao md:block">
               <table class="w-full text-left text-sm">
                 <caption class="sr-only">Produtos, saldos e situação</caption>
                 <thead class="bg-fundo text-xs uppercase tracking-wide text-suave">
@@ -91,7 +91,7 @@ type Filtro = 'todos' | 'ativos' | 'inativos' | 'repor';
                 </thead>
                 <tbody class="divide-y divide-borda">
                   @for (p of visiveis(); track p.sku) {
-                    <tr class="hover:bg-fundo">
+                    <tr class="hover:bg-destaque/40 motion-safe:transition-colors">
                       <td class="px-4 py-3 font-mono text-xs">{{ p.sku }}</td>
                       <td class="px-4 py-3">
                         <a [routerLink]="['/produtos', p.sku]" class="font-semibold text-verde-escuro underline decoration-borda underline-offset-4 hover:decoration-verde">{{ p.nome }}</a>

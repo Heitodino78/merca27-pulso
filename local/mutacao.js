@@ -14,6 +14,7 @@ const ALT = 'src/domain/alteracao.js';
 const FORN = 'src/domain/fornecedor.js';
 const DESP = 'src/application/despacho.js';
 const VEN = 'src/domain/venda.js';
+const IND = 'src/domain/indicadores.js';
 const mutacao = (id, arquivo, de, para, justificativa = '') => ({ id, arquivo, de, para, justificativa });
 const MUTACOES = [
   mutacao('MUT-01', REPO, "operacao.estado === 'CONFIRMADA' || evento.estado === 'PENDENTE'", "false || evento.estado === 'PENDENTE'"),
@@ -186,6 +187,23 @@ const MUTACOES = [
   mutacao('MUT-161', VEN, 'const custoItem = itens[i].quantidade * capturas[i].custoUnitCentavos;', 'const custoItem = capturas[i].custoUnitCentavos;'),
   mutacao('MUT-162', CASOS, 'consulta.desde >= consulta.ate', 'false'),
   mutacao('MUT-163', CASOS, 'new Date(valor).toISOString() === valor', 'true'),
+  // Fase 3: indicadores por período e resumo diário.
+  mutacao('MUT-164', IND, 'if (dentro(venda.registrado_em, periodo)) {', 'if (true) {'),
+  mutacao('MUT-165', IND, 'if (registro.estorno && dentro(registro.estorno.registrado_em, periodo)) {', 'if (registro.estorno && dentro(venda.registrado_em, periodo)) {'),
+  mutacao('MUT-166', IND, 'return instante >= periodo.desde && instante < periodo.ate;', 'return instante >= periodo.desde && instante <= periodo.ate;'),
+  mutacao('MUT-167', IND, 'const DESLOCAMENTO_MS = -3 * 60 * 60 * 1000;', 'const DESLOCAMENTO_MS = 0;'),
+  mutacao('MUT-168', IND, 'margemPercentual: receitaAposDevolucoes > 0 ?', 'margemPercentual: receitaAposDevolucoes >= 0 ?'),
+  mutacao('MUT-169', IND, 'Math.round(vendas.receitaBrutaCentavos / vendas.numero) : null', 'Math.round(vendas.receitaBrutaCentavos / vendas.numero) : 0'),
+  mutacao('MUT-170', IND, 'const receitaAposDevolucoes = vendas.receitaBrutaCentavos - devolucoes.valorCentavos;', 'const receitaAposDevolucoes = Math.max(0, vendas.receitaBrutaCentavos - devolucoes.valorCentavos);'),
+  mutacao('MUT-171', IND, 'devolucoes.cmvCentavos += venda.custo_est_centavos;', ''),
+  mutacao('MUT-172', IND, 'if (!inteiros.every(PULSO.validacao.inteiroSeguro)) return null;', ''),
+  mutacao('MUT-173', IND, 'Date.parse(request.ate) - Date.parse(request.desde) > LIMITE_DIAS * DIA_MS', 'false'),
+  mutacao('MUT-174', CASOS, 'const indicadores = PULSO.indicadores.agregar(estado, normalizado.dados);\n      if (!indicadores)', 'const indicadores = PULSO.indicadores.agregar(estado, normalizado.dados);\n      if (false)'),
+  mutacao('MUT-175', IND, "if (m.tipo === 'PERDA') {", "if (m.tipo === 'PERDA' || m.tipo === 'AJUSTE') {"),
+  mutacao('MUT-176', CASOS, 'diaEmAndamento: geradoEm < dados.ate,', 'diaEmAndamento: false,'),
+  mutacao('MUT-177', DESP, "    'consultarIndicadores',\n  ];", '  ];'),
+  mutacao('MUT-178', IND, 'if (registro.estorno) vendas.estornadasDepois++;', ''),
+  mutacao('MUT-179', IND, "if (venda.registrado_em < periodo.desde) devolucoes.deVendasAnteriores++;", ''),
 ];
 
 function executarMutacao(m) {

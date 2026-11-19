@@ -29,7 +29,7 @@ import { InteiroPipe } from '../ui/formatos';
               <p class="mb-3 text-sm text-suave" role="status">{{ r.itens.length }} produto(s) no mínimo ou abaixo dele. {{ r.aviso }}</p>
               <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 @for (i of r.itens; track i.sku) {
-                  <li class="cartao flex flex-col border-l-4 border-l-ambar">
+                  <li class="cartao cartao-interativo entrar flex flex-col border-l-4 border-l-ambar">
                     <p class="font-mono text-xs text-suave">{{ i.sku }}</p>
                     <h3 class="font-semibold"><a [routerLink]="['/produtos', i.sku]" class="underline decoration-borda underline-offset-4 hover:decoration-verde">{{ i.nome }}</a></h3>
                     <dl class="mt-3 grid grid-cols-3 gap-2 text-sm">

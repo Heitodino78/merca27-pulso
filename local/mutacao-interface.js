@@ -20,6 +20,11 @@ const AVISO = 'src/app/ui/aviso-envio.ts';
 const ENTRADA = 'src/app/formularios/form-entrada.ts';
 const NOVA = 'src/app/paginas/venda-nova.ts';
 const VENDAS = 'src/app/paginas/vendas.ts';
+const PERIODO = 'src/app/nucleo/periodo.ts';
+const KPI = 'src/app/ui/kpi.ts';
+const GRAFICO = 'src/app/ui/grafico-serie.ts';
+const PALETA = 'src/app/ui/paleta-comandos.ts';
+const VISAO = 'src/app/paginas/visao-geral.ts';
 
 const m = (id, arquivo, de, para) => ({ id, arquivo, de, para });
 const MUTACOES = [
@@ -49,6 +54,18 @@ const MUTACOES = [
   m('MUI-24', CLASS, ", 'VENDA_JA_ESTORNADA'", ''),
   m('MUI-25', API, "this.gravar<RespostaEstorno>('estornarVenda', p)", "this.gravar<RespostaEstorno>('confirmarVenda', p)"),
   m('MUI-26', 'src/app/ui/campo.ts', ", '[attr.id]': 'null'", ''),
+  // Fase 3: visão geral, período, gráfico, paleta e filtro de vendas.
+  m('MUI-27', PERIODO, 'return { desde: inicioDoDia(p.de), ate: inicioDoDia(somarDias(p.ate, 1)) };', 'return { desde: inicioDoDia(p.de), ate: inicioDoDia(p.ate) };'),
+  m('MUI-28', PERIODO, 'const DESLOCAMENTO_MS = 3 * 60 * 60 * 1000;', 'const DESLOCAMENTO_MS = 0;'),
+  m('MUI-29', KPI, "if (valor === null || !Number.isFinite(valor)) return 'N/D';", "if (valor === null || !Number.isFinite(valor)) return formatarBRL(0);"),
+  m('MUI-30', API, "this.consultar<Indicadores>('consultarIndicadores', { desde, ate })", "this.consultar<Indicadores>('consultarIndicadores', { desde, ate: desde })"),
+  m('MUI-31', VISAO, ' [consulta]="filtroVendas()"', ''),
+  m('MUI-32', GRAFICO, 'ArrowRight: atual + 1, ArrowLeft: atual - 1', 'ArrowRight: atual + 1, ArrowLeft: atual + 1'),
+  m('MUI-33', PALETA, 'if (item) this.ir(item);', ''),
+  m('MUI-34', PALETA, ".normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')", ''),
+  m('MUI-35', VENDAS, 'return this.api.listarVendas(f ? { desde: f.desde, ate: f.ate, limite: 500 } : {});', 'return this.api.listarVendas({});'),
+  m('MUI-36', VISAO, 'if (!problema) void this.mudarPeriodo(p);', 'void this.mudarPeriodo(p);'),
+  m('MUI-37', VISAO, 'await this.carga.carregar(true);', 'await this.carga.carregar();'),
 ];
 
 const COPIAR = ['src', 'angular.json', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.spec.json', '.postcssrc.json', 'package.json'];
@@ -77,6 +94,12 @@ function executar(mutacao, esbuild) {
 }
 
 const filtro = process.argv[2];
+if (filtro === '--verificar-alvos') {
+  // Confere, sem rodar testes, que cada defeito encontra exatamente um alvo no código atual.
+  const problemas = MUTACOES.filter((x) => fs.readFileSync(path.join(DIR, x.arquivo), 'utf8').split(x.de).length !== 2).map((x) => x.id);
+  console.log(problemas.length ? `Alvos ausentes ou repetidos: ${problemas.join(', ')}` : `${MUTACOES.length} alvos encontrados uma única vez.`);
+  process.exit(problemas.length ? 1 : 0);
+}
 if (filtro && !MUTACOES.some((x) => x.id === filtro)) throw new Error('Mutação de interface desconhecida.');
 const esbuild = prepararEsbuild();
 const resultados = (filtro ? MUTACOES.filter((x) => x.id === filtro) : MUTACOES).map((mutacao) => {

@@ -29,6 +29,8 @@ const PARES = [
   ['suave', 'fundo'], ['suave', 'superficie'], ['suave', 'ambar-claro'], ['suave', 'erro-claro'],
   ['verde-escuro', 'destaque'], ['verde-escuro', 'superficie'], ['verde-escuro', 'fundo'],
   ['verde', 'superficie'], ['verde', 'destaque'], ['erro', 'erro-claro'], ['erro', 'superficie'],
+  // Fase 3: menu lateral e paleta de comandos.
+  ['destaque', 'verde-escuro'], ['texto', 'ambar-claro'], ['verde-escuro', 'ambar-claro'],
 ];
 
 test('paleta do Documento Mestre preservada nos tokens', () => {

@@ -23,12 +23,13 @@ const respostaVenda = { ok: true, vendaId: 'VEN-TESTE', operacaoId: 'OPR-TESTE',
 
 function montar<T>(componente: Type<T>, t: TransporteFalso) {
   const parametros = new BehaviorSubject(convertToParamMap({ id: 'VEN-TESTE' }));
+  const consulta = new BehaviorSubject(convertToParamMap({}));
   TestBed.configureTestingModule({
     imports: [componente],
-    providers: [provideRouter([]), { provide: TRANSPORTE_PULSO, useValue: t }, { provide: ActivatedRoute, useValue: { paramMap: parametros } }],
+    providers: [provideRouter([]), { provide: TRANSPORTE_PULSO, useValue: t }, { provide: ActivatedRoute, useValue: { paramMap: parametros, queryParamMap: consulta } }],
   });
   const fixture = TestBed.createComponent(componente);
-  return { fixture, el: fixture.nativeElement as HTMLElement, parametros };
+  return { fixture, el: fixture.nativeElement as HTMLElement, parametros, consulta };
 }
 function preencher(el: HTMLElement, id: string, valor: string) {
   const c = el.querySelector<HTMLInputElement & HTMLSelectElement>(`input#${id}, select#${id}`)!;
@@ -193,6 +194,20 @@ describe('VendasPagina', () => {
     preencher(el, 'busca-vendas', 'inexistente');
     await estabilizar(fixture);
     expect(el.textContent).toContain('Nenhuma venda corresponde');
+  });
+
+  it('período vindo do painel filtra no núcleo e pode ser limpo', async () => {
+    const t = new TransporteFalso();
+    const { fixture, el, consulta } = montar(VendasPagina, t);
+    consulta.next(convertToParamMap({ desde: '2026-11-13T03:00:00.000Z', ate: '2026-11-20T03:00:00.000Z' }));
+    await estabilizar(fixture);
+    const pedidos = t.daAcao('listarVendas').map((c) => c.pedido);
+    expect(pedidos.at(-1)).toEqual({ desde: '2026-11-13T03:00:00.000Z', ate: '2026-11-20T03:00:00.000Z', limite: 500 });
+    expect(el.querySelector('[data-filtro-periodo]')!.textContent).toContain('13/11/2026 a 19/11/2026');
+    consulta.next(convertToParamMap({}));
+    await estabilizar(fixture);
+    expect(t.daAcao('listarVendas').at(-1)!.pedido).toEqual({});
+    expect(el.querySelector('[data-filtro-periodo]')).toBeNull();
   });
 
   it('falha e vazio têm mensagem e ação correspondente', async () => {

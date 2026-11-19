@@ -33,7 +33,7 @@ import { DataHoraPipe, RotuloCategoriaPipe } from '../ui/formatos';
             <p class="mb-3 text-sm text-suave" role="status">{{ visiveis().length }} de {{ total() }} fornecedor(es).</p>
             <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               @for (f of visiveis(); track f.fornecedor_id) {
-                <li class="cartao">
+                <li class="cartao cartao-interativo entrar">
                   <p class="font-mono text-xs text-suave">{{ f.fornecedor_id }}</p>
                   <h3 class="font-semibold">{{ f.nome_ficticio }}</h3>
                   <dl class="mt-2 grid grid-cols-2 gap-2 text-sm">

@@ -261,10 +261,77 @@ export interface DetalheVenda {
   operacoesPendentes: number;
 }
 
+export interface FiltroVendas {
+  desde?: string;
+  ate?: string;
+  limite?: number;
+}
+
+/* Fase 3: indicadores por período (src/domain/indicadores.js). */
+
+export interface SerieDia {
+  dia: string;
+  receitaBrutaCentavos: number;
+  devolucoesCentavos: number;
+  numeroVendas: number;
+  unidadesVendidas: number;
+  perdasUnidades: number;
+}
+
+export interface ProdutoRanking {
+  sku: string;
+  nome: string;
+  unidadesVendidas: number;
+  receitaBrutaCentavos: number;
+  cmvCentavos: number;
+  unidadesDevolvidas: number;
+  devolvidoCentavos: number;
+}
+
+export interface FormulasIndicadores {
+  receitaBruta: string;
+  devolucoes: string;
+  receitaAposDevolucoes: string;
+  cmvEstimado: string;
+  margemBruta: string;
+  margemPercentual: string;
+  ticketMedio: string;
+  perdas: string;
+  valorEstoque: string;
+}
+
+export interface Indicadores {
+  periodo: { desde: string; ate: string; fuso: string; primeiroDia: string; ultimoDia: string; regra: string };
+  vendas: { numero: number; unidades: number; receitaBrutaCentavos: number; cmvCentavos: number; estornadasDepois: number };
+  devolucoes: { numero: number; unidades: number; valorCentavos: number; cmvCentavos: number; deVendasAnteriores: number };
+  resultado: {
+    receitaBrutaCentavos: number;
+    devolucoesCentavos: number;
+    receitaAposDevolucoesCentavos: number;
+    cmvEstimadoCentavos: number;
+    margemBrutaCentavos: number;
+    margemPercentual: number | null;
+    ticketMedioCentavos: number | null;
+  };
+  perdas: { unidades: number; valorCentavos: number; porCategoria: Record<string, { unidades: number; valorCentavos: number }> };
+  ajustes: { numero: number; unidadesAcrescidas: number; unidadesRetiradas: number; valorLiquidoCentavos: number };
+  entradas: { numero: number; unidades: number; valorCentavos: number };
+  estoqueAtual: { valorCentavos: number; unidades: number; produtosAtivos: number; abaixoDoMinimo: number; semEstoque: number };
+  serie: SerieDia[];
+  produtosMaisVendidos: ProdutoRanking[];
+  totalSkusVendidos: number;
+  origem: { vendaIds: string[]; estornoIds: string[]; movimentosPerda: string[] };
+  formulas: FormulasIndicadores;
+  reposicao: { quantidade: number; itens: ItemReposicao[] };
+  operacoesPendentes: number;
+  avisos: string[];
+}
+
 /** Ações expostas pelo despacho do núcleo (src/application/despacho.js). */
 export type AcaoPulso =
   | 'listarProdutos' | 'listarFornecedores' | 'consultarReposicao' | 'reconciliarPendencias'
   | 'consultarEstoque' | 'consultarHistoricoProduto'
   | 'cadastrarProduto' | 'alterarProduto' | 'desativarProduto' | 'reativarProduto'
   | 'registrarEntrada' | 'registrarSaldoInicial' | 'registrarPerda' | 'ajustarPorContagem'
-  | 'confirmarVenda' | 'estornarVenda' | 'listarVendas' | 'consultarVenda';
+  | 'confirmarVenda' | 'estornarVenda' | 'listarVendas' | 'consultarVenda'
+  | 'consultarIndicadores';

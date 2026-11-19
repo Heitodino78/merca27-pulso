@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { mensagemErro, obrigatorio } from '../formularios/validacao';
 import type { DetalheVenda, ListaVendas, PedidoEstorno, RespostaEstorno } from '../nucleo/contratos';
 import type { ControleEnvio } from '../nucleo/envio';
+import { descreverPeriodo, diaLocal } from '../nucleo/periodo';
 import { PulsoApi } from '../nucleo/pulso-api';
 import { RegistroEnvios } from '../nucleo/registro-envios';
 import { AvisoEnvio } from '../ui/aviso-envio';
@@ -22,6 +23,13 @@ import { BrlPipe, DataHoraPipe, DeltaPipe, RotuloCategoriaPipe, TipoMovimentoPip
       </div>
       <a routerLink="/vendas/nova" class="botao-principal self-start sm:self-auto">Registrar venda</a>
     </div>
+    @if (filtro(); as f) {
+      <p class="entrar mt-4 flex flex-wrap items-center gap-2 text-sm" data-filtro-periodo>
+        <span class="rotulo-chip bg-destaque text-verde-escuro">Período: {{ f.descricao }}</span>
+        <span class="text-suave">até 500 vendas, vindas do painel</span>
+        <a routerLink="/vendas" class="font-semibold text-verde-escuro underline">Limpar filtro</a>
+      </p>
+    }
     <div class="mt-6 max-w-md" role="search">
       <label for="busca-vendas" class="rotulo">Buscar por número da venda ou requisição</label>
       <input id="busca-vendas" type="search" class="campo-entrada" autocomplete="off" placeholder="VEN-..."
@@ -47,7 +55,7 @@ import { BrlPipe, DataHoraPipe, DeltaPipe, RotuloCategoriaPipe, TipoMovimentoPip
             <p class="mb-3 text-sm text-suave" role="status">{{ visiveis().length }} de {{ total() }} venda(s).</p>
             <ul class="grid gap-3">
               @for (v of visiveis(); track v.vendaId) {
-                <li class="cartao flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <li class="cartao cartao-interativo entrar flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div class="min-w-0">
                     <a [routerLink]="['/vendas', v.vendaId]" class="break-all font-mono text-sm font-semibold text-verde-escuro underline">{{ v.vendaId }}</a>
                     <p class="text-sm text-suave">{{ v.registradoEm | dataHora }} · {{ v.quantidadeItens }} item(ns) · {{ v.formaPagamento | rotuloCategoria }}</p>
@@ -71,7 +79,12 @@ import { BrlPipe, DataHoraPipe, DeltaPipe, RotuloCategoriaPipe, TipoMovimentoPip
 })
 export class VendasPagina {
   private readonly api = inject(PulsoApi);
-  protected readonly carga = new Carga<ListaVendas>(() => this.api.listarVendas());
+  /** Filtro de período vindo do painel: instantes UTC [desde, ate), validados pelo núcleo. */
+  protected readonly filtro = signal<{ desde: string; ate: string; descricao: string } | null>(null);
+  protected readonly carga = new Carga<ListaVendas>(() => {
+    const f = this.filtro();
+    return this.api.listarVendas(f ? { desde: f.desde, ate: f.ate, limite: 500 } : {});
+  });
   protected readonly busca = signal('');
   protected readonly total = computed(() => this.carga.valor?.vendas.length ?? 0);
   protected readonly visiveis = computed(() => {
@@ -80,8 +93,22 @@ export class VendasPagina {
   });
 
   constructor() {
-    void this.carga.carregar();
+    const assinatura = inject(ActivatedRoute).queryParamMap.subscribe((q) => {
+      const desde = q.get('desde');
+      const ate = q.get('ate');
+      this.filtro.set(desde && ate ? { desde, ate, descricao: descreverInstantes(desde, ate) } : null);
+      void this.carga.carregar();
+    });
+    inject(DestroyRef).onDestroy(() => assinatura.unsubscribe());
   }
+}
+
+/** Rótulo do período [desde, ate) em dias de São Paulo; só apresentação. */
+function descreverInstantes(desde: string, ate: string): string {
+  const inicio = Date.parse(desde);
+  const fim = Date.parse(ate);
+  if (!Number.isFinite(inicio) || !Number.isFinite(fim)) return `${desde} a ${ate}`;
+  return descreverPeriodo({ de: diaLocal(inicio), ate: diaLocal(fim - 1) });
 }
 
 @Component({

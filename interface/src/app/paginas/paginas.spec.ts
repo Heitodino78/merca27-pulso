@@ -142,6 +142,30 @@ describe('outras páginas', () => {
   });
 });
 
+describe('App: navegação', () => {
+  it('a gaveta do menu abre no botão, fecha com Esc e devolve o estado', async () => {
+    const t = new TransporteFalso();
+    TestBed.configureTestingModule({ imports: [App], providers: [provideRouter(routes), { provide: TRANSPORTE_PULSO, useValue: t }] });
+    const fixture = TestBed.createComponent(App);
+    const el = fixture.nativeElement as HTMLElement;
+    await estabilizar(fixture);
+    const abrir = el.querySelector<HTMLButtonElement>('button[aria-controls="menu-gaveta"]')!;
+    expect(abrir.getAttribute('aria-expanded')).toBe('false');
+    abrir.click();
+    await estabilizar(fixture);
+    const gaveta = el.querySelector('#menu-gaveta')!;
+    expect(gaveta.getAttribute('role')).toBe('dialog');
+    expect(Array.from(gaveta.querySelectorAll('a')).map((a) => a.textContent!.trim())).toContain('Visão geral');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await estabilizar(fixture);
+    expect(el.querySelector('#menu-gaveta')).toBeNull();
+  });
+
+  it('a rota inicial é a visão geral', () => {
+    expect(routes.find((r) => r.path === '')?.redirectTo).toBe('visao-geral');
+  });
+});
+
 describe('App: reconciliação pendente', () => {
   it('mostra o aviso quando uma consulta informa pendências e reconcilia sob demanda', async () => {
     const t = new TransporteFalso();

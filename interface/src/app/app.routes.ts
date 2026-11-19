@@ -8,10 +8,12 @@ import { ProdutosPagina } from './paginas/produtos';
 import { ReposicaoPagina } from './paginas/reposicao';
 import { VendaNovaPagina } from './paginas/venda-nova';
 import { VendaDetalhePagina, VendasPagina } from './paginas/vendas';
+import { VisaoGeralPagina } from './paginas/visao-geral';
 
 /* Rotas carregadas de forma imediata: lazy loading geraria chunks fora do HTML único. */
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'produtos' },
+  { path: '', pathMatch: 'full', redirectTo: 'visao-geral' },
+  { path: 'visao-geral', component: VisaoGeralPagina, title: 'Visão geral — PULSO' },
   { path: 'produtos', component: ProdutosPagina, title: 'Produtos — PULSO' },
   { path: 'produtos/novo', component: ProdutoNovoPagina, title: 'Novo produto — PULSO' },
   { path: 'produtos/:sku', component: ProdutoDetalhePagina, title: 'Produto — PULSO' },

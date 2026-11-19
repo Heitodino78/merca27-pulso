@@ -32,9 +32,16 @@ export class Carga<T> {
 @Component({
   selector: 'pulso-carregando',
   template: `
-    <div role="status" class="flex items-center gap-3 rounded-lg border border-borda bg-superficie p-4 text-sm text-suave">
-      <span aria-hidden="true" class="inline-block size-4 rounded-full border-2 border-verde border-t-transparent motion-safe:animate-spin"></span>
-      {{ texto() }}
+    <div role="status" class="rounded-xl border border-borda bg-superficie p-4 text-sm text-suave shadow-cartao">
+      <p class="flex items-center gap-3">
+        <span aria-hidden="true" class="inline-block size-4 rounded-full border-2 border-verde border-t-transparent motion-safe:animate-spin"></span>
+        {{ texto() }}
+      </p>
+      <div aria-hidden="true" class="mt-4 space-y-3">
+        <div class="esqueleto h-3 w-3/4"></div>
+        <div class="esqueleto h-3 w-1/2"></div>
+        <div class="esqueleto h-3 w-2/3"></div>
+      </div>
     </div>
   `,
 })
