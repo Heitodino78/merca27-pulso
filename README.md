@@ -2,7 +2,7 @@
 
 > **Demonstração educacional.** A MERCA 27 é um mercado fictício e todos os dados são sintéticos. O PULSO não é sistema fiscal, contábil nem produto pronto para uso empresarial real.
 
-**Estado atual: Fase 01 local, blocos 0 a 8 concluídos.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI, com 263 testes aprovados. M-05 está em execução. Interface visual e integração Google continuam pendentes.
+**Estado atual: Fase 01 concluída localmente.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI, com 267 testes aprovados. Interface visual e integração Google continuam pendentes.
 
 ## Requisitos
 
@@ -19,6 +19,7 @@ npm test            # testes automatizados
 npm run check       # verificação de sintaxe
 npm run typecheck   # contratos JSDoc; exige npm ci
 npm run mutacao     # 42 defeitos em cópias temporárias; exige alguns minutos
+npm run medir       # cenário temporário de 90 dias; tempos e volume em JSON
 npm run demo        # demonstração do primeiro marco, em pasta temporária
 
 npm run -s pulso -- seed
@@ -65,6 +66,8 @@ docs/                Documentos-base, decisões, progresso, testes e relatório
 - Antes de novo lançamento, a pendência anterior é reconciliada automaticamente dentro da trava; falha impede iniciar a nova operação. Repetição com a mesma chave e `reconciliar` também continuam disponíveis.
 - Divergências entre registros e intenções, duplicidades, referências e estados inválidos são detectados na leitura (`DADOS_INCONSISTENTES`). A reconciliação relê o estado final antes de anunciar conclusão.
 - Quantidades e saldos devem permanecer no intervalo de inteiros exatos do JavaScript. Uma entrada que ultrapassaria esse limite é rejeitada antes de criar intenção.
+- A leitura comum dispensa a trava. Se encontrar inconsistência, repete uma única vez com trava antes de devolver erro. As gravações continuam serializadas e verificadas por releitura completa.
+- Os saldos usados na projeção são mapas temporários reconstruídos dos movimentos confirmados; nenhum saldo é persistido como fonte independente.
 
 ## Situação do Google
 
@@ -79,4 +82,4 @@ Na revisão de 18/11/2026, o conector Google Drive respondeu às buscas `MERCA` 
 - Uma interrupção real durante a escrita pode deixar uma linha incompleta. Ela é detectada e bloqueia a operação; não há reparo automático de arquivo truncado.
 - Se um processo for encerrado à força durante uma operação, o arquivo `.pulso.lock` precisa ser removido manualmente. A mensagem de erro indica o caminho.
 
-Mais detalhes em [docs/RELATORIO_FASE_00.md](docs/RELATORIO_FASE_00.md).
+Detalhes atuais em [docs/RELATORIO_FASE_01.md](docs/RELATORIO_FASE_01.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). A [Fase 00](docs/RELATORIO_FASE_00.md) permanece como registro histórico.

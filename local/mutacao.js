@@ -34,7 +34,7 @@ const MUTACOES = [
   mutacao('MUT-22', REPO, 'if (vistos.has(linha[chave]))', 'if (false)'),
   mutacao('MUT-23', REPO, "if (operacao.estado !== 'CONFIRMADA') pendentes.push(operacao);", 'if (false) pendentes.push(operacao);'),
   mutacao('MUT-24', REPO, 'else if (!presentes.has(operacao.operacaoId))', 'else if (false)'),
-  mutacao('MUT-25', REPO, "operacoes.get(linha.operacao_id).estado === 'CONFIRMADA'", 'true'),
+  mutacao('MUT-25', REPO, "if (operacao.estado !== 'CONFIRMADA') return;", 'if (false) return;'),
   mutacao('MUT-26', REPO, 'evento.assinatura !== JSON.stringify(normalizado.dados)', 'false'),
   mutacao('MUT-27', REPO, 'evento.tipo !== operacao.tipo', 'false'),
   mutacao('MUT-28', REPO, 'evento.requisicao_id !== operacao.requisicaoId', 'false'),

@@ -15,6 +15,7 @@
     "demo": "node local/demo.js",
     "pulso": "node local/cli.js",
     "mutacao": "node local/mutacao.js",
+    "medir": "node local/medir-desempenho.js",
     "typecheck": "node node_modules/typescript/lib/tsc.js -p tsconfig.src.json && node node_modules/typescript/lib/tsc.js -p tsconfig.local.json"
   },
   "devDependencies": {

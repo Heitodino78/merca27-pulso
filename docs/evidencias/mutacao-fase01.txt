@@ -1,0 +1,68 @@
+
+> a002-merca27-pulso@0.1.0 mutacao
+> node local/mutacao.js
+
+MUT-01: DETECTADA
+MUT-02: DETECTADA
+MUT-03: DETECTADA
+MUT-04: DETECTADA
+MUT-05: DETECTADA
+MUT-06: DETECTADA
+MUT-07: DETECTADA
+MUT-08: DETECTADA
+MUT-09: DETECTADA
+MUT-10: SOBREVIVEU — A reconstrução canônica da intenção já recusa tipo divergente antes da soma.
+MUT-11: SOBREVIVEU — A validação de domínio da intenção já recusa delta zero antes da soma.
+MUT-12: DETECTADA
+MUT-13: DETECTADA
+MUT-14: DETECTADA
+MUT-15: DETECTADA
+MUT-16: DETECTADA
+MUT-17: DETECTADA
+MUT-18: DETECTADA
+MUT-19: DETECTADA
+MUT-20: DETECTADA
+MUT-21: DETECTADA
+MUT-22: DETECTADA
+MUT-23: DETECTADA
+MUT-24: DETECTADA
+MUT-25: DETECTADA
+MUT-26: DETECTADA
+MUT-27: DETECTADA
+MUT-28: DETECTADA
+MUT-29: DETECTADA
+MUT-30: DETECTADA
+MUT-31: DETECTADA
+MUT-32: DETECTADA
+MUT-33: DETECTADA
+MUT-34: DETECTADA
+MUT-35: DETECTADA
+MUT-36: DETECTADA
+MUT-37: SOBREVIVEU — Os tipos têm dados canônicos distintos; a assinatura já recusa esse conflito.
+MUT-38: DETECTADA
+MUT-39: DETECTADA
+MUT-40: DETECTADA
+MUT-41: DETECTADA
+MUT-42: DETECTADA
+{
+  "total": 42,
+  "detectadas": 39,
+  "sobreviventes": [
+    {
+      "id": "MUT-10",
+      "estado": "SOBREVIVEU",
+      "justificativa": "A reconstrução canônica da intenção já recusa tipo divergente antes da soma."
+    },
+    {
+      "id": "MUT-11",
+      "estado": "SOBREVIVEU",
+      "justificativa": "A validação de domínio da intenção já recusa delta zero antes da soma."
+    },
+    {
+      "id": "MUT-37",
+      "estado": "SOBREVIVEU",
+      "justificativa": "Os tipos têm dados canônicos distintos; a assinatura já recusa esse conflito."
+    }
+  ],
+  "erros": []
+}

@@ -189,7 +189,7 @@ function pulsoCriarCasosDeUso() {
         ativo: produto.ativo,
         precoVendaCentavos: produto.preco_venda_centavos, custoRefCentavos: produto.custo_ref_centavos,
         fornecedorId: produto.fornecedor_id, criadoEm: produto.criado_em, atualizadoEm: produto.atualizado_em,
-        saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, produto.sku),
+        saldoAtual: (estado.saldos.get(produto.sku) || 0),
         estoqueMinimo: produto.estoque_minimo,
         estoqueAlvo: produto.estoque_alvo,
         totalMovimentos: historico.length,
@@ -211,7 +211,7 @@ function pulsoCriarCasosDeUso() {
             precoVendaCentavos: produto.preco_venda_centavos,
             custoRefCentavos: produto.custo_ref_centavos, fornecedorId: produto.fornecedor_id, atualizadoEm: produto.atualizado_em,
             ativo: produto.ativo,
-            saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, produto.sku),
+            saldoAtual: (estado.saldos.get(produto.sku) || 0),
             estoqueMinimo: produto.estoque_minimo,
             estoqueAlvo: produto.estoque_alvo,
           };
@@ -224,7 +224,7 @@ function pulsoCriarCasosDeUso() {
     return PULSO.operacoes.consultar(ctx, function (estado) {
       const itens = [];
       estado.produtos.forEach(function (produto) {
-        const saldo = PULSO.estoque.calcularSaldo(estado.movimentos, produto.sku);
+        const saldo = (estado.saldos.get(produto.sku) || 0);
         if (!produto.ativo || saldo > produto.estoque_minimo) return;
         itens.push({ sku: produto.sku, nome: produto.nome, saldoAtual: saldo,
           estoqueMinimo: produto.estoque_minimo, estoqueAlvo: produto.estoque_alvo,

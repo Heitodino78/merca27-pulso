@@ -8,6 +8,7 @@ function pulsoCriarAlteracao() {
     Object.keys(campos).sort().forEach(function (chave) { ordenado[chave] = campos[chave]; });
     return JSON.stringify(ordenado);
   }
+  /** @param {PedidoAlteracao} request */
   function normalizar(request) {
     const v = PULSO.validacao;
     const extras = v.camposDesconhecidos(request, ['requisicaoId', 'sku', 'campos', 'motivo', 'operadorSimulado']);
@@ -41,6 +42,7 @@ function pulsoCriarAlteracao() {
     linha.atualizado_em = agora;
     return { ok: true, produto: linha };
   }
+  /** @returns {LinhaAlteracao} */
   function construirLinha(dados, alteracaoId, operacaoId, agora, campos) {
     return { alteracao_id: alteracaoId, operacao_id: operacaoId, sku: dados.sku, campos_json: canonico(campos),
       motivo: dados.motivo, registrado_em: agora, operador_simulado: dados.operadorSimulado };

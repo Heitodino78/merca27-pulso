@@ -3,6 +3,7 @@
 var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 function pulsoCriarFornecedor() {
   function idValido(id) { return typeof id === 'string' && /^FOR-\d{3}$/.test(id); }
+  /** @param {PedidoFornecedor} request */
   function normalizarCadastro(request) {
     const v = PULSO.validacao;
     const extras = v.camposDesconhecidos(request, ['requisicaoId', 'fornecedorId', 'nomeFicticio', 'categoriaPrincipal', 'prazoEstimadoDias', 'ativo']);
@@ -17,6 +18,7 @@ function pulsoCriarFornecedor() {
       categoriaPrincipal: request.categoriaPrincipal, prazoEstimadoDias: request.prazoEstimadoDias,
       ativo: request.ativo === undefined ? true : request.ativo } };
   }
+  /** @param {PedidoFornecedor} dados @returns {LinhaFornecedor} */
   function construirLinha(dados, operacaoId, agora) {
     return { fornecedor_id: dados.fornecedorId, nome_ficticio: dados.nomeFicticio, categoria_principal: dados.categoriaPrincipal,
       prazo_estimado_dias: dados.prazoEstimadoDias, ativo: dados.ativo, criado_em: agora, operacao_id: operacaoId };

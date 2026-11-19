@@ -199,7 +199,16 @@ function pulsoCriarOperacoes() {
   }
 
   function consultar(ctx, funcao) {
-    return comLock(ctx, function () { return funcao(ctx.repositorio.carregarEstado()); });
+    try {
+      return funcao(ctx.repositorio.carregarEstado());
+    } catch (erro) {
+      // Várias tabelas podem ser lidas durante uma escrita. Uma única releitura
+      // dentro da trava distingue essa janela de uma inconsistência persistente.
+      if (erro && erro.codigo === 'DADOS_INCONSISTENTES') {
+        return comLock(ctx, function () { return funcao(ctx.repositorio.carregarEstado()); });
+      }
+      return traduzirExcecao(erro);
+    }
   }
 
   return { executar: executar, reconciliar: reconciliar, consultar: consultar };

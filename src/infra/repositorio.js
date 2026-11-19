@@ -168,12 +168,6 @@ function pulsoCriarRepositorio() {
     });
   }
 
-  function confirmadas(linhas, operacoes) {
-    return linhas.filter(function (linha) {
-      return operacoes.get(linha.operacao_id).estado === 'CONFIRMADA';
-    });
-  }
-
   function conferirMovimentos(movimentos, produtos) {
     const saldos = new Map();
     movimentos.forEach(function (movimento) {
@@ -190,12 +184,21 @@ function pulsoCriarRepositorio() {
 
   /** @param {ArmazenamentoPulso} armazenamento */
   function criar(armazenamento) {
+    // Só auxilia existe() na continuação da mesma seção crítica. Toda leitura
+    // de estado e toda verificação pós-gravação continua consultando a porta.
+    const ultimasTabelas = new Map();
+    function lerAtual(tabela) {
+      const linhas = lerTabela(armazenamento, tabela);
+      ultimasTabelas.set(tabela, linhas);
+      return linhas;
+    }
     function carregarEstado() {
-      const dobra = dobrarOperacoes(lerTabela(armazenamento, 'OPERACOES_LOG'));
-      const linhasProdutos = lerTabela(armazenamento, 'PRODUTOS');
-      const linhasMovimentos = lerTabela(armazenamento, 'MOVIMENTOS_ESTOQUE');
-      const linhasFornecedores = lerTabela(armazenamento, 'FORNECEDORES');
-      const linhasAlteracoes = lerTabela(armazenamento, 'PRODUTOS_ALTERACOES');
+      ultimasTabelas.clear();
+      const dobra = dobrarOperacoes(lerAtual('OPERACOES_LOG'));
+      const linhasProdutos = lerAtual('PRODUTOS');
+      const linhasMovimentos = lerAtual('MOVIMENTOS_ESTOQUE');
+      const linhasFornecedores = lerAtual('FORNECEDORES');
+      const linhasAlteracoes = lerAtual('PRODUTOS_ALTERACOES');
       conferirOrigem('PRODUTOS', linhasProdutos, dobra.operacoes);
       conferirOrigem('MOVIMENTOS_ESTOQUE', linhasMovimentos, dobra.operacoes);
       conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);
@@ -215,6 +218,8 @@ function pulsoCriarRepositorio() {
       const versoes = new Map();
       /** @type {LinhaMovimento[]} */
       const movimentos = [];
+      const saldos = new Map();
+      const movimentados = new Set();
       // Reproduz a ordem das operações, incluindo o cadastro vigente em cada instante.
       dobra.operacoes.forEach(function (operacao) {
         if (operacao.estado !== 'CONFIRMADA') return;
@@ -239,12 +244,14 @@ function pulsoCriarRepositorio() {
             alteracaoId: linha.alteracao_id, motivo: linha.motivo, registradoEm: linha.registrado_em, operadorSimulado: linha.operador_simulado });
         } else {
           const produto = produtos.get(linha.sku);
-          const saldo = PULSO.estoque.calcularSaldo(movimentos, linha.sku);
+          const saldo = saldos.get(linha.sku) || 0;
           if (operacao.tipo === 'ENTRADA' && (!fornecedores.has(linha.fornecedor_id) || !fornecedores.get(linha.fornecedor_id).ativo)) throw inconsistente('entrada vinculada a fornecedor inexistente ou inativo');
-          if (operacao.tipo === 'SALDO_INICIAL' && movimentos.some(function (m) { return m.sku === linha.sku; })) throw inconsistente('saldo inicial após movimentação');
+          if (operacao.tipo === 'SALDO_INICIAL' && movimentados.has(linha.sku)) throw inconsistente('saldo inicial após movimentação');
           if (['PERDA', 'AJUSTE'].indexOf(operacao.tipo) !== -1 && (!produto || linha.custo_unit_centavos !== produto.custo_ref_centavos)) throw inconsistente('custo histórico divergente do cadastro vigente');
           if (operacao.tipo === 'AJUSTE' && (linha.saldo_anterior !== saldo || linha.saldo_novo !== saldo + linha.delta_unidades)) throw inconsistente('ajuste com saldos divergentes');
           movimentos.push(linha);
+          saldos.set(linha.sku, saldo + linha.delta_unidades);
+          movimentados.add(linha.sku);
         }
       });
       conferirMovimentos(movimentos, produtos);
@@ -254,6 +261,7 @@ function pulsoCriarRepositorio() {
         fornecedores: fornecedores,
         versoes: versoes,
         movimentos: movimentos,
+        saldos: saldos,
         operacoesPorRequisicao: dobra.porRequisicao,
         pendentes: pendentes,
       };
@@ -261,7 +269,8 @@ function pulsoCriarRepositorio() {
 
     function existe(tabela, valorChave) {
       const chave = PULSO.esquema.TABELAS[tabela].chave;
-      return armazenamento.ler(tabela).some(function (linha) { return linha[chave] === valorChave; });
+      const linhas = ultimasTabelas.has(tabela) ? ultimasTabelas.get(tabela) : lerAtual(tabela);
+      return linhas.some(function (linha) { return linha[chave] === valorChave; });
     }
 
     /** Só retorna depois de reler a tabela e conferir o conteúdo completo da linha. */
@@ -269,7 +278,7 @@ function pulsoCriarRepositorio() {
       armazenamento.anexar(tabela, linha);
       const esquema = PULSO.esquema;
       const chave = esquema.TABELAS[tabela].chave;
-      const gravadas = lerTabela(armazenamento, tabela).filter(function (gravada) { return gravada[chave] === linha[chave]; });
+      const gravadas = lerAtual(tabela).filter(function (gravada) { return gravada[chave] === linha[chave]; });
       if (gravadas.length !== 1 || esquema.canonica(tabela, gravadas[0]) !== esquema.canonica(tabela, linha)) {
         throw PULSO.erros.criarExcecao('FALHA_GRAVACAO', 'A gravação em ' + tabela + ' não foi confirmada na releitura.');
       }

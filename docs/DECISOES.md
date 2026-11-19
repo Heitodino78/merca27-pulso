@@ -67,6 +67,8 @@ T-01 (sidebar ou formulário), T-03 (método de custo), T-04 (tipo de lock no Ap
 
 ## Fase 01
 
+- **D-034 — M-05 no fim da Fase 01:** a medição foi adiada para o esquema final, ainda antes de qualquer integração Google, conforme o prompt desta execução. Consultas leem sem trava e, diante de `DADOS_INCONSISTENTES`, repetem uma única vez dentro da trava. Cada reprodução mantém mapas temporários de saldo e de SKUs movimentados, eliminando buscas repetidas no histórico. `existe` reutiliza a tabela já lida na mesma seção crítica; a releitura final e as verificações após cada escrita continuam consultando a porta. Não há cache persistente de saldo ou de estado validado entre consultas. Os tempos ficaram próximos ao cenário anterior: não há evidência de ganho expressivo nesse volume; não se extrapola o resultado para o Google.
+
 - **D-033 — Catálogo:** 40 SKUs e seis fornecedores; os primeiros seis mantêm nome, preço, custo, mínimo e alvo da Fase 00, fixados por teste. A associação de fornecedor usa índice fixo e não consome o gerador aleatório. A seed cadastra fornecedores antes de produtos e permanece idempotente. A CLI apenas converte argumentos e chama os casos de uso; não calcula delta, saldo ou reposição.
 
 - **D-032 — Reposição:** `ativo && saldo <= estoque_minimo`; sugestão `max(0, estoque_alvo - saldo)`. A consulta retorna só os alertas e identifica a regra, o fornecedor quando cadastrado e a necessidade de revisão humana. Não cria compras, movimentos ou eventos de log.

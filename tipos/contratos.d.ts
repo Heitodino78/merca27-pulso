@@ -13,6 +13,18 @@ interface DadosMovimentoAdministrativo {
   sku: string; motivo: string; operadorSimulado: string; quantidade?: number;
   quantidadeContada?: number; custoUnitCentavos?: number; categoriaPerda?: string;
 }
+interface PedidoFornecedor {
+  requisicaoId?: string; fornecedorId: string; nomeFicticio: string; categoriaPrincipal: string; prazoEstimadoDias: number; ativo?: boolean;
+}
+interface PedidoAlteracao {
+  requisicaoId?: string; sku: string; motivo: string; operadorSimulado?: string;
+  campos: Partial<Pick<PedidoCadastro, 'nome' | 'categoria' | 'precoVendaCentavos' | 'custoRefCentavos' | 'estoqueMinimo' | 'estoqueAlvo' | 'fornecedorId' | 'ativo'>>;
+}
+interface PedidoStatus { requisicaoId?: string; sku: string; motivo: string; operadorSimulado?: string; }
+interface PedidoSaldoInicial extends PedidoStatus { quantidade: number; custoUnitCentavos: number; }
+interface PedidoPerda extends PedidoStatus { quantidade: number; categoriaPerda: string; }
+interface PedidoAjuste extends PedidoStatus { quantidadeContada: number; }
+interface PedidoConsulta { sku: string; limiteHistorico?: number; }
 interface LinhaProduto {
   sku: string; nome: string; categoria_id: string; unidade: string;
   preco_venda_centavos: number; custo_ref_centavos: number;

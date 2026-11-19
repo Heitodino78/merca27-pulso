@@ -17,6 +17,25 @@ Ambiente: Node 22.23.5, npm 10.9.9, runtime temporário já conferido na Fase 00
 | 6 | Mesmos quatro comandos | 254 testes; tipos sem erro; 30 arquivos sem erro de sintaxe; demo aprovada |
 | 7 | Mesmos quatro comandos | 260 testes; tipos sem erro; 31 arquivos sem erro de sintaxe; demo aprovada |
 | 8 | Mesmos quatro comandos e regeneração do catálogo | 263 testes; tipos sem erro; 32 arquivos sem erro de sintaxe; demo aprovada |
+| 9 | `npm test`, `npm run check`, `npm run typecheck`, `npm run demo` | 267 testes; tipos sem erro; 34 arquivos sem erro de sintaxe; demo aprovada |
+| Final | `npm run mutacao` | 42 mutações: 39 detectadas, três equivalentes justificadas (MUT-10, MUT-11 e MUT-37), nenhum alvo ausente ou erro de execução; saída 0 |
+
+A evidência integral da mutação está em [evidencias/mutacao-fase01.txt](evidencias/mutacao-fase01.txt). Os resultados JSON de desempenho estão em [antes](evidencias/desempenho-antes.json) e [depois](evidencias/desempenho-depois.json). As mutações foram atualizadas quando a implementação passou a reproduzir os movimentos diretamente pela ordem do log, mantendo os mesmos defeitos conceituais.
+
+### M-05: medição e leitores concorrentes
+
+Comandos executados: `node local/medir-desempenho.js antes` e `node local/medir-desempenho.js depois`, com o mesmo Node 22.23.5. O script roda também por `npm run medir`. A base é gerada pelo executor em memória e serializada exclusivamente numa pasta temporária, removida ao terminar. Volume inicial de ambas as medições: 90 dias (21/08 a 18/11/2026, fictícios), três movimentos por dia, 40 produtos, seis fornecedores, 270 movimentos, 13 alterações e 658 eventos de log (329 operações confirmadas). Sem vendas. Cada caso teve três aquecimentos e 20 repetições; a entrada medida acrescenta uma unidade com chave nova em cada chamada.
+
+| Caso | Mediana antes (ms) | Mediana depois (ms) | P95 antes/depois (ms) | Leituras antes/depois |
+|---|---:|---:|---:|---:|
+| Listar produtos | 18,357 | 17,775 | 19,947 / 19,877 | 5 / 5 |
+| Consultar estoque | 17,175 | 17,243 | 20,189 / 18,260 | 5 / 5 |
+| Consultar reposição | 17,478 | 17,081 | 18,800 / 18,904 | 5 / 5 |
+| Registrar entrada | 54,636 | 54,542 | 58,939 / 57,013 | 13 / 13 |
+
+Resultados próximos e sujeitos a ruído: não demonstram ganho expressivo de velocidade. As leituras obrigatórias de confirmação foram mantidas. A reutilização de tabelas evita uma leitura redundante de existência ao reconciliar; a reprodução do saldo passa a usar mapas por SKU, sem varrer movimentos a cada operação. Esses resultados são locais, em JSONL temporário, e não representam cotas ou desempenho do Google.
+
+Antes da mudança, `node --test tests/leituras.test.js` teve três falhas em quatro testes; depois, todos passaram. Foram testadas leitura consistente sem trava, inconsistência transitória corrigida em uma repetição sob trava e inconsistência real ainda devolvida como erro. O teste com processos reais usou quatro leitores (30 consultas cada) e um escritor (20 entradas), pausando 15 ms entre gravação do movimento e confirmação. Nenhum leitor reportou falso erro; o saldo final foi 20. Os testes anteriores de adulteração e corrupção na confirmação continuam aprovados.
 
 Bloco 8: 40 produtos, seis fornecedores e os valores originais dos seis primeiros SKUs fixados por teste. A jornada CLI cobriu todos os comandos novos e repetição de entrada. Um recálculo independente leu os JSONL, filtrou as operações confirmadas e coincidiu com todos os 40 saldos consultados.
 

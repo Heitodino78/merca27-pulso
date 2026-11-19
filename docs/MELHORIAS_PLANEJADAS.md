@@ -1,6 +1,6 @@
 # Melhorias planejadas — PULSO
 
-**Status: aprovadas pelo proprietário em 18/11/2026; execução da Fase 01 em andamento.** Os itens concluídos têm evidência em `docs/TESTES.md`.
+**Status: Fase 01 local concluída em 18/11/2026.** M-01, M-02, M-04, M-05 e M-07 têm evidência em `docs/TESTES.md`. M-06 e M-03 permanecem pendentes.
 
 ## Ordem de execução
 
@@ -10,7 +10,7 @@
 | 2 | M-01 | Custo unitário na entrada | Bloco 3 da Fase 01 | [x] Concluída |
 | 3 | M-02 | Alteração e desativação de produto | Bloco 4 da Fase 01 | [x] Concluída |
 | 4 | M-04 | Reconciliação automática | Bloco 5 da Fase 01 | [x] Concluída |
-| 5 | M-05 | Desempenho e leituras sem trava | Antes da integração com o Sheets | [ ] Pendente |
+| 5 | M-05 | Desempenho e leituras sem trava | Bloco 9 da Fase 01, antes do Sheets | [x] Concluída |
 | 6 | M-06 | Interface compatível com Apps Script | Depois de M-01 e M-02 | [ ] Pendente |
 | 7 | M-03 | Operações com vários registros | Antes da Fase 2 (vendas) | [ ] Pendente |
 
