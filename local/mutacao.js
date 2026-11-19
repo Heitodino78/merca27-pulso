@@ -20,7 +20,7 @@ const MUTACOES = [
   mutacao('MUT-03', REPO, "if (!produto) throw inconsistente('movimento '", "if (false) throw inconsistente('movimento '"),
   mutacao('MUT-04', REPO, 'evento.referencia_id !== linha[chave] ||', 'false ||'),
   mutacao('MUT-05', REPO, "['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1", 'false'),
-  mutacao('MUT-06', REPO, "['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE'].indexOf(evento.tipo) === -1", 'false'),
+  mutacao('MUT-06', REPO, "['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE', 'CONTAGEM_INVENTARIO'].indexOf(evento.tipo) === -1", 'false'),
   mutacao('MUT-07', 'local/armazenamento-jsonl.js', 'fs.fsyncSync(descritor);', '/* sem fsync */'),
   mutacao('MUT-08', OPS, "if (!operacao || operacao.estado !== 'CONFIRMADA')", 'if (false)'),
   mutacao('MUT-09', OPS, 'if (estadoFinal.pendentes.length)', 'if (false)'),
@@ -38,12 +38,12 @@ const MUTACOES = [
   mutacao('MUT-21', 'src/domain/produto.js', "typeof ativo !== 'boolean'", 'false'),
   mutacao('MUT-22', REPO, 'if (vistos.has(linha[chave]))', 'if (false)'),
   mutacao('MUT-23', REPO, "if (operacao.estado !== 'CONFIRMADA') pendentes.push(operacao);", 'if (false) pendentes.push(operacao);'),
-  mutacao('MUT-24', REPO, 'else if (!presentes.has(operacao.operacaoId))', 'else if (false)'),
+  mutacao('MUT-24', REPO, 'else if (!operacao.registros.every(', 'else if (false && !operacao.registros.every('),
   mutacao('MUT-25', REPO, "if (operacao.estado !== 'CONFIRMADA') return;", 'if (false) return;'),
-  mutacao('MUT-26', REPO, 'evento.assinatura !== JSON.stringify(normalizado.dados)', 'false'),
+  mutacao('MUT-26', REPO, 'evento.assinatura !== JSON.stringify(normalizado.dados) ||\n        PULSO.esquema.canonica(payload.tabela', 'false ||\n        PULSO.esquema.canonica(payload.tabela'),
   mutacao('MUT-27', REPO, 'evento.tipo !== operacao.tipo', 'false'),
   mutacao('MUT-28', REPO, 'evento.requisicao_id !== operacao.requisicaoId', 'false'),
-  mutacao('MUT-29', REPO, 'evento.referencia_id !== operacao.linha[chave]', 'false'),
+  mutacao('MUT-29', REPO, 'evento.referencia_id !== operacao.referenciaId', 'false'),
   mutacao('MUT-30', REPO, 'evento.tentativas < 1', 'false'),
   mutacao('MUT-31', REPO, 'if (!PULSO.validacao.inteiroSeguro(saldo))', 'if (false)'),
   mutacao('MUT-32', REPO, 'gravadas.length !== 1 || esquema.canonica(tabela, gravadas[0]) !== esquema.canonica(tabela, linha)', 'gravadas.length !== 1'),
@@ -56,7 +56,7 @@ const MUTACOES = [
   mutacao('MUT-39', 'src/domain/estoque.js', 'saldo += movimento.delta_unidades;', 'saldo = movimento.delta_unidades;'),
   mutacao('MUT-40', 'local/armazenamento-jsonl.js', "if (!conteudo.endsWith('\\n'))", 'if (false)'),
   mutacao('MUT-41', OPS, 'podeMarcarInterrupcao = false;\n      ctx.repositorio.anexarVerificado(LOG', 'podeMarcarInterrupcao = true;\n      ctx.repositorio.anexarVerificado(LOG'),
-  mutacao('MUT-42', REPO, "if (esquema.canonica(tabela, linha) !== esquema.canonica(tabela, operacao.linha))", 'if (false)'),
+  mutacao('MUT-42', REPO, "if (esquema.canonica(tabela, linha) !== esquema.canonica(tabela, registro.linha))", 'if (false)'),
   mutacao('MUT-43', CASOS, "estado.fornecedores.has(dados.fornecedorId) ? PULSO.erros.falha('FORNECEDOR_DUPLICADO'", "false ? PULSO.erros.falha('FORNECEDOR_DUPLICADO'"),
   mutacao('MUT-44', CASOS, "if (!produto) return PULSO.erros.falha('SKU_INEXISTENTE', 'Produto não cadastrado.');\n        const aplicado", "const aplicado"),
   mutacao('MUT-45', CASOS, "if (!aplicado.ok) return aplicado;", ""),
@@ -97,7 +97,7 @@ const MUTACOES = [
   mutacao('MUT-80', ALT, "linha.atualizado_em = agora;", ""),
   mutacao('MUT-81', ALT, "Object.keys(campos).sort().forEach(function (chave) { ordenado", "Object.keys(campos).forEach(function (chave) { ordenado"),
   mutacao('MUT-82', ALT, "if (problema || typeof operador !== 'string' || !/^[A-Z0-9]", "if (typeof operador !== 'string' || !/^[A-Z0-9]"),
-  mutacao('MUT-83', REPO, "if (operacao.tipo === 'SALDO_INICIAL' && movimentados.has(linha.sku))", "if (false)"),
+  mutacao('MUT-83', REPO, "if (tipoMovimento === 'SALDO_INICIAL' && movimentados.has(linha.sku))", "if (false)"),
   mutacao('MUT-84', REPO, "linha.custo_unit_centavos !== produto.custo_ref_centavos", "false"),
   mutacao('MUT-85', REPO, "(linha.saldo_anterior !== saldo || linha.saldo_novo !== saldo + linha.delta_unidades)", "false"),
   mutacao('MUT-86', REPO, "(!fornecedores.has(linha.fornecedor_id) || !fornecedores.get(linha.fornecedor_id).ativo)", "false"),
@@ -105,10 +105,10 @@ const MUTACOES = [
   mutacao('MUT-88', REPO, "if (!produto) throw inconsistente('alteração de produto inexistente');", ""),
   mutacao('MUT-89', REPO, "PULSO.alteracao.canonico(campos) !== linha.campos_json", "false"),
   mutacao('MUT-90', REPO, "if (!resultado.ok || (resultado.produto.fornecedor_id && !fornecedores.has(resultado.produto.fornecedor_id)))", "if (false)"),
-  mutacao('MUT-91', REPO, "if (operacao.tipo === 'ENTRADA' && !produto.ativo) throw", "if (false) throw"),
+  mutacao('MUT-91', REPO, "if (tipoMovimento === 'ENTRADA' && !produto.ativo) throw", "if (false) throw"),
   mutacao('MUT-92', REPO, "conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);", ""),
   mutacao('MUT-93', REPO, "conferirOrigem('PRODUTOS_ALTERACOES', linhasAlteracoes, dobra.operacoes);", ""),
-  mutacao('MUT-94', REPO, "linhasProdutos.concat(linhasMovimentos, linhasFornecedores, linhasAlteracoes)", "linhasProdutos.concat(linhasMovimentos)"),
+  mutacao('MUT-94', REPO, "FORNECEDORES: linhasFornecedores, PRODUTOS_ALTERACOES: linhasAlteracoes };", "FORNECEDORES: [], PRODUTOS_ALTERACOES: [] };"),
   mutacao('MUT-95', REPO, "Object.keys(campos).some(function (c) { return campos[c] !== normalizado.dados.campos[c]; })", "false"),
   mutacao('MUT-96', REPO, "(evento.tipo === 'AJUSTE' && !PULSO.validacao.inteiroNaoNegativo(linha.saldo_anterior))", "false"),
   mutacao('MUT-97', REPO, "return reutilizar && ultimasTabelas.has(tabela) ? ultimasTabelas.get(tabela) : lerAtual(tabela);", "return lerAtual(tabela);"),
@@ -129,6 +129,31 @@ const MUTACOES = [
   mutacao('MUT-111', DESP, "if (!semPedido && !PULSO.validacao.eObjeto(pedido)) {", "if (false) {"),
   mutacao('MUT-112', DESP, "const ACOES_SEM_PEDIDO = CONSULTAS_SEM_PEDIDO.concat(['reconciliarPendencias']);", "const ACOES_SEM_PEDIDO = CONSULTAS_SEM_PEDIDO.concat(['reconciliarPendencias', 'cadastrarFornecedor']);"),
   mutacao('MUT-113', DESP, "return falha('FALHA_INESPERADA'", "throw erro; return falha('FALHA_INESPERADA'"),
+  // M-03: operações com vários registros e CONTAGEM_INVENTARIO.
+  mutacao('MUT-114', REPO, "&&\n        TIPOS_LEGADOS.indexOf(evento.tipo) !== -1) registros = [payload];", ") registros = [payload];"),
+  mutacao('MUT-115', REPO, 'if (vistos.has(identificador))', 'if (false)',
+    'Registro repetido também é recusado pela exigência de um registro por operação antiga e pela ordem estrita dos itens da contagem; a checagem é defesa redundante.'),
+  mutacao('MUT-116', REPO, 'if (!registros.length || registros.length > LIMITE_REGISTROS)', 'if (registros.length > LIMITE_REGISTROS)'),
+  mutacao('MUT-117', REPO, 'else if (!operacao.registros.every(', 'else if (!operacao.registros.some('),
+  mutacao('MUT-118', REPO, 'return r.tabela === tabela && r.linha[chave] === linha[chave];', 'return r.tabela === tabela;'),
+  mutacao('MUT-119', REPO, "if (registros.length !== 1) throw", "if (false) throw"),
+  mutacao('MUT-120', REPO, 'operacao.registros.forEach(function (registro) { reproduzir(operacao, registro.linha); });', 'reproduzir(operacao, operacao.registros[0].linha);'),
+  mutacao('MUT-121', REPO, "if (operacao.tipo === 'CONTAGEM_INVENTARIO') conferirItensContados(operacao, produtos, saldos);", ''),
+  mutacao('MUT-122', REPO, 'if (evento.referencia_id !== registros[0].linha.movimento_id)', 'if (false)'),
+  mutacao('MUT-123', REPO, "if (registro.tabela !== 'MOVIMENTOS_ESTOQUE') throw", 'if (false) throw',
+    'Linha de outra tabela é recusada antes pelo esquema dessa tabela e depois pela reconstrução canônica do movimento; a checagem é defesa redundante.'),
+  mutacao('MUT-124', REPO, '!ajustados.has(item.sku) && (saldos.get(item.sku) || 0) !== item.quantidadeContada', 'false'),
+  mutacao('MUT-125', OPS, 'if (!ctx.repositorio.existe(registro.tabela, registro.linha[chave])) {', '{'),
+  mutacao('MUT-126', OPS, 'registros.forEach(function (registro) {\n        ctx.repositorio.anexarVerificado(registro.tabela, registro.linha);\n      });',
+    'ctx.repositorio.anexarVerificado(registros[0].tabela, registros[0].linha);'),
+  mutacao('MUT-127', OPS, 'operacao.registros.forEach(function (registro) {\n      const chave', 'operacao.registros.slice(0, 1).forEach(function (registro) {\n      const chave'),
+  mutacao('MUT-128', MOV, 'if (vistos.has(item.sku)) return falha(', 'if (false) return falha('),
+  mutacao('MUT-129', MOV, 'itens.sort(function (a, b) { return a.sku < b.sku ? -1 : 1; });', ''),
+  mutacao('MUT-130', MOV, 'request.itens.length > LIMITE_ITENS_CONTAGEM', 'false'),
+  mutacao('MUT-131', CASOS, 'if (ausente) return', 'if (false) return'),
+  mutacao('MUT-132', CASOS, 'if (!comDiferenca) return', 'if (false) return'),
+  mutacao('MUT-133', CASOS, 'if (saldo === item.quantidadeContada) return;', ''),
+  mutacao('MUT-134', CASOS, 'const saldo = estado.saldos.get(item.sku) || 0;', 'const saldo = 0;'),
 ];
 
 function executarMutacao(m) {
@@ -151,8 +176,17 @@ function executarMutacao(m) {
   }
 }
 
+/** Confere, sem rodar testes, que cada defeito encontra exatamente um alvo no código atual. */
+function verificarAlvos() {
+  const problemas = MUTACOES.filter((m) => fs.readFileSync(path.join(RAIZ, m.arquivo), 'utf8').split(m.de).length !== 2)
+    .map((m) => m.id);
+  console.log(problemas.length ? `Alvos ausentes ou repetidos: ${problemas.join(', ')}` : `${MUTACOES.length} alvos encontrados uma única vez.`);
+  process.exitCode = problemas.length ? 1 : 0;
+}
+
 function principal() {
   const filtro = process.argv[2];
+  if (filtro === '--verificar-alvos') return verificarAlvos();
   const selecionadas = filtro ? MUTACOES.filter((m) => m.id === filtro) : MUTACOES;
   if (!selecionadas.length) throw new Error('Mutação desconhecida.');
   const resultados = selecionadas.map((m) => {

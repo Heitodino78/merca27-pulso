@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { criarAmbiente, ambienteComProduto, PRODUTO_BASE } = require('./apoio');
+const { criarAmbiente, ambienteComProduto, PRODUTO_BASE, FORMATOS, editarPayload } = require('./apoio');
 
 const ENTRADA = Object.freeze({ requisicaoId: 'REV-ENT', sku: 'MER-001', quantidade: 10, custoUnitCentavos: 600, fornecedorId: 'FOR-001' });
 const PERDA = Object.freeze({ requisicaoId: 'REV-PER', sku: 'MER-001', quantidade: 2, categoriaPerda: 'AVARIA', motivo: 'Avaria fictícia' });
@@ -191,15 +191,13 @@ test('CLI mostra o histórico de versões e recusa palavra solta no lugar de op�
 
 const INICIAL = Object.freeze({ requisicaoId: 'REV-INI', sku: 'MER-001', quantidade: 7, custoUnitCentavos: 450, motivo: 'Inventário fictício' });
 
-/** Reescreve linha e intenção juntas, simulando adulteração que respeita o formato. */
-function forjarLinha(armazenamento, tabela, requisicao, alterar) {
+/** Reescreve linha e intenção juntas, simulando adulteração que respeita o formato (legado ou atual). */
+function forjarLinha(armazenamento, tabela, requisicao, alterar, formato) {
   const intencao = armazenamento.tabelas.OPERACOES_LOG.find((e) => e.requisicao_id === requisicao && e.estado === 'PENDENTE');
-  const payload = JSON.parse(intencao.payload);
-  alterar(payload.linha);
-  intencao.payload = JSON.stringify(payload);
+  const registro = editarPayload(intencao, formato, (r) => alterar(r.linha));
   const chave = tabela === 'MOVIMENTOS_ESTOQUE' ? 'movimento_id' : 'alteracao_id';
-  const gravada = armazenamento.tabelas[tabela].find((l) => l[chave] === payload.linha[chave]);
-  if (gravada) Object.assign(gravada, payload.linha);
+  const gravada = armazenamento.tabelas[tabela].find((l) => l[chave] === registro.linha[chave]);
+  if (gravada) Object.assign(gravada, registro.linha);
 }
 
 test('alteração de SKU inexistente retorna erro claro', () => {
@@ -274,36 +272,38 @@ test('histórico com alterações fora de ordem não aceita versão inválida do
   assert.equal(pulso.listarProdutos().erro.codigo, 'DADOS_INCONSISTENTES');
 });
 
-test('alteração confirmada com campos gravados diferentes do efeito do pedido é recusada', () => {
-  const { pulso, armazenamento } = ambienteComProduto();
-  pulso.alterarProduto({ ...ALTERACAO, campos: { nome: 'Nome Revisado', precoVendaCentavos: 1200 } });
-  forjarLinha(armazenamento, 'PRODUTOS_ALTERACOES', ALTERACAO.requisicaoId, (l) => { l.campos_json = '{"nome":"Nome Revisado"}'; });
-  assert.equal(pulso.listarProdutos().erro.codigo, 'DADOS_INCONSISTENTES');
-});
+for (const formato of FORMATOS) {
+  test(`alteração confirmada com campos gravados diferentes do efeito do pedido é recusada (payload ${formato})`, () => {
+    const { pulso, armazenamento } = ambienteComProduto();
+    pulso.alterarProduto({ ...ALTERACAO, campos: { nome: 'Nome Revisado', precoVendaCentavos: 1200 } });
+    forjarLinha(armazenamento, 'PRODUTOS_ALTERACOES', ALTERACAO.requisicaoId, (l) => { l.campos_json = '{"nome":"Nome Revisado"}'; }, formato);
+    assert.equal(pulso.listarProdutos().erro.codigo, 'DADOS_INCONSISTENTES');
+  });
 
-test('alteração pendente com valor forjado não é concluída', () => {
-  const { pulso, armazenamento } = ambienteComProduto();
-  armazenamento.falharNaProxima('PRODUTOS_ALTERACOES', 'antes');
-  assert.equal(pulso.alterarProduto(ALTERACAO).ok, false);
-  forjarLinha(armazenamento, 'PRODUTOS_ALTERACOES', ALTERACAO.requisicaoId, (l) => { l.campos_json = '{"nome":"Nome Forjado"}'; });
-  assert.equal(pulso.reconciliarPendencias().erro.codigo, 'DADOS_INCONSISTENTES');
-  assert.equal(armazenamento.tabelas.PRODUTOS_ALTERACOES.length, 0);
-});
+  test(`alteração pendente com valor forjado não é concluída (payload ${formato})`, () => {
+    const { pulso, armazenamento } = ambienteComProduto();
+    armazenamento.falharNaProxima('PRODUTOS_ALTERACOES', 'antes');
+    assert.equal(pulso.alterarProduto(ALTERACAO).ok, false);
+    forjarLinha(armazenamento, 'PRODUTOS_ALTERACOES', ALTERACAO.requisicaoId, (l) => { l.campos_json = '{"nome":"Nome Forjado"}'; }, formato);
+    assert.equal(pulso.reconciliarPendencias().erro.codigo, 'DADOS_INCONSISTENTES');
+    assert.equal(armazenamento.tabelas.PRODUTOS_ALTERACOES.length, 0);
+  });
 
-test('ajuste pendente sem saldo anterior não é concluído', () => {
-  const { pulso, armazenamento } = ambienteComProduto();
-  pulso.registrarEntrada(ENTRADA);
-  const ajuste = { requisicaoId: 'REV-AJU', sku: 'MER-001', quantidadeContada: 4, motivo: 'Contagem fictícia' };
-  armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
-  assert.equal(pulso.ajustarPorContagem(ajuste).ok, false);
-  forjarLinha(armazenamento, 'MOVIMENTOS_ESTOQUE', ajuste.requisicaoId, (l) => { l.saldo_anterior = null; l.delta_unidades = 4; });
-  assert.equal(pulso.reconciliarPendencias().erro.codigo, 'DADOS_INCONSISTENTES');
-  assert.equal(armazenamento.tabelas.MOVIMENTOS_ESTOQUE.length, 1);
-});
+  test(`ajuste pendente sem saldo anterior não é concluído (payload ${formato})`, () => {
+    const { pulso, armazenamento } = ambienteComProduto();
+    pulso.registrarEntrada(ENTRADA);
+    const ajuste = { requisicaoId: 'REV-AJU', sku: 'MER-001', quantidadeContada: 4, motivo: 'Contagem fictícia' };
+    armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
+    assert.equal(pulso.ajustarPorContagem(ajuste).ok, false);
+    forjarLinha(armazenamento, 'MOVIMENTOS_ESTOQUE', ajuste.requisicaoId, (l) => { l.saldo_anterior = null; l.delta_unidades = 4; }, formato);
+    assert.equal(pulso.reconciliarPendencias().erro.codigo, 'DADOS_INCONSISTENTES');
+    assert.equal(armazenamento.tabelas.MOVIMENTOS_ESTOQUE.length, 1);
+  });
+}
 
 test('novo lançamento não começa se a pendência continuar aberta depois de concluída', () => {
   const { carregarNucleo } = require('../local/nucleo');
-  const pendente = { operacaoId: 'OPR-P', requisicaoId: 'REV-P', tipo: 'ENTRADA', tabela: 'MOVIMENTOS_ESTOQUE', linha: { movimento_id: 'MOV-P' }, tentativas: 1 };
+  const pendente = { operacaoId: 'OPR-P', requisicaoId: 'REV-P', tipo: 'ENTRADA', registros: [{ tabela: 'MOVIMENTOS_ESTOQUE', linha: { movimento_id: 'MOV-P' } }], referenciaId: 'MOV-P', tentativas: 1 };
   const gravadas = [];
   const r = carregarNucleo().operacoes.executar({
     lock: { executar: (fn) => fn() }, relogio: () => '2026-11-18T12:00:00.000Z', gerarId: (p) => `${p}-T`,

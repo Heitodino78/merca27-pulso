@@ -25,6 +25,16 @@ interface PedidoSaldoInicial extends PedidoStatus { quantidade: number; custoUni
 interface PedidoPerda extends PedidoStatus { quantidade: number; categoriaPerda: string; }
 interface PedidoAjuste extends PedidoStatus { quantidadeContada: number; }
 interface PedidoConsulta { sku: string; limiteHistorico?: number; }
+interface ItemContagem { sku: string; quantidadeContada: number; }
+interface PedidoContagem { requisicaoId?: string; itens: ItemContagem[]; motivo: string; operadorSimulado?: string; }
+/** Registro de uma operação: um dado em uma tabela. M-03: uma operação grava uma lista deles. */
+interface RegistroOperacao { tabela: string; linha: LinhaPulso; }
+/** Payload da intenção PENDENTE. O formato legado { tabela, linha } da Fase 01 continua legível. */
+interface PayloadIntencao { registros: RegistroOperacao[]; }
+interface OperacaoPulso {
+  operacaoId: string; requisicaoId: string; tipo: string; estado: string; tentativas: number;
+  assinatura: string; registros: RegistroOperacao[]; referenciaId: string;
+}
 interface LinhaProduto {
   sku: string; nome: string; categoria_id: string; unidade: string;
   preco_venda_centavos: number; custo_ref_centavos: number;
@@ -56,6 +66,9 @@ interface RespostaOperacao {
   ok: boolean; erro?: ErroPulso; duplicada?: boolean; recuperada?: boolean;
   operacaoId?: string; movimentoId?: string; sku?: string; quantidade?: number; saldoAtual?: number;
   mensagem?: string; aviso?: string;
+  /** Contagem de inventário: ajustes gravados e SKUs que já conferiam. */
+  ajustados?: { sku: string; movimentoId: string; saldoAnterior: number; saldoNovo: number; deltaUnidades: number }[];
+  semDiferenca?: string[];
 }
 type LinhaPulso = LinhaProduto | LinhaMovimento | LinhaEvento | LinhaFornecedor | LinhaAlteracao;
 interface ArmazenamentoPulso {

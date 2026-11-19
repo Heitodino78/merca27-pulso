@@ -17,3 +17,13 @@ Execute `npm run -s pulso -- seed` para cadastrar os seis fornecedores e depois 
 Os seis produtos da Fase 00 mantêm exatamente nome, preço, custo, mínimo e alvo, fixados em `tests/catalogo-fase1.test.js`. Nenhuma transação histórica é gerada pela seed. O cenário de 90 dias é separado, temporário e voltado à medição de desempenho; não representa vendas reais nem dados de mercado.
 
 O formato de movimentos da Fase 01 inclui custo, fornecedor, categoria de perda e saldos de ajuste. Bases anteriores não são migradas nem apagadas automaticamente. Preserve-as e escolha uma pasta nova com `PULSO_DADOS`. Perdas e ajustes usam o custo de referência vigente; entrada exige custo unitário explícito e fornecedor. Saldo inicial exige quantidade positiva e motivo e só pode ocorrer antes de movimentos confirmados.
+
+## Base de compatibilidade da Fase 01 (`fixtures/base-fase01/`)
+
+Cinco arquivos JSONL gerados em 19/11/2026 pelo código da Fase 01, **antes** de M-03, com relógio e identificadores determinísticos de `tests/apoio.js`. As intenções usam o payload antigo `{ tabela, linha }`. Conteúdo, todo fictício:
+
+- fornecedor `FOR-001`, produtos `MER-001` e `MER-002`;
+- saldo inicial (5 em `MER-002`), entrada (10), perda (2) e ajuste por contagem (para 7) em `MER-001`;
+- alteração de preço de `MER-002`, uma rejeição (`QTD_INVALIDA`) e uma entrada interrompida antes do dado (`REQ-ENT-PEND`, pendente).
+
+Saldos esperados: `MER-001` 7 e `MER-002` 5, com uma operação pendente; depois de reconciliar, `MER-002` passa a 9. `tests/m03.test.js` copia a base para uma pasta temporária, confere a leitura e a reconciliação e verifica que as linhas antigas continuam idênticas byte a byte. **Não edite estes arquivos**: eles são a prova de compatibilidade (D-049).

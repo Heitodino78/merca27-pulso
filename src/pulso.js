@@ -21,6 +21,7 @@ function pulsoCriar(portas) {
     registrarSaldoInicial: /** @param {PedidoSaldoInicial} request */ function (request) { return PULSO.casosDeUso.registrarSaldoInicial(ctx, request); },
     registrarPerda: /** @param {PedidoPerda} request */ function (request) { return PULSO.casosDeUso.registrarPerda(ctx, request); },
     ajustarPorContagem: /** @param {PedidoAjuste} request */ function (request) { return PULSO.casosDeUso.ajustarPorContagem(ctx, request); },
+    registrarContagem: /** @param {PedidoContagem} request */ function (request) { return PULSO.casosDeUso.registrarContagem(ctx, request); },
     alterarProduto: /** @param {PedidoAlteracao} request */ function (request) { return PULSO.casosDeUso.alterarProduto(ctx, request); },
     desativarProduto: /** @param {PedidoStatus} request */ function (request) { return PULSO.casosDeUso.desativarProduto(ctx, request); },
     reativarProduto: /** @param {PedidoStatus} request */ function (request) { return PULSO.casosDeUso.reativarProduto(ctx, request); },

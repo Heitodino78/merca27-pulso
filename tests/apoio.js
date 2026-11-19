@@ -65,4 +65,19 @@ function saldoRecalculado(armazenamento, sku) {
     .reduce((total, m) => total + m.delta_unidades, 0);
 }
 
-module.exports = { criarAmbiente, ambienteComProduto, PRODUTO_BASE, eventos, saldoRecalculado };
+/**
+ * Formatos do payload da intenção: 'legado' é o { tabela, linha } gravado até a Fase 01;
+ * 'atual' é o { registros: [...] } de M-03. Testes de adulteração rodam nos dois.
+ */
+const FORMATOS = ['legado', 'atual'];
+
+/** Edita o primeiro registro da intenção e regrava o payload no formato pedido. */
+function editarPayload(evento, formato, alterar) {
+  const lido = JSON.parse(evento.payload);
+  const registros = lido.registros ? lido.registros : [lido];
+  alterar(registros[0]);
+  evento.payload = JSON.stringify(formato === 'legado' ? registros[0] : { registros });
+  return registros[0];
+}
+
+module.exports = { criarAmbiente, ambienteComProduto, PRODUTO_BASE, eventos, saldoRecalculado, FORMATOS, editarPayload };

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { ambienteComProduto, eventos } = require('./apoio');
+const { ambienteComProduto, eventos, FORMATOS, editarPayload } = require('./apoio');
 const { criarArmazenamentoJsonl } = require('../local/armazenamento-jsonl');
 
 const ENTRADA = { custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'INTEGRIDADE-1', sku: 'MER-001', quantidade: 10 };
@@ -98,17 +98,21 @@ for (const [nome, alterar] of ALTERACOES_LOG) {
   });
 }
 
-for (const tabela of ['OPERACOES_LOG', '__proto__', 'constructor']) {
-  test(`intenção não pode apontar para a tabela ${tabela}`, () => {
-    const { pulso, armazenamento } = ambienteComProduto();
-    pulso.registrarEntrada(ENTRADA);
-    const intencao = eventos(armazenamento, 'PENDENTE').find((e) => e.requisicao_id === ENTRADA.requisicaoId);
-    const payload = JSON.parse(intencao.payload);
-    payload.tabela = tabela;
-    if (tabela === 'OPERACOES_LOG') payload.linha = { ...confirmacaoEntrada(armazenamento)[0] };
-    intencao.payload = JSON.stringify(payload);
-    assert.equal(pulso.listarProdutos().erro.codigo, 'DADOS_INCONSISTENTES');
-  });
+for (const formato of FORMATOS) {
+  for (const tabela of ['OPERACOES_LOG', '__proto__', 'constructor']) {
+    test(`intenção não pode apontar para a tabela ${tabela} (payload ${formato})`, () => {
+      const { pulso, armazenamento } = ambienteComProduto();
+      pulso.registrarEntrada(ENTRADA);
+      const intencao = eventos(armazenamento, 'PENDENTE').find((e) => e.requisicao_id === ENTRADA.requisicaoId);
+      editarPayload(intencao, formato, (r) => {
+        r.tabela = tabela;
+        if (tabela === 'OPERACOES_LOG') r.linha = { ...confirmacaoEntrada(armazenamento)[0] };
+      });
+      const forma = JSON.parse(intencao.payload);
+      assert.deepEqual(Object.keys(forma).sort(), formato === 'legado' ? ['linha', 'tabela'] : ['registros'], 'só a tabela muda, não a forma do payload');
+      assert.equal(pulso.listarProdutos().erro.codigo, 'DADOS_INCONSISTENTES');
+    });
+  }
 }
 
 test('intenção com assinatura divergente é detectada antes de uma repetição', () => {
@@ -118,19 +122,19 @@ test('intenção com assinatura divergente é detectada antes de uma repetição
   assert.equal(pulso.registrarEntrada(ENTRADA).erro.codigo, 'DADOS_INCONSISTENTES');
 });
 
-test('intenção com número de unidades negativo não pode ser recuperada', () => {
-  const { pulso, armazenamento } = ambienteComProduto();
-  armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
-  pulso.registrarEntrada(ENTRADA);
-  const intencao = eventos(armazenamento, 'PENDENTE').find((e) => e.requisicao_id === ENTRADA.requisicaoId);
-  const payload = JSON.parse(intencao.payload);
-  payload.linha.delta_unidades = -1;
-  intencao.payload = JSON.stringify(payload);
-  const r = pulso.reconciliarPendencias();
-  assert.equal(r.ok, false);
-  assert.equal(r.erro.codigo, 'DADOS_INCONSISTENTES');
-  assert.equal(confirmacaoEntrada(armazenamento).length, 0);
-});
+for (const formato of FORMATOS) {
+  test(`intenção com número de unidades negativo não pode ser recuperada (payload ${formato})`, () => {
+    const { pulso, armazenamento } = ambienteComProduto();
+    armazenamento.falharNaProxima('MOVIMENTOS_ESTOQUE', 'antes');
+    pulso.registrarEntrada(ENTRADA);
+    const intencao = eventos(armazenamento, 'PENDENTE').find((e) => e.requisicao_id === ENTRADA.requisicaoId);
+    editarPayload(intencao, formato, (r) => { r.linha.delta_unidades = -1; });
+    const r = pulso.reconciliarPendencias();
+    assert.equal(r.ok, false);
+    assert.equal(r.erro.codigo, 'DADOS_INCONSISTENTES');
+    assert.equal(confirmacaoEntrada(armazenamento).length, 0);
+  });
+}
 
 test('JSONL completa escritas parciais de bytes antes de confirmar a gravação', (t) => {
   const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'pulso-escrita-parcial-'));

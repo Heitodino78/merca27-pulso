@@ -26,6 +26,36 @@ function pulsoCriarRepositorio() {
     return linhas;
   }
 
+  const TABELAS_DE_DADOS = ['PRODUTOS', 'MOVIMENTOS_ESTOQUE', 'FORNECEDORES', 'PRODUTOS_ALTERACOES'];
+  const LIMITE_REGISTROS = 200;
+  /** Tipos que já existiam quando o payload era { tabela, linha }; tipos novos só usam o formato atual. */
+  const TIPOS_LEGADOS = ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE'];
+
+  /**
+   * Payload atual: { registros: [{ tabela, linha }, ...] }. O formato da Fase 01,
+   * { tabela, linha }, continua legível como lista de um registro, sem reescrever o log (D-049).
+   */
+  function lerRegistros(evento, payload) {
+    const v = PULSO.validacao;
+    const invalido = function () { return inconsistente('operação ' + evento.operacao_id + ' com payload inválido'); };
+    let registros;
+    if (v.eObjeto(payload) && Object.keys(payload).length === 1 && Array.isArray(payload.registros)) registros = payload.registros;
+    else if (v.eObjeto(payload) && Object.keys(payload).length === 2 && 'tabela' in payload && 'linha' in payload &&
+        TIPOS_LEGADOS.indexOf(evento.tipo) !== -1) registros = [payload];
+    else throw invalido();
+    if (!registros.length || registros.length > LIMITE_REGISTROS) throw invalido();
+    const vistos = new Set();
+    return registros.map(function (registro) {
+      if (!v.eObjeto(registro) || Object.keys(registro).length !== 2 || TABELAS_DE_DADOS.indexOf(registro.tabela) === -1) throw invalido();
+      const problema = PULSO.esquema.problemaLinha(registro.tabela, registro.linha);
+      if (problema) throw inconsistente('operação ' + evento.operacao_id + ': ' + problema);
+      const identificador = registro.tabela + '|' + registro.linha[PULSO.esquema.TABELAS[registro.tabela].chave];
+      if (vistos.has(identificador)) throw inconsistente('operação ' + evento.operacao_id + ' com registro repetido');
+      vistos.add(identificador);
+      return { tabela: registro.tabela, linha: registro.linha };
+    });
+  }
+
   function abrirIntencao(evento) {
     let payload;
     try {
@@ -33,16 +63,12 @@ function pulsoCriarRepositorio() {
     } catch (e) {
       throw inconsistente('operação ' + evento.operacao_id + ' com payload ilegível');
     }
-    if (!PULSO.validacao.eObjeto(payload) || Object.keys(payload).length !== 2 ||
-        ['PRODUTOS', 'MOVIMENTOS_ESTOQUE', 'FORNECEDORES', 'PRODUTOS_ALTERACOES'].indexOf(payload.tabela) === -1) {
-      throw inconsistente('operação ' + evento.operacao_id + ' com payload inválido');
-    }
-    const problema = PULSO.esquema.problemaLinha(payload.tabela, payload.linha);
-    if (problema) throw inconsistente('operação ' + evento.operacao_id + ': ' + problema);
+    const registros = lerRegistros(evento, payload);
     if (!PULSO.validacao.requisicaoValida(evento.requisicao_id) || !evento.assinatura) {
       throw inconsistente('operação ' + evento.operacao_id + ' sem requisição ou assinatura');
     }
-    conferirIntencao(evento, payload);
+    conferirIntencao(evento, registros);
+    const principal = registros[0];
     return {
       operacaoId: evento.operacao_id,
       requisicaoId: evento.requisicao_id,
@@ -50,13 +76,52 @@ function pulsoCriarRepositorio() {
       estado: evento.estado,
       tentativas: evento.tentativas,
       assinatura: evento.assinatura,
-      tabela: payload.tabela,
-      linha: payload.linha,
+      registros: registros,
+      // referencia_id dos eventos é sempre a chave do primeiro registro da lista.
+      referenciaId: principal.linha[PULSO.esquema.TABELAS[principal.tabela].chave],
     };
   }
 
+  /** Contagem de inventário: um AJUSTE por SKU com diferença, na ordem dos itens do pedido. */
+  function conferirContagem(evento, registros) {
+    const v = PULSO.validacao;
+    let normalizado;
+    try { normalizado = PULSO.movimento.normalizarContagem(JSON.parse(evento.assinatura)); }
+    catch (erro) { throw inconsistente('assinatura de contagem inválida'); }
+    if (!normalizado.ok || evento.assinatura !== JSON.stringify(normalizado.dados) ||
+        evento.tentativas !== 1 || evento.erro_cod !== null || registros.length > normalizado.dados.itens.length) {
+      throw inconsistente('operação ' + evento.operacao_id + ' com intenção de contagem incompatível');
+    }
+    const itens = normalizado.dados.itens;
+    const registradoEm = registros[0].linha.registrado_em;
+    let posicao = 0;
+    registros.forEach(function (registro, indice) {
+      const linha = registro.linha;
+      if (registro.tabela !== 'MOVIMENTOS_ESTOQUE') throw inconsistente('contagem com registro fora de MOVIMENTOS_ESTOQUE');
+      while (posicao < itens.length && itens[posicao].sku !== linha.sku) posicao++;
+      if (posicao === itens.length) throw inconsistente('contagem com movimento fora da ordem dos itens');
+      const item = itens[posicao++];
+      if (!v.inteiroNaoNegativo(linha.custo_unit_centavos) || !v.inteiroNaoNegativo(linha.saldo_anterior) ||
+          linha.registrado_em !== registradoEm || linha.delta_unidades === 0) {
+        throw inconsistente('contagem com movimento inválido');
+      }
+      const reconstruida = PULSO.movimento.construirAdministrativo(
+        { sku: item.sku, quantidadeContada: item.quantidadeContada, motivo: normalizado.dados.motivo, operadorSimulado: normalizado.dados.operadorSimulado },
+        'AJUSTE', 'MOV-' + evento.operacao_id + '-' + (indice + 1), evento.operacao_id, linha.registrado_em, linha.saldo_anterior, linha.custo_unit_centavos);
+      if (PULSO.esquema.canonica('MOVIMENTOS_ESTOQUE', linha) !== PULSO.esquema.canonica('MOVIMENTOS_ESTOQUE', reconstruida)) {
+        throw inconsistente('operação ' + evento.operacao_id + ' com movimento divergente da contagem');
+      }
+    });
+    if (evento.referencia_id !== registros[0].linha.movimento_id) {
+      throw inconsistente('operação ' + evento.operacao_id + ' com referência divergente');
+    }
+  }
+
   /** A intenção recuperável precisa respeitar as mesmas regras do pedido original. */
-  function conferirIntencao(evento, payload) {
+  function conferirIntencao(evento, registros) {
+    if (evento.tipo === 'CONTAGEM_INVENTARIO') return conferirContagem(evento, registros);
+    if (registros.length !== 1) throw inconsistente('operação ' + evento.operacao_id + ' do tipo ' + evento.tipo + ' com mais de um registro');
+    const payload = registros[0];
     const linha = payload.linha;
     let normalizado;
     let reconstruida;
@@ -116,7 +181,7 @@ function pulsoCriarRepositorio() {
     const rejeitadas = new Set();
     eventos.forEach(function (evento) {
       if (['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1 ||
-          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE'].indexOf(evento.tipo) === -1) {
+          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE', 'CONTAGEM_INVENTARIO'].indexOf(evento.tipo) === -1) {
         throw inconsistente('operação ' + evento.operacao_id + ' com evento inválido');
       }
       if (evento.estado === 'REJEITADA') {
@@ -140,9 +205,8 @@ function pulsoCriarRepositorio() {
       if (operacao.estado === 'CONFIRMADA' || evento.estado === 'PENDENTE') {
         throw inconsistente('operação ' + evento.operacao_id + ' com sequência de estados inválida');
       }
-      const chave = PULSO.esquema.TABELAS[operacao.tabela].chave;
       if (evento.tipo !== operacao.tipo || evento.requisicao_id !== operacao.requisicaoId ||
-          evento.referencia_id !== operacao.linha[chave] || evento.tentativas < operacao.tentativas ||
+          evento.referencia_id !== operacao.referenciaId || evento.tentativas < operacao.tentativas ||
           evento.assinatura !== null || evento.payload !== null ||
           (evento.estado === 'CONFIRMADA' ? evento.erro_cod !== null : evento.erro_cod !== 'FALHA_GRAVACAO')) {
         throw inconsistente('operação ' + evento.operacao_id + ' com evento divergente da intenção');
@@ -153,16 +217,17 @@ function pulsoCriarRepositorio() {
     return { operacoes: operacoes, porRequisicao: porRequisicao };
   }
 
-  /** Cada linha de dado precisa corresponder exatamente à operação que a originou. */
+  /** Cada linha de dado precisa constar, exatamente igual, na lista da operação que a originou. */
   function conferirOrigem(tabela, linhas, operacoes) {
     const esquema = PULSO.esquema;
     const chave = esquema.TABELAS[tabela].chave;
     linhas.forEach(function (linha) {
       const operacao = operacoes.get(linha.operacao_id);
-      if (!operacao || operacao.tabela !== tabela || operacao.linha[chave] !== linha[chave]) {
+      const registro = operacao && operacao.registros.find(function (r) { return r.tabela === tabela && r.linha[chave] === linha[chave]; });
+      if (!registro) {
         throw inconsistente(tabela + ': registro ' + linha[chave] + ' sem operação de origem');
       }
-      if (esquema.canonica(tabela, linha) !== esquema.canonica(tabela, operacao.linha)) {
+      if (esquema.canonica(tabela, linha) !== esquema.canonica(tabela, registro.linha)) {
         throw inconsistente(tabela + ': registro ' + linha[chave] + ' difere do que foi confirmado');
       }
     });
@@ -178,6 +243,17 @@ function pulsoCriarRepositorio() {
       if (saldo < 0) throw inconsistente('saldo negativo em ' + movimento.sku);
       if (!PULSO.validacao.inteiroSeguro(saldo)) throw inconsistente('saldo fora do limite de inteiros exatos em ' + movimento.sku);
       saldos.set(movimento.sku, saldo);
+    });
+  }
+
+  /** Itens contados sem movimento só são válidos se já conferiam com o saldo naquele instante. */
+  function conferirItensContados(operacao, produtos, saldos) {
+    const ajustados = new Set(operacao.registros.map(function (r) { return r.linha.sku; }));
+    JSON.parse(operacao.assinatura).itens.forEach(function (item) {
+      if (!produtos.has(item.sku)) throw inconsistente('contagem de SKU inexistente ' + item.sku);
+      if (!ajustados.has(item.sku) && (saldos.get(item.sku) || 0) !== item.quantidadeContada) {
+        throw inconsistente('contagem sem ajuste para ' + item.sku + ', que tinha diferença');
+      }
     });
   }
 
@@ -208,12 +284,18 @@ function pulsoCriarRepositorio() {
       conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);
       conferirOrigem('PRODUTOS_ALTERACOES', linhasAlteracoes, dobra.operacoes);
 
-      const presentes = new Set(linhasProdutos.concat(linhasMovimentos, linhasFornecedores, linhasAlteracoes).map(function (l) { return l.operacao_id; }));
+      // Operação confirmada precisa ter TODOS os registros da sua lista gravados.
+      const linhasPorTabela = { PRODUTOS: linhasProdutos, MOVIMENTOS_ESTOQUE: linhasMovimentos, FORNECEDORES: linhasFornecedores, PRODUTOS_ALTERACOES: linhasAlteracoes };
+      const presentes = {};
+      Object.keys(linhasPorTabela).forEach(function (tabela) {
+        const chave = PULSO.esquema.TABELAS[tabela].chave;
+        presentes[tabela] = new Set(linhasPorTabela[tabela].map(function (l) { return l[chave]; }));
+      });
       const pendentes = [];
       dobra.operacoes.forEach(function (operacao) {
         if (operacao.estado !== 'CONFIRMADA') pendentes.push(operacao);
-        else if (!presentes.has(operacao.operacaoId)) {
-          throw inconsistente('operação confirmada ' + operacao.operacaoId + ' sem o registro correspondente');
+        else if (!operacao.registros.every(function (r) { return presentes[r.tabela].has(r.linha[PULSO.esquema.TABELAS[r.tabela].chave]); })) {
+          throw inconsistente('operação confirmada ' + operacao.operacaoId + ' sem todos os registros correspondentes');
         }
       });
 
@@ -227,7 +309,11 @@ function pulsoCriarRepositorio() {
       // Reproduz a ordem das operações, incluindo o cadastro vigente em cada instante.
       dobra.operacoes.forEach(function (operacao) {
         if (operacao.estado !== 'CONFIRMADA') return;
-        const linha = operacao.linha;
+        if (operacao.tipo === 'CONTAGEM_INVENTARIO') conferirItensContados(operacao, produtos, saldos);
+        operacao.registros.forEach(function (registro) { reproduzir(operacao, registro.linha); });
+      });
+
+      function reproduzir(operacao, linha) {
         if (operacao.tipo === 'CADASTRO_FORNECEDOR') {
           fornecedores.set(linha.fornecedor_id, linha);
         } else if (operacao.tipo === 'CADASTRO_PRODUTO') {
@@ -247,19 +333,21 @@ function pulsoCriarRepositorio() {
           versoes.get(linha.sku).push({ produto: Object.assign({}, resultado.produto), operacaoId: linha.operacao_id,
             alteracaoId: linha.alteracao_id, motivo: linha.motivo, registradoEm: linha.registrado_em, operadorSimulado: linha.operador_simulado });
         } else {
+          // Regras pelo tipo do movimento: uma contagem de inventário grava vários AJUSTE.
+          const tipoMovimento = linha.tipo;
           const produto = produtos.get(linha.sku);
           const saldo = saldos.get(linha.sku) || 0;
           if (!produto) throw inconsistente('movimento ' + linha.movimento_id + ' anterior ao cadastro do SKU');
-          if (operacao.tipo === 'ENTRADA' && !produto.ativo) throw inconsistente('entrada registrada em produto inativo');
-          if (operacao.tipo === 'ENTRADA' && (!fornecedores.has(linha.fornecedor_id) || !fornecedores.get(linha.fornecedor_id).ativo)) throw inconsistente('entrada vinculada a fornecedor inexistente ou inativo');
-          if (operacao.tipo === 'SALDO_INICIAL' && movimentados.has(linha.sku)) throw inconsistente('saldo inicial após movimentação');
-          if (['PERDA', 'AJUSTE'].indexOf(operacao.tipo) !== -1 && linha.custo_unit_centavos !== produto.custo_ref_centavos) throw inconsistente('custo histórico divergente do cadastro vigente');
-          if (operacao.tipo === 'AJUSTE' && (linha.saldo_anterior !== saldo || linha.saldo_novo !== saldo + linha.delta_unidades)) throw inconsistente('ajuste com saldos divergentes');
+          if (tipoMovimento === 'ENTRADA' && !produto.ativo) throw inconsistente('entrada registrada em produto inativo');
+          if (tipoMovimento === 'ENTRADA' && (!fornecedores.has(linha.fornecedor_id) || !fornecedores.get(linha.fornecedor_id).ativo)) throw inconsistente('entrada vinculada a fornecedor inexistente ou inativo');
+          if (tipoMovimento === 'SALDO_INICIAL' && movimentados.has(linha.sku)) throw inconsistente('saldo inicial após movimentação');
+          if (['PERDA', 'AJUSTE'].indexOf(tipoMovimento) !== -1 && linha.custo_unit_centavos !== produto.custo_ref_centavos) throw inconsistente('custo histórico divergente do cadastro vigente');
+          if (tipoMovimento === 'AJUSTE' && (linha.saldo_anterior !== saldo || linha.saldo_novo !== saldo + linha.delta_unidades)) throw inconsistente('ajuste com saldos divergentes');
           movimentos.push(linha);
           saldos.set(linha.sku, saldo + linha.delta_unidades);
           movimentados.add(linha.sku);
         }
-      });
+      }
       conferirMovimentos(movimentos);
 
       return {

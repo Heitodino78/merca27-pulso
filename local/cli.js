@@ -22,6 +22,8 @@ Comandos:
   saldo-inicial --sku MER-001 --quantidade 7 --custo 600 --motivo "Inventário fictício"
   perda --sku MER-001 --quantidade 2 --categoria-perda AVARIA --motivo "Avaria fictícia"
   ajuste --sku MER-001 --contada 4 --motivo "Contagem fictícia"
+  contagem --item MER-001=4 --item MER-002=0 --motivo "Inventário fictício"
+                            Contagem de vários SKUs: tudo ou nada, um ajuste por SKU com diferença
   reposicao                 Lista alertas e sugestões para revisão humana
   historico-produto --sku MER-001   Mostra as versões do cadastro
 
@@ -33,7 +35,8 @@ function lerOpcoes(argumentos) {
   const opcoes = {};
   for (let i = 0; i < argumentos.length; i++) {
     const nome = argumentos[i].startsWith('--') ? argumentos[i].slice(2) : null;
-    if (nome === 'inativo') opcoes.inativo = true;
+    if (nome === 'item' && i + 1 < argumentos.length) (opcoes.item ??= []).push(argumentos[++i]);
+    else if (nome === 'inativo') opcoes.inativo = true;
     else if (nome === 'ativo') opcoes.ativo = true;
     else if (OPCOES_COM_VALOR.includes(nome) && i + 1 < argumentos.length) opcoes[nome] = argumentos[++i];
     else throw new Error(`Opção inválida ou sem valor: ${argumentos[i]}`);
@@ -148,6 +151,21 @@ for (const [comando, metodo] of [['desativar', 'desativarProduto'], ['reativar',
 comandos['saldo-inicial'] = (pulso, o) => executarEscrita(pulso, 'registrarSaldoInicial', o, { sku: o.sku, quantidade: numero(o.quantidade), custoUnitCentavos: numero(o.custo), motivo: o.motivo });
 comandos.perda = (pulso, o) => executarEscrita(pulso, 'registrarPerda', o, { sku: o.sku, quantidade: numero(o.quantidade), categoriaPerda: o['categoria-perda'], motivo: o.motivo });
 comandos.ajuste = (pulso, o) => executarEscrita(pulso, 'ajustarPorContagem', o, { sku: o.sku, quantidadeContada: numero(o.contada), motivo: o.motivo });
+// Cada --item é SKU=quantidade. Formato inválido segue como texto e o domínio recusa.
+comandos.contagem = (pulso, o) => {
+  const itens = (o.item ?? []).map((texto) => {
+    const separador = texto.indexOf('=');
+    return separador < 0 ? { sku: texto } : { sku: texto.slice(0, separador), quantidadeContada: numero(texto.slice(separador + 1)) };
+  });
+  const requisicaoId = requisicao(o);
+  const r = pulso.registrarContagem({ requisicaoId, itens, motivo: o.motivo });
+  if (!r.ok) return imprimirErro(r, requisicaoId);
+  console.log(`OK: ${r.mensagem}`);
+  for (const a of r.ajustados) console.log(`  ${a.sku}: ${a.saldoAnterior} -> ${a.saldoNovo} (${a.deltaUnidades > 0 ? '+' : ''}${a.deltaUnidades})`);
+  if (r.semDiferenca.length) console.log(`  Já conferiam: ${r.semDiferenca.join(', ')}`);
+  console.log(`Requisição: ${requisicaoId}${r.duplicada ? ' (já confirmada)' : ''}`);
+  return 0;
+};
 comandos.reposicao = (pulso) => {
   const r = pulso.consultarReposicao();
   if (!r.ok) return imprimirErro(r);

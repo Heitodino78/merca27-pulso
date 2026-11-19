@@ -60,7 +60,10 @@ function medirDesempenho(rotulo = 'atual') {
     return { rotulo, node: process.version, dias: 90, operacoesDiarias: 3, alteracoesSemanais: 13, volume,
       medidas: [medir('listarProdutos', () => pulso.listarProdutos()), medir('consultarEstoque', () => pulso.consultarEstoque({ sku: 'MER-001' })),
         medir('consultarReposicao', () => pulso.consultarReposicao()), medir('registrarEntrada', () => pulso.registrarEntrada({ requisicaoId: `MED-BENCH-${++req}`,
-          sku: 'MER-001', quantidade: 1, custoUnitCentavos: 160, fornecedorId: 'FOR-001' }))],
+          sku: 'MER-001', quantidade: 1, custoUnitCentavos: 160, fornecedorId: 'FOR-001' })),
+        // M-03: cinco SKUs por contagem; a quantidade muda a cada chamada para sempre haver diferença.
+        medir('registrarContagem', () => pulso.registrarContagem({ requisicaoId: `MED-CONT-${++req}`, motivo: 'Inventário fictício',
+          itens: ['MER-010', 'MER-011', 'MER-012', 'MER-013', 'MER-014'].map((sku, i) => ({ sku, quantidadeContada: 100 + ((req + i) % 2) })) }))],
       limites: 'Ambiente local JSONL, dados sintéticos e volume declarado; não mede Google, vendas nem uma operação comercial real.' };
   } finally { fs.rmSync(pasta, { recursive: true, force: true }); }
 }

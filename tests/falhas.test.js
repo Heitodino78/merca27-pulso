@@ -166,7 +166,7 @@ for (const [nome, adulterar] of ADULTERACOES) {
   });
 }
 
-test('saldo negativo forjado com operação aparentemente válida é detectado', () => {
+for (const formato of ['legado', 'atual']) test(`saldo negativo forjado com operação aparentemente válida é detectado (payload ${formato})`, () => {
   const { pulso, armazenamento } = ambienteComProduto();
   const instante = '2026-11-18T13:00:00.000Z';
   const linha = {
@@ -179,7 +179,7 @@ test('saldo negativo forjado com operação aparentemente válida é detectado',
     referencia_id: 'MOV-FORJADO', erro_cod: null, tentativas: 1,
   };
   armazenamento.tabelas.OPERACOES_LOG.push(
-    { ...evento, evento_id: 'EVT-F1', estado: 'PENDENTE', assinatura: JSON.stringify({ sku: 'MER-001', motivo: 'Avaria fictícia', operadorSimulado: 'OPERADOR-DEMO', quantidade: 5, categoriaPerda: 'AVARIA' }), payload: JSON.stringify({ tabela: 'MOVIMENTOS_ESTOQUE', linha }) },
+    { ...evento, evento_id: 'EVT-F1', estado: 'PENDENTE', assinatura: JSON.stringify({ sku: 'MER-001', motivo: 'Avaria fictícia', operadorSimulado: 'OPERADOR-DEMO', quantidade: 5, categoriaPerda: 'AVARIA' }), payload: JSON.stringify(formato === 'legado' ? { tabela: 'MOVIMENTOS_ESTOQUE', linha } : { registros: [{ tabela: 'MOVIMENTOS_ESTOQUE', linha }] }) },
     { ...evento, evento_id: 'EVT-F2', estado: 'CONFIRMADA', assinatura: null, payload: null },
   );
   armazenamento.tabelas.MOVIMENTOS_ESTOQUE.push(linha);

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { ambienteComProduto, eventos } = require('./apoio');
+const { ambienteComProduto, eventos, FORMATOS, editarPayload } = require('./apoio');
 const { carregarNucleo } = require('../local/nucleo');
 const { criarArmazenamentoJsonl } = require('../local/armazenamento-jsonl');
 const ENTRADA = { custoUnitCentavos: 600, fornecedorId: 'FOR-001', requisicaoId: 'AUD-1', sku: 'MER-001', quantidade: 10 };
@@ -14,23 +14,22 @@ const ADULTERACOES = [
     const confirmacao = t.OPERACOES_LOG.find((e) => e.requisicao_id === 'AUD-1' && e.estado === 'CONFIRMADA');
     t.OPERACOES_LOG.push({ ...confirmacao, evento_id: 'EVT-EXTRA', estado: 'PENDENTE_RECONCILIACAO', erro_cod: 'FALHA_GRAVACAO' });
   }],
-  ['duas operações com a mesma requisição', (t) => {
-    const evento = t.OPERACOES_LOG.find((e) => e.requisicao_id === 'AUD-1' && e.estado === 'PENDENTE');
-    const payload = JSON.parse(evento.payload);
-    payload.linha.operacao_id = 'OPR-OUTRA';
-    payload.linha.movimento_id = 'MOV-OUTRO';
-    t.OPERACOES_LOG.push({ ...evento, evento_id: 'EVT-OUTRO', operacao_id: 'OPR-OUTRA', referencia_id: 'MOV-OUTRO', payload: JSON.stringify(payload) });
-  }],
-  ['movimento de SKU sem cadastro', (t) => {
-    const evento = t.OPERACOES_LOG.find((e) => e.requisicao_id === 'AUD-1' && e.estado === 'PENDENTE');
-    const payload = JSON.parse(evento.payload);
-    payload.linha.sku = 'MER-999';
-    const dados = JSON.parse(evento.assinatura);
-    dados.sku = 'MER-999';
-    evento.payload = JSON.stringify(payload);
-    evento.assinatura = JSON.stringify(dados);
-    t.MOVIMENTOS_ESTOQUE[0].sku = 'MER-999';
-  }],
+  ...FORMATOS.flatMap((formato) => [
+    [`duas operações com a mesma requisição (payload ${formato})`, (t) => {
+      const evento = t.OPERACOES_LOG.find((e) => e.requisicao_id === 'AUD-1' && e.estado === 'PENDENTE');
+      const copia = { ...evento, evento_id: 'EVT-OUTRO', operacao_id: 'OPR-OUTRA', referencia_id: 'MOV-OUTRO' };
+      editarPayload(copia, formato, (r) => { r.linha.operacao_id = 'OPR-OUTRA'; r.linha.movimento_id = 'MOV-OUTRO'; });
+      t.OPERACOES_LOG.push(copia);
+    }],
+    [`movimento de SKU sem cadastro (payload ${formato})`, (t) => {
+      const evento = t.OPERACOES_LOG.find((e) => e.requisicao_id === 'AUD-1' && e.estado === 'PENDENTE');
+      editarPayload(evento, formato, (r) => { r.linha.sku = 'MER-999'; });
+      const dados = JSON.parse(evento.assinatura);
+      dados.sku = 'MER-999';
+      evento.assinatura = JSON.stringify(dados);
+      t.MOVIMENTOS_ESTOQUE[0].sku = 'MER-999';
+    }],
+  ]),
   ['referência da intenção divergente', (t) => {
     t.OPERACOES_LOG.find((e) => e.requisicao_id === 'AUD-1' && e.estado === 'PENDENTE').referencia_id = 'MOV-OUTRO';
   }],

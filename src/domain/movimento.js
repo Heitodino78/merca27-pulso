@@ -5,6 +5,7 @@ var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 function pulsoCriarMovimento() {
   const TIPOS = ['SALDO_INICIAL', 'ENTRADA', 'VENDA', 'PERDA', 'AJUSTE', 'ESTORNO'];
   const OPERADOR_PADRAO = 'OPERADOR-DEMO';
+  const LIMITE_ITENS_CONTAGEM = 100;
   const PADRAO_OPERADOR = /^[A-Z0-9][A-Z0-9-]{2,39}$/;
   const CAMPOS = ['requisicaoId', 'sku', 'quantidade', 'referenciaFornecedor', 'motivo', 'operadorSimulado', 'custoUnitCentavos', 'fornecedorId'];
 
@@ -100,7 +101,44 @@ function pulsoCriarMovimento() {
       saldo_anterior: tipo === 'AJUSTE' ? saldoAnterior : null, saldo_novo: tipo === 'AJUSTE' ? dados.quantidadeContada : null };
   }
 
-  return { TIPOS: TIPOS, normalizarEntrada: normalizarEntrada, construirEntrada: construirEntrada,
+  /**
+   * Contagem de inventário com vários SKUs. Itens ordenados por SKU: a mesma contagem
+   * enviada em outra ordem tem a mesma assinatura e é reconhecida como repetição.
+   */
+  function normalizarContagem(request) {
+    const v = PULSO.validacao;
+    const falha = PULSO.erros.falha;
+    if (!v.eObjeto(request) || v.camposDesconhecidos(request, ['requisicaoId', 'itens', 'motivo', 'operadorSimulado']).length) {
+      return falha('DADOS_INVALIDOS', 'Campo não aceito na contagem.');
+    }
+    if (!Array.isArray(request.itens) || !request.itens.length || request.itens.length > LIMITE_ITENS_CONTAGEM) {
+      return falha('DADOS_INVALIDOS', 'Informe de 1 a ' + LIMITE_ITENS_CONTAGEM + ' itens contados.');
+    }
+    const vistos = new Set();
+    const itens = [];
+    for (let i = 0; i < request.itens.length; i++) {
+      const item = request.itens[i];
+      if (!v.eObjeto(item) || v.camposDesconhecidos(item, ['sku', 'quantidadeContada']).length) {
+        return falha('DADOS_INVALIDOS', 'Cada item da contagem deve ter apenas sku e quantidadeContada.');
+      }
+      if (!v.skuValido(item.sku)) return falha('SKU_INVALIDO', 'Informe o SKU no formato MER-001.');
+      if (!v.inteiroNaoNegativo(item.quantidadeContada)) {
+        return falha('QTD_INVALIDA', 'A quantidade contada de ' + item.sku + ' deve ser inteira, zero ou maior.');
+      }
+      if (vistos.has(item.sku)) return falha('DADOS_INVALIDOS', 'O SKU ' + item.sku + ' aparece mais de uma vez na contagem.');
+      vistos.add(item.sku);
+      itens.push({ sku: item.sku, quantidadeContada: item.quantidadeContada });
+    }
+    itens.sort(function (a, b) { return a.sku < b.sku ? -1 : 1; });
+    const problema = v.problemaTexto(request.motivo, 'Motivo', 3, 200);
+    const operador = request.operadorSimulado === undefined ? OPERADOR_PADRAO : request.operadorSimulado;
+    if (problema || typeof operador !== 'string' || !PADRAO_OPERADOR.test(operador)) {
+      return falha('DADOS_INVALIDOS', problema || 'Operador simulado inválido.');
+    }
+    return { ok: true, dados: { itens: itens, motivo: request.motivo, operadorSimulado: operador } };
+  }
+
+  return { TIPOS: TIPOS, normalizarEntrada: normalizarEntrada, construirEntrada: construirEntrada, normalizarContagem: normalizarContagem,
     normalizarAdministrativo: normalizarAdministrativo, construirAdministrativo: construirAdministrativo };
 }
 PULSO.movimento = pulsoCriarMovimento();

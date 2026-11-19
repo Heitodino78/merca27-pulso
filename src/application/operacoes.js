@@ -55,32 +55,39 @@ function pulsoCriarOperacoes() {
     return resultado;
   }
 
-  /** Conclui uma operação pendente sem duplicar o dado, mesmo que ele já tenha sido gravado. */
+  /**
+   * Conclui uma operação pendente gravando, na ordem da intenção, só os registros que faltam.
+   * A conferência de que o conjunto final é exatamente o da intenção fica na releitura seguinte.
+   */
   function concluir(ctx, operacao, automatica) {
-    const chave = PULSO.esquema.TABELAS[operacao.tabela].chave;
-    if (!ctx.repositorio.existe(operacao.tabela, operacao.linha[chave])) {
-      ctx.repositorio.anexarVerificado(operacao.tabela, operacao.linha);
-    }
+    operacao.registros.forEach(function (registro) {
+      const chave = PULSO.esquema.TABELAS[registro.tabela].chave;
+      if (!ctx.repositorio.existe(registro.tabela, registro.linha[chave])) {
+        ctx.repositorio.anexarVerificado(registro.tabela, registro.linha);
+      }
+    });
     ctx.repositorio.anexarVerificado(LOG, linhaEvento(ctx, {
       operacaoId: operacao.operacaoId,
       requisicaoId: operacao.requisicaoId,
       tipo: operacao.tipo,
       estado: 'CONFIRMADA',
       resumo: automatica ? 'Operação concluída por reconciliação automática.' : 'Operação concluída por reconciliação.',
-      referenciaId: operacao.linha[chave],
+      referenciaId: operacao.referenciaId,
       tentativas: operacao.tentativas + 1,
     }));
   }
 
   function gravarNova(ctx, def, requisicaoId, assinatura, dados, estado) {
     const operacaoId = ctx.gerarId('OPR');
-    const registro = def.construir(dados, operacaoId, ctx.relogio(), estado);
-    const chave = PULSO.esquema.TABELAS[registro.tabela].chave;
+    // construir devolve a lista ordenada de registros da operação.
+    const registros = def.construir(dados, operacaoId, ctx.relogio(), estado);
+    if (!Array.isArray(registros) || !registros.length) throw new Error('Operação sem registros.');
+    const principal = registros[0];
     const base = {
       operacaoId: operacaoId,
       requisicaoId: requisicaoId,
       tipo: def.tipo,
-      referenciaId: registro.linha[chave],
+      referenciaId: principal.linha[PULSO.esquema.TABELAS[principal.tabela].chave],
     };
     let podeMarcarInterrupcao = false;
     try {
@@ -89,10 +96,12 @@ function pulsoCriarOperacoes() {
         resumo: 'Intenção registrada.',
         tentativas: 1,
         assinatura: assinatura,
-        payload: JSON.stringify(registro),
+        payload: JSON.stringify({ registros: registros }),
       })));
       podeMarcarInterrupcao = true;
-      ctx.repositorio.anexarVerificado(registro.tabela, registro.linha);
+      registros.forEach(function (registro) {
+        ctx.repositorio.anexarVerificado(registro.tabela, registro.linha);
+      });
       // A confirmação pode ter sido gravada mesmo com erro de retorno: nada mais pode ser
       // anexado depois dela. A intenção PENDENTE já basta para a recuperação.
       podeMarcarInterrupcao = false;
@@ -136,7 +145,8 @@ function pulsoCriarOperacoes() {
 
   /**
    * def: { tipo, normalizar(request), assinatura(dados), verificar(estado, dados),
-   *        construir(dados, operacaoId, agora), responder(estado, operacao, situacao) }
+   *        construir(dados, operacaoId, agora, estado) -> [{ tabela, linha }, ...],
+   *        responder(estado, operacao, situacao) }
    */
   /** @returns {RespostaOperacao} */
   function executar(ctx, def, request) {

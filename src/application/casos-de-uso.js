@@ -5,6 +5,11 @@ var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 function pulsoCriarCasosDeUso() {
   const LIMITE_HISTORICO_PADRAO = 20;
 
+  /** Primeiro registro da operação; nas operações de um registro, é o próprio dado gravado. */
+  function principal(operacao) {
+    return operacao.registros[0].linha;
+  }
+
   function cadastrarFornecedor(ctx, request) {
     return PULSO.operacoes.executar(ctx, {
       tipo: 'CADASTRO_FORNECEDOR', normalizar: PULSO.fornecedor.normalizarCadastro,
@@ -13,10 +18,10 @@ function pulsoCriarCasosDeUso() {
         return estado.fornecedores.has(dados.fornecedorId) ? PULSO.erros.falha('FORNECEDOR_DUPLICADO', 'Fornecedor já cadastrado.') : null;
       },
       construir: function (dados, operacaoId, agora) {
-        return { tabela: 'FORNECEDORES', linha: PULSO.fornecedor.construirLinha(dados, operacaoId, agora) };
+        return [{ tabela: 'FORNECEDORES', linha: PULSO.fornecedor.construirLinha(dados, operacaoId, agora) }];
       },
       responder: function (estado, operacao, situacao) {
-        return { ok: true, operacaoId: operacao.operacaoId, fornecedorId: operacao.linha.fornecedor_id,
+        return { ok: true, operacaoId: operacao.operacaoId, fornecedorId: principal(operacao).fornecedor_id,
           duplicada: situacao.duplicada, recuperada: situacao.recuperada,
           mensagem: situacao.duplicada ? 'Cadastro já realizado por esta requisição; nada foi alterado.' : 'Fornecedor cadastrado.' };
       },
@@ -42,11 +47,11 @@ function pulsoCriarCasosDeUso() {
         return null;
       },
       construir: function (dados, operacaoId, agora, estado) {
-        return { tabela: 'PRODUTOS_ALTERACOES', linha: PULSO.alteracao.construirLinha(dados, 'ALT-' + operacaoId, operacaoId, agora,
-          PULSO.alteracao.efeito(estado.produtos.get(dados.sku), dados.campos)) };
+        return [{ tabela: 'PRODUTOS_ALTERACOES', linha: PULSO.alteracao.construirLinha(dados, 'ALT-' + operacaoId, operacaoId, agora,
+          PULSO.alteracao.efeito(estado.produtos.get(dados.sku), dados.campos)) }];
       },
       responder: function (estado, operacao, situacao) {
-        return { ok: true, operacaoId: operacao.operacaoId, sku: operacao.linha.sku, duplicada: situacao.duplicada,
+        return { ok: true, operacaoId: operacao.operacaoId, sku: principal(operacao).sku, duplicada: situacao.duplicada,
           recuperada: situacao.recuperada,
           mensagem: situacao.duplicada ? 'Alteração já realizada por esta requisição; nada foi alterado.' : 'Alteração de produto confirmada.' };
       },
@@ -82,7 +87,7 @@ function pulsoCriarCasosDeUso() {
         return null;
       },
       construir: function (dados, operacaoId, agora) {
-        return { tabela: 'PRODUTOS', linha: PULSO.produto.construirLinha(dados, operacaoId, agora) };
+        return [{ tabela: 'PRODUTOS', linha: PULSO.produto.construirLinha(dados, operacaoId, agora) }];
       },
       responder: function (estado, operacao, situacao) {
         return {
@@ -90,10 +95,10 @@ function pulsoCriarCasosDeUso() {
           duplicada: situacao.duplicada,
           recuperada: situacao.recuperada,
           operacaoId: operacao.operacaoId,
-          sku: operacao.linha.sku,
+          sku: principal(operacao).sku,
           mensagem: situacao.duplicada
             ? 'Cadastro já realizado por esta requisição; nada foi alterado.'
-            : 'Produto ' + operacao.linha.sku + ' cadastrado.',
+            : 'Produto ' + principal(operacao).sku + ' cadastrado.',
         };
       },
     }, request);
@@ -119,7 +124,7 @@ function pulsoCriarCasosDeUso() {
       },
       construir: function (dados, operacaoId, agora) {
         const movimentoId = 'MOV-' + operacaoId;
-        return { tabela: 'MOVIMENTOS_ESTOQUE', linha: PULSO.movimento.construirEntrada(dados, movimentoId, operacaoId, agora) };
+        return [{ tabela: 'MOVIMENTOS_ESTOQUE', linha: PULSO.movimento.construirEntrada(dados, movimentoId, operacaoId, agora) }];
       },
       responder: function (estado, operacao, situacao) {
         return {
@@ -127,12 +132,12 @@ function pulsoCriarCasosDeUso() {
           duplicada: situacao.duplicada,
           recuperada: situacao.recuperada,
           operacaoId: operacao.operacaoId,
-          movimentoId: operacao.linha.movimento_id,
-          sku: operacao.linha.sku,
-          quantidade: operacao.linha.delta_unidades,
-          custoUnitCentavos: operacao.linha.custo_unit_centavos,
-          fornecedorId: operacao.linha.fornecedor_id,
-          saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, operacao.linha.sku),
+          movimentoId: principal(operacao).movimento_id,
+          sku: principal(operacao).sku,
+          quantidade: principal(operacao).delta_unidades,
+          custoUnitCentavos: principal(operacao).custo_unit_centavos,
+          fornecedorId: principal(operacao).fornecedor_id,
+          saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, principal(operacao).sku),
           mensagem: situacao.duplicada
             ? 'Entrada já registrada por esta requisição; o saldo não mudou.'
             : 'Entrada registrada.',
@@ -155,14 +160,54 @@ function pulsoCriarCasosDeUso() {
         return null;
       },
       construir: function (dados, operacaoId, agora, estado) {
-        return { tabela: 'MOVIMENTOS_ESTOQUE', linha: PULSO.movimento.construirAdministrativo(dados, tipo, 'MOV-' + operacaoId, operacaoId, agora,
-          PULSO.estoque.calcularSaldo(estado.movimentos, dados.sku), estado.produtos.get(dados.sku).custo_ref_centavos) };
+        return [{ tabela: 'MOVIMENTOS_ESTOQUE', linha: PULSO.movimento.construirAdministrativo(dados, tipo, 'MOV-' + operacaoId, operacaoId, agora,
+          PULSO.estoque.calcularSaldo(estado.movimentos, dados.sku), estado.produtos.get(dados.sku).custo_ref_centavos) }];
       },
       responder: function (estado, operacao, situacao) {
         return { ok: true, duplicada: situacao.duplicada, recuperada: situacao.recuperada,
-          operacaoId: operacao.operacaoId, movimentoId: operacao.linha.movimento_id, sku: operacao.linha.sku,
-          quantidade: operacao.linha.delta_unidades, saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, operacao.linha.sku),
+          operacaoId: operacao.operacaoId, movimentoId: principal(operacao).movimento_id, sku: principal(operacao).sku,
+          quantidade: principal(operacao).delta_unidades, saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, principal(operacao).sku),
           mensagem: situacao.duplicada ? 'Movimentação já confirmada; nada foi duplicado.' : 'Movimentação confirmada.' };
+      },
+    }, request);
+  }
+
+  /** Contagem de vários SKUs: tudo ou nada, um AJUSTE por SKU com diferença (M-03, D-050). */
+  function registrarContagem(ctx, request) {
+    return PULSO.operacoes.executar(ctx, {
+      tipo: 'CONTAGEM_INVENTARIO', normalizar: PULSO.movimento.normalizarContagem,
+      assinatura: function (dados) { return dados; },
+      verificar: function (estado, dados) {
+        const ausente = dados.itens.find(function (item) { return !estado.produtos.has(item.sku); });
+        if (ausente) return PULSO.erros.falha('SKU_INEXISTENTE', 'O SKU ' + ausente.sku + ' não está cadastrado. Nenhum item da contagem foi registrado.');
+        const comDiferenca = dados.itens.some(function (item) { return (estado.saldos.get(item.sku) || 0) !== item.quantidadeContada; });
+        if (!comDiferenca) return PULSO.erros.falha('AJUSTE_SEM_DIFERENCA', 'Todos os itens contados conferem com o saldo; nenhum ajuste é necessário.');
+        return null;
+      },
+      construir: function (dados, operacaoId, agora, estado) {
+        const registros = [];
+        dados.itens.forEach(function (item) {
+          const saldo = estado.saldos.get(item.sku) || 0;
+          if (saldo === item.quantidadeContada) return;
+          registros.push({ tabela: 'MOVIMENTOS_ESTOQUE', linha: PULSO.movimento.construirAdministrativo(
+            { sku: item.sku, quantidadeContada: item.quantidadeContada, motivo: dados.motivo, operadorSimulado: dados.operadorSimulado },
+            'AJUSTE', 'MOV-' + operacaoId + '-' + (registros.length + 1), operacaoId, agora, saldo, estado.produtos.get(item.sku).custo_ref_centavos) });
+        });
+        return registros;
+      },
+      responder: function (estado, operacao, situacao) {
+        const ajustados = operacao.registros.map(function (r) {
+          return { sku: r.linha.sku, movimentoId: r.linha.movimento_id, saldoAnterior: r.linha.saldo_anterior,
+            saldoNovo: r.linha.saldo_novo, deltaUnidades: r.linha.delta_unidades };
+        });
+        const skusAjustados = new Set(ajustados.map(function (a) { return a.sku; }));
+        const semDiferenca = JSON.parse(operacao.assinatura).itens
+          .filter(function (item) { return !skusAjustados.has(item.sku); })
+          .map(function (item) { return item.sku; });
+        return { ok: true, duplicada: situacao.duplicada, recuperada: situacao.recuperada, operacaoId: operacao.operacaoId,
+          ajustados: ajustados, semDiferenca: semDiferenca,
+          mensagem: situacao.duplicada ? 'Contagem já registrada por esta requisição; nada foi duplicado.'
+            : 'Contagem registrada: ' + ajustados.length + ' ajuste(s).' };
       },
     }, request);
   }
@@ -243,6 +288,7 @@ function pulsoCriarCasosDeUso() {
     registrarSaldoInicial: function (ctx, request) { return registrarAdministrativo(ctx, request, 'SALDO_INICIAL'); },
     registrarPerda: function (ctx, request) { return registrarAdministrativo(ctx, request, 'PERDA'); },
     ajustarPorContagem: function (ctx, request) { return registrarAdministrativo(ctx, request, 'AJUSTE'); },
+    registrarContagem: registrarContagem,
     alterarProduto: alterarProduto, consultarHistoricoProduto: consultarHistoricoProduto,
     desativarProduto: function (ctx, request) { return mudarStatus(ctx, request, false); },
     reativarProduto: function (ctx, request) { return mudarStatus(ctx, request, true); },
