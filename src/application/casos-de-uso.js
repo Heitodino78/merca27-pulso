@@ -1,4 +1,4 @@
-/* Casos de uso da Fase 00: cadastro, entrada, consulta e reconciliação. */
+/* Casos de uso: fornecedores, produtos, movimentos de estoque, consultas e reposição. */
 /** @type {PulsoNucleo} */
 var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 
@@ -17,7 +17,8 @@ function pulsoCriarCasosDeUso() {
       },
       responder: function (estado, operacao, situacao) {
         return { ok: true, operacaoId: operacao.operacaoId, fornecedorId: operacao.linha.fornecedor_id,
-          duplicada: situacao.duplicada, recuperada: situacao.recuperada, mensagem: 'Fornecedor cadastrado.' };
+          duplicada: situacao.duplicada, recuperada: situacao.recuperada,
+          mensagem: situacao.duplicada ? 'Cadastro já realizado por esta requisição; nada foi alterado.' : 'Fornecedor cadastrado.' };
       },
     }, request);
   }
@@ -46,7 +47,8 @@ function pulsoCriarCasosDeUso() {
       },
       responder: function (estado, operacao, situacao) {
         return { ok: true, operacaoId: operacao.operacaoId, sku: operacao.linha.sku, duplicada: situacao.duplicada,
-          recuperada: situacao.recuperada, mensagem: 'Alteração de produto confirmada.' };
+          recuperada: situacao.recuperada,
+          mensagem: situacao.duplicada ? 'Alteração já realizada por esta requisição; nada foi alterado.' : 'Alteração de produto confirmada.' };
       },
     }, request);
   }
@@ -120,7 +122,7 @@ function pulsoCriarCasosDeUso() {
         return { tabela: 'MOVIMENTOS_ESTOQUE', linha: PULSO.movimento.construirEntrada(dados, movimentoId, operacaoId, agora) };
       },
       responder: function (estado, operacao, situacao) {
-        const resposta = {
+        return {
           ok: true,
           duplicada: situacao.duplicada,
           recuperada: situacao.recuperada,
@@ -135,8 +137,6 @@ function pulsoCriarCasosDeUso() {
             ? 'Entrada já registrada por esta requisição; o saldo não mudou.'
             : 'Entrada registrada.',
         };
-        if (situacao.duplicada) resposta.aviso = 'OPERACAO_DUPLICADA';
-        return resposta;
       },
     }, request);
   }

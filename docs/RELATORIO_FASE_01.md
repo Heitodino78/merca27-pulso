@@ -8,6 +8,20 @@ Os blocos 0 a 9 do prompt de Fase 01 foram executados em ordem. A revisão pende
 
 O PULSO agora permite cadastrar fornecedores e produtos, alterar o cadastro com histórico, registrar saldo inicial, entrada, perda e contagem, consultar o saldo e obter sugestões de reposição. As operações continuam idempotentes, somente-acréscimo e confirmadas apenas após releitura. A Fase 01 está concluída localmente; interface visual e integração Google continuam pendentes.
 
+## Revisão independente
+
+Depois da entrega, uma revisão comparou o código com o prompt da fase, testou as regras novas e corrigiu os defeitos encontrados. **Os números desta seção substituem os da entrega original.**
+
+- **343 testes aprovados** no Node 22.23.5 e no Node 24.22.3, com sintaxe válida em 35 arquivos, tipos e demonstração aprovados.
+- **108 mutações:** 105 detectadas e 3 equivalentes justificadas. As 66 mutações novas cobrem as regras da Fase 01.
+- **Dados inválidos:** `alterarProduto` agora recusa `NaN`, `Infinity` e objetos.
+- **Histórico:** a leitura recusa movimento anterior ao cadastro do SKU e entrada em produto inativo.
+- **Respostas:** repetições sempre avisam `OPERACAO_DUPLICADA`, e falhas de consulta retornam `FALHA_LEITURA`.
+- **M-05:** a entrada caiu de 13 para 8 leituras. As consultas continuam com 5 leituras e tempos equivalentes.
+- **CLI:** novo comando `historico-produto` e validação mais rígida das opções.
+
+Detalhes em [TESTES.md](TESTES.md) e nas decisões D-035 a D-039.
+
 ## Funcionalidades e arquitetura
 
 - **M-07:** JSDoc e contratos em `tipos/`, TypeScript sem build e duas configurações separando núcleo e ambiente Node. Nenhuma API Node em `src/`. `strict` permanece desativado com justificativa em D-027.
@@ -38,7 +52,7 @@ Os testes existentes receberam os novos campos obrigatórios. A expectativa de t
 
 Node.js **22.23.5**, npm **10.9.9**, TypeScript **5.9.3**, `@types/node` **22.20.5**, Git **2.56.0** e Python **3.13.16**. O runtime Node temporário já validado da Fase 00 foi reutilizado; nada foi instalado globalmente. `.npmrc` define `bin-links=false` no volume vfat, e o compilador é chamado por `node node_modules/typescript/lib/tsc.js`. Dependências são somente de desenvolvimento e estão fixadas no lockfile.
 
-## Testes e evidências
+## Testes e evidências da entrega original
 
 - Linha de base: 130 testes aprovados, 23 arquivos com sintaxe válida e demonstração aprovada.
 - Suíte final: **267 testes aprovados**, sem falhas, cancelados ou ignorados; 34 arquivos com sintaxe válida.

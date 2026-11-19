@@ -1,6 +1,6 @@
 # Progresso do A-002 — MERCA 27 / PULSO
 
-Última atualização: 18/11/2026, Fase 01 concluída localmente na branch `fase-01`.
+Última atualização: 18/11/2026, Fase 01 concluída localmente e revisada na branch `fase-01`.
 
 ## Implementado e testado localmente
 
@@ -23,8 +23,8 @@
 - [x] Verificação do estado final da reconciliação e tratamento de retorno ambíguo.
 - [x] Escrita parcial de bytes tratada no adaptador JSONL.
 - [x] Demonstração com asserções e recálculo independente; guia da seed em `fixtures/SEED_README.md`.
-- [x] 267 testes aprovados no Node.js 22.23.5, checagem de tipos e sintaxe válida em 34 arquivos.
-- [x] Executor de 42 mutações reproduzíveis em cópias temporárias.
+- [x] 343 testes aprovados, checagem de tipos e sintaxe válida em 35 arquivos.
+- [x] Executor de 108 mutações reproduzíveis em cópias temporárias, cobrindo também as regras da Fase 01.
 - [x] Medição local de 90 dias sintéticos e testes de leitores concorrentes com gravações.
 
 ## Melhorias aprovadas
@@ -35,7 +35,7 @@ Detalhes e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADA
 - [x] M-01: custo unitário por entrada e fornecedores fictícios com vínculo validado.
 - [x] M-02: alteração, desativação, reativação e histórico completo de versões.
 - [x] M-04: reconciliação automática antes de novos lançamentos, com releitura e log.
-- [x] M-05: projeção em memória por SKU, leituras sem trava, repetição controlada e medição antes/depois.
+- [x] M-05: projeção em memória por SKU, leituras sem trava, repetição controlada, entrada com 8 leituras em vez de 13 e medição antes/depois.
 - [ ] M-06: interface compatível com Apps Script.
 - [ ] M-03: operações com vários registros, antes da Fase 2.
 

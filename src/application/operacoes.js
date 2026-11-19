@@ -129,6 +129,11 @@ function pulsoCriarOperacoes() {
     return def.responder(estado, operacao, situacao);
   }
 
+  /** Toda repetição de operação confirmada recebe o mesmo aviso, seja qual for o caso de uso. */
+  function responderDuplicada(def, estado, operacao) {
+    return Object.assign(def.responder(estado, operacao, { duplicada: true, recuperada: false }), { aviso: 'OPERACAO_DUPLICADA' });
+  }
+
   /**
    * def: { tipo, normalizar(request), assinatura(dados), verificar(estado, dados),
    *        construir(dados, operacaoId, agora), responder(estado, operacao, situacao) }
@@ -156,7 +161,7 @@ function pulsoCriarOperacoes() {
             'REQUISICAO_CONFLITANTE', 'Este identificador de requisição já foi usado com dados diferentes. Nada foi alterado.'
           ));
         }
-        if (anterior.estado === 'CONFIRMADA') return def.responder(estado, anterior, { duplicada: true, recuperada: false });
+        if (anterior.estado === 'CONFIRMADA') return responderDuplicada(def, estado, anterior);
         concluir(ctx, anterior);
         estado = ctx.repositorio.carregarEstado();
         return responderConfirmada(def, estado, requisicaoId, { duplicada: false, recuperada: true });
@@ -178,7 +183,8 @@ function pulsoCriarOperacoes() {
       const falhaGravacao = gravarNova(ctx, def, requisicaoId, assinatura, normalizado.dados, estado);
       if (falhaGravacao) return falhaGravacao;
 
-      estado = ctx.repositorio.carregarEstado();
+      // Ainda dentro da trava: cada tabela já foi lida, e as gravadas foram relidas após escrever.
+      estado = ctx.repositorio.carregarEstado({ reutilizarLeituras: true });
       return responderConfirmada(def, estado, requisicaoId, { duplicada: false, recuperada: false });
     });
   }
@@ -198,16 +204,24 @@ function pulsoCriarOperacoes() {
     });
   }
 
+  /** Consulta não grava nada: a falha nunca deve sugerir repetir uma gravação. */
+  function falhaDeLeitura(erro) {
+    if (erro && erro.codigo) return PULSO.erros.falha(erro.codigo, erro.message);
+    return PULSO.erros.falha('FALHA_LEITURA', 'Não foi possível ler os dados. Nada foi alterado; tente novamente.');
+  }
+
   function consultar(ctx, funcao) {
     try {
       return funcao(ctx.repositorio.carregarEstado());
     } catch (erro) {
+      if (!erro || erro.codigo !== 'DADOS_INCONSISTENTES') return falhaDeLeitura(erro);
       // Várias tabelas podem ser lidas durante uma escrita. Uma única releitura
       // dentro da trava distingue essa janela de uma inconsistência persistente.
-      if (erro && erro.codigo === 'DADOS_INCONSISTENTES') {
-        return comLock(ctx, function () { return funcao(ctx.repositorio.carregarEstado()); });
+      try {
+        return ctx.lock.executar(function () { return funcao(ctx.repositorio.carregarEstado()); });
+      } catch (erroNaTrava) {
+        return falhaDeLeitura(erroNaTrava);
       }
-      return traduzirExcecao(erro);
     }
   }
 

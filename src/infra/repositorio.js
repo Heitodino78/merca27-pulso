@@ -168,10 +168,9 @@ function pulsoCriarRepositorio() {
     });
   }
 
-  function conferirMovimentos(movimentos, produtos) {
+  function conferirMovimentos(movimentos) {
     const saldos = new Map();
     movimentos.forEach(function (movimento) {
-      if (!produtos.has(movimento.sku)) throw inconsistente('movimento ' + movimento.movimento_id + ' de SKU sem cadastro');
       if (PULSO.movimento.TIPOS.indexOf(movimento.tipo) === -1 || movimento.delta_unidades === 0) {
         throw inconsistente('movimento ' + movimento.movimento_id + ' inválido');
       }
@@ -184,21 +183,26 @@ function pulsoCriarRepositorio() {
 
   /** @param {ArmazenamentoPulso} armazenamento */
   function criar(armazenamento) {
-    // Só auxilia existe() na continuação da mesma seção crítica. Toda leitura
-    // de estado e toda verificação pós-gravação continua consultando a porta.
+    // Vale só na continuação da mesma seção crítica: auxilia existe() e a resposta
+    // final do executor. Toda verificação pós-gravação continua consultando a porta.
     const ultimasTabelas = new Map();
     function lerAtual(tabela) {
       const linhas = lerTabela(armazenamento, tabela);
       ultimasTabelas.set(tabela, linhas);
       return linhas;
     }
-    function carregarEstado() {
-      ultimasTabelas.clear();
-      const dobra = dobrarOperacoes(lerAtual('OPERACOES_LOG'));
-      const linhasProdutos = lerAtual('PRODUTOS');
-      const linhasMovimentos = lerAtual('MOVIMENTOS_ESTOQUE');
-      const linhasFornecedores = lerAtual('FORNECEDORES');
-      const linhasAlteracoes = lerAtual('PRODUTOS_ALTERACOES');
+    /** @param {{ reutilizarLeituras?: boolean }} [opcoes] Só use dentro da trava que fez as leituras. */
+    function carregarEstado(opcoes) {
+      const reutilizar = Boolean(opcoes && opcoes.reutilizarLeituras);
+      if (!reutilizar) ultimasTabelas.clear();
+      const ler = function (tabela) {
+        return reutilizar && ultimasTabelas.has(tabela) ? ultimasTabelas.get(tabela) : lerAtual(tabela);
+      };
+      const dobra = dobrarOperacoes(ler('OPERACOES_LOG'));
+      const linhasProdutos = ler('PRODUTOS');
+      const linhasMovimentos = ler('MOVIMENTOS_ESTOQUE');
+      const linhasFornecedores = ler('FORNECEDORES');
+      const linhasAlteracoes = ler('PRODUTOS_ALTERACOES');
       conferirOrigem('PRODUTOS', linhasProdutos, dobra.operacoes);
       conferirOrigem('MOVIMENTOS_ESTOQUE', linhasMovimentos, dobra.operacoes);
       conferirOrigem('FORNECEDORES', linhasFornecedores, dobra.operacoes);
@@ -245,16 +249,18 @@ function pulsoCriarRepositorio() {
         } else {
           const produto = produtos.get(linha.sku);
           const saldo = saldos.get(linha.sku) || 0;
+          if (!produto) throw inconsistente('movimento ' + linha.movimento_id + ' anterior ao cadastro do SKU');
+          if (operacao.tipo === 'ENTRADA' && !produto.ativo) throw inconsistente('entrada registrada em produto inativo');
           if (operacao.tipo === 'ENTRADA' && (!fornecedores.has(linha.fornecedor_id) || !fornecedores.get(linha.fornecedor_id).ativo)) throw inconsistente('entrada vinculada a fornecedor inexistente ou inativo');
           if (operacao.tipo === 'SALDO_INICIAL' && movimentados.has(linha.sku)) throw inconsistente('saldo inicial após movimentação');
-          if (['PERDA', 'AJUSTE'].indexOf(operacao.tipo) !== -1 && (!produto || linha.custo_unit_centavos !== produto.custo_ref_centavos)) throw inconsistente('custo histórico divergente do cadastro vigente');
+          if (['PERDA', 'AJUSTE'].indexOf(operacao.tipo) !== -1 && linha.custo_unit_centavos !== produto.custo_ref_centavos) throw inconsistente('custo histórico divergente do cadastro vigente');
           if (operacao.tipo === 'AJUSTE' && (linha.saldo_anterior !== saldo || linha.saldo_novo !== saldo + linha.delta_unidades)) throw inconsistente('ajuste com saldos divergentes');
           movimentos.push(linha);
           saldos.set(linha.sku, saldo + linha.delta_unidades);
           movimentados.add(linha.sku);
         }
       });
-      conferirMovimentos(movimentos, produtos);
+      conferirMovimentos(movimentos);
 
       return {
         produtos: produtos,

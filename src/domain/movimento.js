@@ -1,4 +1,4 @@
-/* Modelo de Movimento de estoque. Nesta fase apenas ENTRADA é emitida. */
+/* Modelo de Movimento de estoque: saldo inicial, entrada, perda e ajuste por contagem. */
 /** @type {PulsoNucleo} */
 var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 

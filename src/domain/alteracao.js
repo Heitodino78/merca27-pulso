@@ -3,6 +3,11 @@
 var PULSO = PULSO || /** @type {PulsoNucleo} */ ({});
 function pulsoCriarAlteracao() {
   const CAMPOS = ['nome', 'categoria', 'precoVendaCentavos', 'custoRefCentavos', 'estoqueMinimo', 'estoqueAlvo', 'fornecedorId', 'ativo'];
+  /** JSON.stringify converteria NaN em null e objetos em texto: só valores simples são aceitos. */
+  function valorSimples(valor) {
+    return valor === null || typeof valor === 'string' || typeof valor === 'boolean' ||
+      (typeof valor === 'number' && Number.isFinite(valor));
+  }
   function canonico(campos) {
     const ordenado = {};
     Object.keys(campos).sort().forEach(function (chave) { ordenado[chave] = campos[chave]; });
@@ -14,7 +19,7 @@ function pulsoCriarAlteracao() {
     const extras = v.camposDesconhecidos(request, ['requisicaoId', 'sku', 'campos', 'motivo', 'operadorSimulado']);
     if (!v.skuValido(request.sku)) return PULSO.erros.falha('SKU_INVALIDO', 'Informe o SKU no formato MER-001.');
     if (extras.length || !v.eObjeto(request.campos) || !Object.keys(request.campos).length ||
-        v.camposDesconhecidos(request.campos, CAMPOS).length || Object.values(request.campos).some(function (valor) { return valor === undefined; })) {
+        v.camposDesconhecidos(request.campos, CAMPOS).length || Object.values(request.campos).some(function (valor) { return !valorSimples(valor); })) {
       return PULSO.erros.falha('DADOS_INVALIDOS', 'Informe somente campos alteráveis do produto; SKU e unidade são imutáveis.');
     }
     const problema = v.problemaTexto(request.motivo, 'Motivo', 3, 200);

@@ -20,12 +20,12 @@ Confirme o estado real pelo código e pelos comandos. Preserve os cinco document
 ## 2. ESTADO REAL
 
 - Branch fase-01, criada após registrar a revisão da Fase 00. Commits locais por bloco; sem merge em main, remoto ou publicação.
-- 267 testes aprovados; sintaxe em 34 arquivos; duas configurações de tipos e demo aprovadas.
+- 343 testes aprovados; sintaxe em 35 arquivos; duas configurações de tipos e demo aprovadas.
 - Núcleo src/ em scripts globais var PULSO, com fábricas nomeadas e contratos JSDoc inferidos por tipos/contratos.d.ts; sem APIs do Node.
 - Portas: armazenamento { ler, anexar }, lock { executar }, relogio e gerarId.
 - Uma operação ainda guarda somente { tabela, linha }. Protocolo PENDENTE -> dado -> CONFIRMADA, verificação completa após escrever, idempotência e conflito.
 - Reconciliação automática antes de novo lançamento, dentro da trava, com recarga do estado; reconciliação manual também disponível.
-- Consultas sem trava; DADOS_INCONSISTENTES provoca uma única repetição sob trava. Saldo é derivado e nunca persistido.
+- Consultas sem trava; DADOS_INCONSISTENTES provoca uma única repetição sob trava; falha de leitura retorna FALHA_LEITURA. Toda repetição confirmada traz aviso OPERACAO_DUPLICADA. Saldo é derivado e nunca persistido.
 - Tabelas: FORNECEDORES, PRODUTOS, PRODUTOS_ALTERACOES, MOVIMENTOS_ESTOQUE e OPERACOES_LOG.
 - APIs: cadastrarFornecedor, listarFornecedores, cadastrarProduto, alterarProduto, desativarProduto, reativarProduto, consultarHistoricoProduto, registrarSaldoInicial, registrarEntrada, registrarPerda, ajustarPorContagem, consultarEstoque, listarProdutos, consultarReposicao e reconciliarPendencias.
 - Entrada exige custoUnitCentavos e fornecedorId. Perda exige quantidade positiva, motivo e categoriaPerda (AVARIA/VENCIMENTO/QUEBRA). Ajuste exige quantidadeContada inteira >= 0 e motivo. Custo de perda/ajuste é capturado do cadastro vigente.
@@ -33,7 +33,7 @@ Confirme o estado real pelo código e pelos comandos. Preserve os cinco document
 - Desativação impede entrada; perda e ajuste aceitam produto inativo. Versões e movimentos anteriores são preservados.
 - Seed determinística: 40 SKUs e seis fornecedores, semente 27; seis SKUs originais preservados por teste. Seed não cria movimentos.
 - Reposição: ativo && saldo <= mínimo; sugestão max(0, alvo - saldo), somente consulta e revisão humana.
-- local/cli.js cobre todos os fluxos. local/mutacao.js aplica 42 defeitos somente em cópias temporárias. local/medir-desempenho.js usa 90 dias sintéticos em pasta temporária.
+- local/cli.js cobre todos os fluxos. local/mutacao.js aplica 108 defeitos somente em cópias temporárias (cerca de 15 minutos). local/medir-desempenho.js usa 90 dias sintéticos em pasta temporária.
 
 ## 3. AMBIENTE E LINHA DE BASE
 

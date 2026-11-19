@@ -2,11 +2,11 @@
 
 > **Demonstração educacional.** A MERCA 27 é um mercado fictício e todos os dados são sintéticos. O PULSO não é sistema fiscal, contábil nem produto pronto para uso empresarial real.
 
-**Estado atual: Fase 01 concluída localmente.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI, com 267 testes aprovados. Interface visual e integração Google continuam pendentes.
+**Estado atual: Fase 01 concluída localmente.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI, com 343 testes aprovados. Interface visual e integração Google continuam pendentes.
 
 ## Requisitos
 
-- Node.js 22 ou superior (revisão testada na versão 22.23.5; entrega anterior na 24.22.3).
+- Node.js 22 ou superior (testado nas versões 22.23.5 e 24.22.3).
 - Dependências somente de desenvolvimento: `typescript@5.9.3` e `@types/node@22.20.5`. Execute `npm ci` para instalá-las e `npm run typecheck` para conferir `src/` e `local/`, sem build. A operação por CLI não exige essas dependências.
 - `.npmrc` define `bin-links=false` para o volume vfat; o compilador é chamado diretamente por Node. Nenhuma instalação global é necessária.
 
@@ -18,7 +18,7 @@ Nesta máquina, Node/npm não estão no PATH padrão. A revisão usou um runtime
 npm test            # testes automatizados
 npm run check       # verificação de sintaxe
 npm run typecheck   # contratos JSDoc; exige npm ci
-npm run mutacao     # 42 defeitos em cópias temporárias; exige alguns minutos
+npm run mutacao     # 108 defeitos em cópias temporárias; leva cerca de 15 minutos
 npm run medir       # cenário temporário de 90 dias; tempos e volume em JSON
 npm run demo        # demonstração do primeiro marco, em pasta temporária
 
@@ -36,6 +36,7 @@ npm run -s pulso -- saldo-inicial --sku MER-041 --quantidade 7 --custo 600 --mot
 npm run -s pulso -- perda --sku MER-041 --quantidade 2 --categoria-perda AVARIA --motivo "Avaria fictícia"
 npm run -s pulso -- ajuste --sku MER-041 --contada 4 --motivo "Contagem fictícia"
 npm run -s pulso -- reposicao
+npm run -s pulso -- historico-produto --sku MER-001
 npm run -s pulso -- reconciliar
 ```
 

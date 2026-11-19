@@ -18,16 +18,16 @@ Complementa as ADRs do Documento Mestre. Os documentos-base não foram alterados
 | D-012 | Interface da Fase 00 é uma CLI | A interface em Sheets depende de integração indisponível | Identidade visual fica para a etapa com sidebar |
 | D-013 | Tabelas locais em JSON Lines com `fsync` | Sem dependências e compatível com acréscimo | Leitura integral a cada operação, adequada ao volume atual |
 
-## Decisões aprovadas e ainda não implementadas
+## Decisões aprovadas para as melhorias
 
-Aprovadas pelo proprietário em 18/11/2026. Escopo e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADAS.md).
+Aprovadas pelo proprietário em 18/11/2026. Escopo, critérios de aceite e situação de cada uma em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADAS.md).
 
 | ID | Melhoria | Decisão | Efeito sobre decisões atuais |
 |---|---|---|---|
 | D-014 | M-01 | Registrar o custo unitário obrigatório em cada entrada | Prepara a decisão T-03, sem resolvê-la |
 | D-015 | M-02 | Alterar produtos por eventos em `PRODUTOS_ALTERACOES`, mantendo a criação imutável | Mantém D-003 |
 | D-016 | M-03 | Permitir vários registros por operação antes da Fase 2 | Amplia D-004 |
-| D-017 | M-04 | Concluir pendências automaticamente antes de novo lançamento | **Substituirá D-007 quando implementada** |
+| D-017 | M-04 | Concluir pendências automaticamente antes de novo lançamento | **Substituiu D-007 (ver D-030)** |
 | D-018 | M-05 | Medir o desempenho e fazer consultas sem trava, com nova tentativa dentro da trava em caso de inconsistência | Reduz o custo apontado em D-013 |
 | D-019 | M-06 | Criar interface HTML compatível com Apps Script e pré-visualização local | **Substituirá D-012 como interface principal**; a CLI permanece |
 | D-020 | M-07 | Checar tipos com JSDoc e TypeScript apenas em desenvolvimento | Mantém D-002 |
@@ -64,6 +64,14 @@ A demonstração passou a usar asserções e recálculo independente do JSONL. N
 ## Decisões ainda abertas
 
 T-01 (sidebar ou formulário), T-03 (método de custo), T-04 (tipo de lock no Apps Script), T-06 (implantação e teste no Google) e T-07 (proteção da planilha).
+
+## Revisão independente da Fase 01
+
+- **D-035 — Valores simples em alterações:** `alterarProduto` aceita apenas texto, número finito, booleano ou nulo. Antes, a serialização transformava `NaN` em nulo e objetos em texto, o que podia remover o fornecedor de um produto sem aviso.
+- **D-036 — Ordem do histórico:** a leitura recusa movimento anterior ao cadastro do SKU e entrada em produto que estava inativo naquele momento.
+- **D-037 — Respostas coerentes:** toda repetição confirmada recebe `OPERACAO_DUPLICADA`, e falha de leitura em consulta retorna `FALHA_LEITURA`, pois nenhuma gravação foi tentada.
+- **D-038 — Leituras da resposta final:** depois de gravar, o executor monta a resposta com as tabelas já lidas na mesma trava. As tabelas gravadas são relidas após cada escrita e as demais não podem mudar enquanto a trava existe. A entrada caiu de 13 para 8 leituras. Complementa D-034; reconciliações continuam relendo todas as tabelas.
+- **D-039 — Cobertura de mutação:** as 42 mutações herdadas cobriam quase só regras da Fase 00. Foram acrescentadas 66 mutações para as regras da Fase 01.
 
 ## Fase 01
 

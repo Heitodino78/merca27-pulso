@@ -23,6 +23,7 @@ Comandos:
   perda --sku MER-001 --quantidade 2 --categoria-perda AVARIA --motivo "Avaria fictícia"
   ajuste --sku MER-001 --contada 4 --motivo "Contagem fictícia"
   reposicao                 Lista alertas e sugestões para revisão humana
+  historico-produto --sku MER-001   Mostra as versões do cadastro
 
 Valores em centavos. Dados em ./data (ou na pasta definida em PULSO_DADOS).`;
 
@@ -31,10 +32,10 @@ const OPCOES_COM_VALOR = ['sku', 'nome', 'categoria', 'preco', 'custo', 'minimo'
 function lerOpcoes(argumentos) {
   const opcoes = {};
   for (let i = 0; i < argumentos.length; i++) {
-    const nome = argumentos[i].replace(/^--/, '');
+    const nome = argumentos[i].startsWith('--') ? argumentos[i].slice(2) : null;
     if (nome === 'inativo') opcoes.inativo = true;
     else if (nome === 'ativo') opcoes.ativo = true;
-    else if (argumentos[i].startsWith('--') && OPCOES_COM_VALOR.includes(nome) && i + 1 < argumentos.length) opcoes[nome] = argumentos[++i];
+    else if (OPCOES_COM_VALOR.includes(nome) && i + 1 < argumentos.length) opcoes[nome] = argumentos[++i];
     else throw new Error(`Opção inválida ou sem valor: ${argumentos[i]}`);
   }
   return opcoes;
@@ -152,6 +153,14 @@ comandos.reposicao = (pulso) => {
   if (!r.ok) return imprimirErro(r);
   for (const item of r.itens) console.log(`${item.sku}  ${item.nome}  saldo ${item.saldoAtual}  mínimo ${item.estoqueMinimo}  alvo ${item.estoqueAlvo}  sugestão ${item.sugestaoUnidades}  fornecedor ${item.fornecedor?.fornecedor_id ?? 'não associado'}`);
   console.log(r.aviso);
+  return 0;
+};
+comandos['historico-produto'] = (pulso, o) => {
+  const r = pulso.consultarHistoricoProduto({ sku: o.sku });
+  if (!r.ok) return imprimirErro(r);
+  r.versoes.forEach((v, i) => {
+    console.log(`v${i + 1}  ${dataHora(v.registradoEm)}  ${v.motivo}  preço ${reais(v.produto.preco_venda_centavos)}  custo ${reais(v.produto.custo_ref_centavos)}  mín ${v.produto.estoque_minimo}  alvo ${v.produto.estoque_alvo}${v.produto.ativo ? '' : '  INATIVO'}`);
+  });
   return 0;
 };
 

@@ -1,6 +1,53 @@
 # Evidências de testes
 
-## Fase 01 — execução por blocos (18/11/2026)
+## Revisão independente da Fase 01 (18/11/2026)
+
+Esta seção traz o estado atual. As seções seguintes registram o histórico de cada entrega. Ambiente exclusivamente local: nada foi executado em Google Sheets, Apps Script ou interface visual.
+
+| Verificação | Resultado |
+|---|---|
+| `npm test` no Node 22.23.5 e no Node 24.22.3 | 343 testes, 343 aprovados, 0 falhas |
+| `npm run check` | 35 arquivos, 0 erros de sintaxe |
+| `npm run typecheck` | Duas configurações aprovadas |
+| `npm run demo` | Saldo final 10, recálculo independente 10 e um movimento |
+| `npm run mutacao` | 108 defeitos: 105 detectados e 3 equivalentes justificados (MUT-10, MUT-11 e MUT-37) |
+
+A evidência completa está em [evidencias/mutacao-fase01.txt](evidencias/mutacao-fase01.txt).
+
+### Defeitos encontrados na revisão
+
+| Defeito | Correção |
+|---|---|
+| `alterarProduto` aceitava `NaN`, `Infinity` e objetos, convertendo-os na serialização. `fornecedorId: NaN` removia o fornecedor do produto | Só valores simples são aceitos (D-035) |
+| A leitura aceitava movimento anterior ao cadastro do SKU e entrada em produto inativo naquele momento | Ordem validada ao reproduzir o histórico (D-036) |
+| Só a entrada avisava `OPERACAO_DUPLICADA`, e repetir fornecedor ou alteração respondia como operação nova | Aviso único e mensagens corretas (D-037) |
+| Falha de leitura em consulta aparecia como `FALHA_GRAVACAO` | Novo código `FALHA_LEITURA` (D-037) |
+| M-05 estava marcada como concluída, mas a entrada continuava com 13 leituras | Resposta final reaproveita as leituras da mesma trava (D-038) |
+| A CLI não mostrava o histórico de versões e aceitava palavra solta como opção | Comando `historico-produto` e validação das opções |
+| As 42 mutações quase não cobriam as regras da Fase 01 | 66 mutações novas e 76 testes novos em `tests/revisao-fase01.test.js` (D-039) |
+
+### Desempenho
+
+Mesmo cenário sintético da Fase 01: 90 dias, 270 movimentos e 658 eventos de log, em JSONL temporário.
+
+| Caso | Mediana na entrega do Codex | Mediana na revisão | Leituras antes/depois |
+|---|---:|---:|---:|
+| Listar produtos | 17,775 ms | 17,679 ms | 5 / 5 |
+| Consultar estoque | 17,243 ms | 17,126 ms | 5 / 5 |
+| Consultar reposição | 17,081 ms | 17,517 ms | 5 / 5 |
+| Registrar entrada | 54,542 ms | 50,180 ms | 13 / 8 |
+
+O ganho real está na entrada, com 5 leituras a menos por operação. As diferenças nas consultas estão dentro do ruído. Os valores são locais e não indicam o desempenho no Google. Dados completos em [evidencias/desempenho-revisao.json](evidencias/desempenho-revisao.json).
+
+### Não testado até agora
+
+- Execução real no Apps Script, cotas, `LockService` e comportamento de células do Sheets.
+- Volumes acima do cenário de 90 dias.
+- Queda de energia durante a escrita e reparo automático de arquivo truncado.
+- Alteração coerente de todo o histórico, pois não há proteção criptográfica.
+- Modo `strict` do TypeScript, mantido desativado (D-027).
+
+## Fase 01 — entrega original, execução por blocos (18/11/2026)
 
 Ambiente: Node 22.23.5, npm 10.9.9, runtime temporário já conferido na Fase 00. Nenhuma integração externa faz parte desta execução.
 
@@ -47,7 +94,7 @@ M-07: o comando experimental `node node_modules/typescript/lib/tsc.js -p tsconfi
 
 Mutações equivalentes nesta fundação: MUT-10 (tipo de movimento) e MUT-11 (delta zero) são barradas pela reconstrução canônica da intenção antes da soma; MUT-37 (tipo no conflito) continua barrada pela assinatura dos dados, que difere entre tipos. O executor não ignora alvos ausentes, defeitos sintaticamente inválidos ou erros de execução: esses casos retornam falha. Uma sobrevivente sem justificativa também retorna falha.
 
-O teste antigo de saldo negativo forjado ainda é alcançado pelo tipo PERDA não suportado: será corrigido com a operação PERDA bem formada no Bloco 6. Os dois controles finais do executor receberam testes próprios com repositório de teste que devolve uma operação ainda pendente.
+Os dois controles finais do executor receberam testes próprios com repositório de teste que devolve uma operação ainda pendente.
 
 ## Registro histórico da Fase 00
 
@@ -109,7 +156,7 @@ Os 112 testes originais foram preservados. A suíte completa também executou as
 - Erro de retorno depois de uma confirmação persistida não afirma que nada foi gravado. Consulta e repetição mostram a conclusão, sem duplicação.
 - Escrita limitada a cinco bytes por chamada produz um JSONL completo, inclusive com caracteres acentuados; escrita sem progresso retorna `FALHA_GRAVACAO`.
 
-O comportamento de bloqueio por pendências continua o mesmo (D-007). M-04, reconciliação automática, não foi implementada nem teve seus testes antecipados.
+Naquela revisão, o bloqueio por pendências seguia D-007. A reconciliação automática (M-04) foi implementada depois, na Fase 01.
 
 ## Verificação de acesso Google
 
@@ -131,10 +178,10 @@ O script de mutação foi ferramenta temporária e não faz parte do repositóri
 
 Quando a confirmação era gravada, mas a escrita acusava erro, o sistema anexava um evento depois de `CONFIRMADA` e o log passava a ser recusado como inconsistente. A correção está registrada em D-006 e o caso tem teste próprio.
 
-## Não testado
+## Não testado na Fase 00
+
+Lista histórica. A situação atual está em "Não testado até agora", na revisão da Fase 01.
 
 - Execução real no Apps Script, cotas, `LockService` e comportamento de células do Sheets.
-- Versões do Node diferentes da 22.23.5 nesta revisão; a versão 24.22.3 tem somente evidência histórica.
 - Volumes grandes de dados.
 - Interrupção por queda de energia, reparo automático de arquivos truncados ou alteração coerente de todo o histórico.
-- Checagem de tipos: M-07 segue pendente; nenhuma checagem TypeScript foi declarada.
