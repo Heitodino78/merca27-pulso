@@ -21,7 +21,7 @@ function preparar() {
 test('despacho expõe somente as ações da interface, sem cadastrar fornecedor nem contagem', () => {
   const { despacho } = preparar();
   assert.deepEqual([...despacho.ACOES].sort(), [
-    'ajustarPorContagem', 'alterarProduto', 'cadastrarProduto', 'confirmarVenda', 'consultarEstoque', 'consultarHistoricoProduto',
+    'ajustarPorContagem', 'alterarProduto', 'cadastrarProduto', 'confirmarVenda', 'consultarEstoque', 'consultarHistoricoProduto', 'consultarIndicadores',
     'consultarReposicao', 'consultarVenda', 'desativarProduto', 'estornarVenda', 'listarFornecedores', 'listarProdutos', 'listarVendas',
     'reativarProduto', 'reconciliarPendencias', 'registrarEntrada', 'registrarPerda', 'registrarSaldoInicial',
   ]);

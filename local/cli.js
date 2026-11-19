@@ -32,10 +32,13 @@ Comandos:
                             Estorno total e único, devolvendo as unidades ao estoque
   reposicao                 Lista alertas e sugestões para revisão humana
   historico-produto --sku MER-001   Mostra as versões do cadastro
+  indicadores --de 2026-11-01 --ate 2026-11-19
+                            Indicadores do período (dias de São Paulo, ambos inclusivos)
+  resumo [--dia 2026-11-19] Resumo operacional do dia (padrão: hoje). Não envia nada.
 
 Valores em centavos. Dados em ./data (ou na pasta definida em PULSO_DADOS).`;
 
-const OPCOES_COM_VALOR = ['sku', 'nome', 'categoria', 'preco', 'custo', 'minimo', 'alvo', 'quantidade', 'referencia', 'motivo', 'requisicao', 'fornecedor', 'prazo', 'categoria-perda', 'contada', 'pagamento', 'observacao', 'id', 'venda'];
+const OPCOES_COM_VALOR = ['sku', 'nome', 'categoria', 'preco', 'custo', 'minimo', 'alvo', 'quantidade', 'referencia', 'motivo', 'requisicao', 'fornecedor', 'prazo', 'categoria-perda', 'contada', 'pagamento', 'observacao', 'id', 'venda', 'de', 'ate', 'dia'];
 
 function lerOpcoes(argumentos) {
   const opcoes = {};
@@ -217,6 +220,38 @@ comandos['historico-produto'] = (pulso, o) => {
   r.versoes.forEach((v, i) => {
     console.log(`v${i + 1}  ${dataHora(v.registradoEm)}  ${v.motivo}  preço ${reais(v.produto.preco_venda_centavos)}  custo ${reais(v.produto.custo_ref_centavos)}  mín ${v.produto.estoque_minimo}  alvo ${v.produto.estoque_alvo}${v.produto.ativo ? '' : '  INATIVO'}`);
   });
+  return 0;
+};
+
+/** Dia de hoje em São Paulo (UTC−03:00, D-064). A conversão de dias para instantes fica no núcleo. */
+const hojeLocal = () => new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+const dataLocal = (dia) => (typeof dia === 'string' ? dia.split('-').reverse().join('/') : dia);
+comandos.indicadores = (pulso, o) => {
+  const { indicadores } = require('./nucleo').carregarNucleo();
+  const de = o.de ?? hojeLocal();
+  const ate = o.ate ?? de;
+  if (!indicadores.diaValido(de) || !indicadores.diaValido(ate) || ate < de) {
+    console.error('ERRO DADOS_INVALIDOS: use --de e --ate no formato AAAA-MM-DD, com --ate >= --de.');
+    return 1;
+  }
+  const r = pulso.consultarIndicadores({ desde: indicadores.inicioDoDia(de), ate: indicadores.inicioDoDia(indicadores.diaSeguinte(ate)) });
+  if (!r.ok) return imprimirErro(r);
+  const pct = r.resultado.margemPercentual === null ? 'N/D' : `${String(r.resultado.margemPercentual).replace('.', ',')}%`;
+  console.log(`Indicadores de ${dataLocal(de)} a ${dataLocal(ate)} (${r.periodo.fuso}). Dados fictícios.`);
+  console.log(`  Vendas: ${r.vendas.numero} (${r.vendas.unidades} un.)  Receita bruta ${reais(r.resultado.receitaBrutaCentavos)}`);
+  console.log(`  Devoluções: ${r.devolucoes.numero}  ${reais(r.resultado.devolucoesCentavos)}  →  receita após devoluções ${reais(r.resultado.receitaAposDevolucoesCentavos)}`);
+  console.log(`  CMV estimado ${reais(r.resultado.cmvEstimadoCentavos)}  Margem bruta ${reais(r.resultado.margemBrutaCentavos)} (${pct})`);
+  console.log(`  Ticket médio ${r.resultado.ticketMedioCentavos === null ? 'N/D' : reais(r.resultado.ticketMedioCentavos)}`);
+  console.log(`  Perdas: ${r.perdas.unidades} un. (${reais(r.perdas.valorCentavos)})  Entradas: ${r.entradas.unidades} un.`);
+  console.log(`  Estoque atual estimado ${reais(r.estoqueAtual.valorCentavos)}; ${r.reposicao.quantidade} produto(s) com reposição sugerida.`);
+  for (const p of r.produtosMaisVendidos.slice(0, 5)) console.log(`    ${p.sku}  ${p.nome.padEnd(34)} ${String(p.unidadesVendidas).padStart(4)} un.  ${reais(p.receitaBrutaCentavos)}`);
+  for (const aviso of r.avisos) console.log(`Atenção: ${aviso}`);
+  return 0;
+};
+comandos.resumo = (pulso, o) => {
+  const r = pulso.gerarResumoDiario({ dia: o.dia ?? hojeLocal() });
+  if (!r.ok) return imprimirErro(r);
+  console.log(r.texto);
   return 0;
 };
 

@@ -33,6 +33,10 @@ interface PedidoVenda {
 interface PedidoEstorno { requisicaoId?: string; vendaId: string; motivo: string; operadorSimulado?: string; }
 interface PedidoListarVendas { desde?: string; ate?: string; limite?: number; }
 interface PedidoConsultarVenda { vendaId?: string; requisicaoId?: string; }
+/** Fase 3: período em instantes ISO UTC, início inclusivo e fim exclusivo. */
+interface PedidoIndicadores { desde: string; ate: string; }
+/** Fase 3: dia civil AAAA-MM-DD em America/Sao_Paulo. */
+interface PedidoResumoDiario { dia: string; }
 interface LinhaVenda {
   venda_id: string; operacao_id: string; requisicao_id: string; registrado_em: string; forma_pagamento: string;
   total_centavos: number; custo_est_centavos: number; observacao: string | null; operador_simulado: string;
@@ -113,6 +117,7 @@ interface PulsoNucleo {
   alteracao: ReturnType<typeof pulsoCriarAlteracao>;
   movimento: ReturnType<typeof pulsoCriarMovimento>;
   venda: ReturnType<typeof pulsoCriarVenda>;
+  indicadores: ReturnType<typeof pulsoCriarIndicadores>;
   estoque: ReturnType<typeof pulsoCriarEstoque>;
   esquema: ReturnType<typeof pulsoCriarEsquema>;
   repositorio: ReturnType<typeof pulsoCriarRepositorio>;

@@ -1,0 +1,100 @@
+{
+  "rotulo": "fase03",
+  "node": "v22.23.5",
+  "dias": 90,
+  "operacoesDiarias": 3,
+  "alteracoesSemanais": 13,
+  "volume": {
+    "PRODUTOS_ALTERACOES": 13,
+    "FORNECEDORES": 6,
+    "PRODUTOS": 40,
+    "MOVIMENTOS_ESTOQUE": 270,
+    "VENDAS": 0,
+    "ITENS_VENDA": 0,
+    "ESTORNOS_VENDA": 0,
+    "OPERACOES_LOG": 658
+  },
+  "medidas": [
+    {
+      "nome": "listarProdutos",
+      "repeticoes": 20,
+      "medianaMs": 18.1,
+      "mediaMs": 17.983,
+      "p95Ms": 18.828,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "consultarEstoque",
+      "repeticoes": 20,
+      "medianaMs": 17.787,
+      "mediaMs": 17.909,
+      "p95Ms": 18.547,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "consultarReposicao",
+      "repeticoes": 20,
+      "medianaMs": 17.433,
+      "mediaMs": 17.726,
+      "p95Ms": 18.58,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "registrarEntrada",
+      "repeticoes": 20,
+      "medianaMs": 43.636,
+      "mediaMs": 43.54,
+      "p95Ms": 45.46,
+      "leiturasPorChamada": 11
+    },
+    {
+      "nome": "registrarContagem",
+      "repeticoes": 20,
+      "medianaMs": 64.554,
+      "mediaMs": 64.62,
+      "p95Ms": 69.748,
+      "leiturasPorChamada": 15
+    },
+    {
+      "nome": "confirmarVenda",
+      "repeticoes": 20,
+      "medianaMs": 70.17,
+      "mediaMs": 75.806,
+      "p95Ms": 104.186,
+      "leiturasPorChamada": 17
+    },
+    {
+      "nome": "listarVendas",
+      "repeticoes": 20,
+      "medianaMs": 29.247,
+      "mediaMs": 29.838,
+      "p95Ms": 34.706,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "consultarVenda",
+      "repeticoes": 20,
+      "medianaMs": 29.425,
+      "mediaMs": 29.676,
+      "p95Ms": 32.717,
+      "leiturasPorChamada": 8
+    },
+    {
+      "nome": "estornarVenda",
+      "repeticoes": 20,
+      "medianaMs": 80.079,
+      "mediaMs": 83.658,
+      "p95Ms": 104.39,
+      "leiturasPorChamada": 14
+    },
+    {
+      "nome": "consultarIndicadores",
+      "repeticoes": 20,
+      "medianaMs": 32.859,
+      "mediaMs": 33.813,
+      "p95Ms": 39.384,
+      "leiturasPorChamada": 8
+    }
+  ],
+  "limites": "Ambiente local JSONL, dados sintéticos e volume declarado; vendas medidas após o cenário de estoque. Não mede Google nem uma operação comercial real."
+}

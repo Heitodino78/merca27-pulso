@@ -412,26 +412,70 @@ function pulsoCriarCasosDeUso() {
     });
   }
 
+  /** Regra única de reposição (D-032), usada pela consulta, pelos indicadores e pelo resumo diário. */
+  function itensReposicao(estado) {
+    const itens = [];
+    estado.produtos.forEach(function (produto) {
+      const saldo = (estado.saldos.get(produto.sku) || 0);
+      if (!produto.ativo || saldo > produto.estoque_minimo) return;
+      itens.push({ sku: produto.sku, nome: produto.nome, saldoAtual: saldo,
+        estoqueMinimo: produto.estoque_minimo, estoqueAlvo: produto.estoque_alvo,
+        sugestaoUnidades: Math.max(0, produto.estoque_alvo - saldo),
+        fornecedor: produto.fornecedor_id ? estado.fornecedores.get(produto.fornecedor_id) : null,
+        regra: 'produto ativo e saldo <= mínimo; sugestão = max(0, alvo - saldo)' });
+    });
+    itens.sort(function (a, b) { return a.sku.localeCompare(b.sku); });
+    return itens;
+  }
+
   function consultarReposicao(ctx) {
     return PULSO.operacoes.consultar(ctx, function (estado) {
-      const itens = [];
-      estado.produtos.forEach(function (produto) {
-        const saldo = (estado.saldos.get(produto.sku) || 0);
-        if (!produto.ativo || saldo > produto.estoque_minimo) return;
-        itens.push({ sku: produto.sku, nome: produto.nome, saldoAtual: saldo,
-          estoqueMinimo: produto.estoque_minimo, estoqueAlvo: produto.estoque_alvo,
-          sugestaoUnidades: Math.max(0, produto.estoque_alvo - saldo),
-          fornecedor: produto.fornecedor_id ? estado.fornecedores.get(produto.fornecedor_id) : null,
-          regra: 'produto ativo e saldo <= mínimo; sugestão = max(0, alvo - saldo)' });
-      });
-      itens.sort(function (a, b) { return a.sku.localeCompare(b.sku); });
-      return { ok: true, itens: itens, operacoesPendentes: estado.pendentes.length,
+      return { ok: true, itens: itensReposicao(estado), operacoesPendentes: estado.pendentes.length,
         aviso: 'Sugestão para revisão humana. Nenhuma compra foi realizada.' };
     });
   }
 
+  const AVISO_PENDENCIAS = 'Há operações pendentes de reconciliação; elas não entram nos números até serem concluídas.';
+
+  /** Indicadores do período [desde, ate) sobre o estado completo, sem o limite de listarVendas (Fase 3). */
+  function consultarIndicadores(ctx, request) {
+    const normalizado = PULSO.indicadores.normalizarPeriodo(request);
+    if (!normalizado.ok) return normalizado;
+    return PULSO.operacoes.consultar(ctx, function (estado) {
+      const indicadores = PULSO.indicadores.agregar(estado, normalizado.dados);
+      if (!indicadores) return PULSO.erros.falha('INDICADOR_FORA_DO_LIMITE', 'Um indicador ultrapassa o limite de valores exatos; nenhum número foi arredondado.');
+      const reposicao = itensReposicao(estado);
+      return Object.assign({ ok: true }, indicadores, {
+        reposicao: { quantidade: reposicao.length, itens: reposicao.slice(0, 5) },
+        operacoesPendentes: estado.pendentes.length,
+        avisos: estado.pendentes.length ? [AVISO_PENDENCIAS] : [],
+      });
+    });
+  }
+
+  /**
+   * Resumo operacional de um dia civil em São Paulo. Só prepara o conteúdo: não envia nada
+   * e não grava nada (a execução programada e a entrega ficam para uma porta futura, D-066).
+   */
+  function gerarResumoDiario(ctx, request) {
+    const normalizado = PULSO.indicadores.normalizarDia(request);
+    if (!normalizado.ok) return normalizado;
+    return PULSO.operacoes.consultar(ctx, function (estado) {
+      const dados = normalizado.dados;
+      const indicadores = PULSO.indicadores.agregar(estado, { desde: dados.desde, ate: dados.ate });
+      if (!indicadores) return PULSO.erros.falha('INDICADOR_FORA_DO_LIMITE', 'Um indicador ultrapassa o limite de valores exatos; nenhum número foi arredondado.');
+      const geradoEm = ctx.relogio();
+      const resumo = {
+        dia: dados.dia, fuso: PULSO.indicadores.FUSO, desde: dados.desde, ate: dados.ate, geradoEm: geradoEm,
+        diaEmAndamento: geradoEm < dados.ate, indicadores: indicadores, reposicao: itensReposicao(estado),
+        operacoesPendentes: estado.pendentes.length, origem: 'consultarIndicadores sobre o mesmo período',
+      };
+      return Object.assign({ ok: true }, resumo, { texto: PULSO.indicadores.textoResumo(resumo) });
+    });
+  }
+
   return {
-    consultarReposicao: consultarReposicao,
+    consultarReposicao: consultarReposicao, consultarIndicadores: consultarIndicadores, gerarResumoDiario: gerarResumoDiario,
     registrarSaldoInicial: function (ctx, request) { return registrarAdministrativo(ctx, request, 'SALDO_INICIAL'); },
     registrarPerda: function (ctx, request) { return registrarAdministrativo(ctx, request, 'PERDA'); },
     ajustarPorContagem: function (ctx, request) { return registrarAdministrativo(ctx, request, 'AJUSTE'); },

@@ -15,6 +15,8 @@ function pulsoCriarDespacho() {
     'registrarEntrada', 'registrarSaldoInicial', 'registrarPerda', 'ajustarPorContagem',
     // Fase 2: listarVendas recebe objeto (período e limite opcionais; {} lista tudo).
     'confirmarVenda', 'estornarVenda', 'listarVendas', 'consultarVenda',
+    // Fase 3: somente leitura; período obrigatório.
+    'consultarIndicadores',
   ];
   const ACOES = ACOES_SEM_PEDIDO.concat(ACOES_COM_PEDIDO);
 

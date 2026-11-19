@@ -18,6 +18,8 @@ function pulsoCriar(portas) {
   };
   return {
     consultarReposicao: function () { return PULSO.casosDeUso.consultarReposicao(ctx); },
+    consultarIndicadores: /** @param {PedidoIndicadores} request */ function (request) { return PULSO.casosDeUso.consultarIndicadores(ctx, request); },
+    gerarResumoDiario: /** @param {PedidoResumoDiario} request */ function (request) { return PULSO.casosDeUso.gerarResumoDiario(ctx, request); },
     registrarSaldoInicial: /** @param {PedidoSaldoInicial} request */ function (request) { return PULSO.casosDeUso.registrarSaldoInicial(ctx, request); },
     registrarPerda: /** @param {PedidoPerda} request */ function (request) { return PULSO.casosDeUso.registrarPerda(ctx, request); },
     ajustarPorContagem: /** @param {PedidoAjuste} request */ function (request) { return PULSO.casosDeUso.ajustarPorContagem(ctx, request); },

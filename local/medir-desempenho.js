@@ -76,7 +76,10 @@ function medirDesempenho(rotulo = 'atual') {
         medir('listarVendas', () => pulso.listarVendas({})),
         medir('consultarVenda', () => pulso.consultarVenda({ vendaId: vendasMedidas[0] })),
         medir('estornarVenda', () => pulso.estornarVenda({ requisicaoId: `MED-ESTORNO-${++req}`,
-          vendaId: vendasMedidas[proximoEstorno++], motivo: 'Devolução sintética' }))],
+          vendaId: vendasMedidas[proximoEstorno++], motivo: 'Devolução sintética' })),
+        // Fase 3: um ano até agora, cobrindo os 90 dias, as vendas e os estornos medidos acima.
+        medir('consultarIndicadores', () => pulso.consultarIndicadores({
+          desde: new Date(Date.now() - 365 * 86400000).toISOString(), ate: new Date(Date.now() + 86400000).toISOString() }))],
       limites: 'Ambiente local JSONL, dados sintéticos e volume declarado; vendas medidas após o cenário de estoque. Não mede Google nem uma operação comercial real.' };
   } finally { fs.rmSync(pasta, { recursive: true, force: true }); }
 }
