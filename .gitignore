@@ -1,0 +1,5 @@
+data/
+node_modules/
+.clasprc.json
+.env
+*.log

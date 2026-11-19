@@ -1,0 +1,72 @@
+{
+  "aviso": "Dados 100% sintéticos para demonstração.",
+  "semente": 27,
+  "produtos": [
+    {
+      "sku": "MER-001",
+      "nome": "Água Mineral Fictícia 500 ml",
+      "categoria": "BEBIDAS",
+      "unidade": "UN",
+      "precoVendaCentavos": 200,
+      "custoRefCentavos": 160,
+      "estoqueMinimo": 4,
+      "estoqueAlvo": 11,
+      "ativo": true
+    },
+    {
+      "sku": "MER-002",
+      "nome": "Arroz Demonstração 1 kg",
+      "categoria": "MERCEARIA",
+      "unidade": "UN",
+      "precoVendaCentavos": 754,
+      "custoRefCentavos": 580,
+      "estoqueMinimo": 5,
+      "estoqueAlvo": 11,
+      "ativo": true
+    },
+    {
+      "sku": "MER-003",
+      "nome": "Leite Demonstração 1 L",
+      "categoria": "LATICINIOS",
+      "unidade": "UN",
+      "precoVendaCentavos": 565,
+      "custoRefCentavos": 425,
+      "estoqueMinimo": 7,
+      "estoqueAlvo": 17,
+      "ativo": true
+    },
+    {
+      "sku": "MER-004",
+      "nome": "Biscoito Salgado Fictício 100 g",
+      "categoria": "SNACKS",
+      "unidade": "UN",
+      "precoVendaCentavos": 377,
+      "custoRefCentavos": 292,
+      "estoqueMinimo": 6,
+      "estoqueAlvo": 12,
+      "ativo": true
+    },
+    {
+      "sku": "MER-005",
+      "nome": "Sabonete Demonstração 90 g",
+      "categoria": "HIGIENE",
+      "unidade": "UN",
+      "precoVendaCentavos": 343,
+      "custoRefCentavos": 245,
+      "estoqueMinimo": 6,
+      "estoqueAlvo": 19,
+      "ativo": true
+    },
+    {
+      "sku": "MER-006",
+      "nome": "Detergente Fictício 500 ml",
+      "categoria": "LIMPEZA",
+      "unidade": "UN",
+      "precoVendaCentavos": 378,
+      "custoRefCentavos": 268,
+      "estoqueMinimo": 6,
+      "estoqueAlvo": 14,
+      "ativo": true
+    }
+  ]
+}
