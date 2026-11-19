@@ -19,7 +19,9 @@ import { Component, input } from '@angular/core';
       <p [id]="id() + '-erro'" class="erro-campo">{{ erro() }}</p>
     }
   `,
-  host: { class: 'block' },
+  // Um id literal é também atributo do host Angular. Só o controle projetado deve
+  // recebê-lo, para o label e as consultas por id não apontarem para o wrapper.
+  host: { class: 'block', '[attr.id]': 'null' },
 })
 export class Campo {
   readonly id = input.required<string>();

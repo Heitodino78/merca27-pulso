@@ -1,9 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { classificarFalhaGravacao, type Certeza } from './classificacao';
 import type {
-  AcaoPulso, ConsultaEstoque, ConsultaReposicao, ErroPulso, HistoricoProduto, ListaFornecedores, ListaProdutos,
-  PedidoAjuste, PedidoAlteracao, PedidoCadastro, PedidoEntrada, PedidoPerda, PedidoSaldoInicial, PedidoStatus,
-  RespostaGravacao, RespostaReconciliacao,
+  AcaoPulso, ConsultaEstoque, ConsultaReposicao, DetalheVenda, ErroPulso, HistoricoProduto, ListaFornecedores, ListaProdutos,
+  ListaVendas, PedidoAjuste, PedidoAlteracao, PedidoCadastro, PedidoEntrada, PedidoEstorno, PedidoPerda, PedidoSaldoInicial,
+  PedidoStatus, PedidoVenda, RespostaEstorno, RespostaGravacao, RespostaReconciliacao, RespostaVenda,
 } from './contratos';
 import { FalhaTransporte, TRANSPORTE_PULSO } from './transporte';
 
@@ -81,6 +81,11 @@ export class PulsoApi {
   registrarSaldoInicial(p: PedidoSaldoInicial) { return this.gravar('registrarSaldoInicial', p); }
   registrarPerda(p: PedidoPerda) { return this.gravar('registrarPerda', p); }
   ajustarPorContagem(p: PedidoAjuste) { return this.gravar('ajustarPorContagem', p); }
+
+  listarVendas() { return this.consultar<ListaVendas>('listarVendas', {}); }
+  consultarVenda(vendaId: string) { return this.consultar<DetalheVenda>('consultarVenda', { vendaId }); }
+  confirmarVenda(p: PedidoVenda) { return this.gravar<RespostaVenda>('confirmarVenda', p); }
+  estornarVenda(p: PedidoEstorno) { return this.gravar<RespostaEstorno>('estornarVenda', p); }
 
   async reconciliarPendencias(): Promise<ResultadoGravacao<RespostaReconciliacao>> {
     const resultado = await this.gravar<RespostaReconciliacao>('reconciliarPendencias');

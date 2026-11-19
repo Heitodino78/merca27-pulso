@@ -84,6 +84,7 @@ export class App {
 
   protected readonly menu = [
     { rota: '/produtos', rotulo: 'Produtos', exato: false },
+    { rota: '/vendas', rotulo: 'Vendas', exato: false },
     { rota: '/entrada', rotulo: 'Registrar entrada', exato: true },
     { rota: '/reposicao', rotulo: 'Reposição', exato: true },
     { rota: '/fornecedores', rotulo: 'Fornecedores', exato: true },

@@ -18,6 +18,8 @@ const CLASS = 'src/app/nucleo/classificacao.ts';
 const DIN = 'src/app/nucleo/dinheiro.ts';
 const AVISO = 'src/app/ui/aviso-envio.ts';
 const ENTRADA = 'src/app/formularios/form-entrada.ts';
+const NOVA = 'src/app/paginas/venda-nova.ts';
+const VENDAS = 'src/app/paginas/vendas.ts';
 
 const m = (id, arquivo, de, para) => ({ id, arquivo, de, para });
 const MUTACOES = [
@@ -34,6 +36,19 @@ const MUTACOES = [
   m('MUI-11', AVISO, "<button type=\"button\" class=\"botao-principal mt-3\" (click)=\"controle().repetir()\">Repetir com a mesma chave</button>", ""),
   m('MUI-12', ENTRADA, '<fieldset [disabled]="controle.enviando()"', '<fieldset'),
   m('MUI-13', ENTRADA, 'custoUnitCentavos: paraCentavos(v.custo) ?? Number.NaN,', 'custoUnitCentavos: Number(v.custo),'),
+  m('MUI-14', NOVA, 'revisando() || controle.enviando() || !!confirmada()', 'revisando() || controle.enviando()'),
+  m('MUI-15', NOVA, 'subtotal: preco * i.quantidade', 'subtotal: preco'),
+  m('MUI-16', NOVA, 'quantidade: paraInteiro(i.quantidade) ?? Number.NaN', 'quantidade: 1'),
+  m('MUI-17', NOVA, 'this.revisando.set(true);', 'this.revisando.set(true); void this.confirmar();'),
+  m('MUI-18', NOVA, "return e.fase === 'sucesso' ? e.resposta : null;", "return e.fase === 'sucesso' && e.resposta.totalCentavos === 0 ? e.resposta : null;"),
+  m('MUI-19', VENDAS, "if (this.controle.estado().fase === 'sucesso') untracked", "if (this.controle.estado().fase === 'incerto') untracked"),
+  m('MUI-20', NOVA, '.filter((p) => p.ativo)', '.filter(() => true)'),
+  m('MUI-21', VENDAS, ' || v.requisicaoId.toUpperCase().includes(termo)', ''),
+  m('MUI-22', NOVA, 'formaPagamentoFicticia: v.pagamento,', "formaPagamentoFicticia: 'DINHEIRO',"),
+  m('MUI-23', VENDAS, "protected readonly motivo = new FormControl('', { nonNullable: true, validators: [obrigatorio] });", "protected readonly motivo = new FormControl('', { nonNullable: true });"),
+  m('MUI-24', CLASS, ", 'VENDA_JA_ESTORNADA'", ''),
+  m('MUI-25', API, "this.gravar<RespostaEstorno>('estornarVenda', p)", "this.gravar<RespostaEstorno>('confirmarVenda', p)"),
+  m('MUI-26', 'src/app/ui/campo.ts', ", '[attr.id]': 'null'", ''),
 ];
 
 const COPIAR = ['src', 'angular.json', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.spec.json', '.postcssrc.json', 'package.json'];
@@ -59,6 +74,7 @@ function executar(mutacao, esbuild) {
 }
 
 const filtro = process.argv[2];
+if (filtro && !MUTACOES.some((x) => x.id === filtro)) throw new Error('Mutação de interface desconhecida.');
 const esbuild = prepararEsbuild();
 const resultados = (filtro ? MUTACOES.filter((x) => x.id === filtro) : MUTACOES).map((mutacao) => {
   const estado = executar(mutacao, esbuild);

@@ -48,6 +48,7 @@ const CATEGORIAS: Record<string, string> = {
   BEBIDAS: 'Bebidas', MERCEARIA: 'Mercearia', LATICINIOS: 'Laticínios',
   SNACKS: 'Snacks', HIGIENE: 'Higiene', LIMPEZA: 'Limpeza',
   AVARIA: 'Avaria', VENCIMENTO: 'Vencimento', QUEBRA: 'Quebra',
+  DINHEIRO: 'Dinheiro', PIX: 'Pix', CARTAO: 'Cartão',
 };
 
 @Pipe({ name: 'rotuloCategoria' })

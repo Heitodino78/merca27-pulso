@@ -206,9 +206,65 @@ export interface PedidoAjuste extends PedidoStatus {
   quantidadeContada: number;
 }
 
+export const FORMAS_PAGAMENTO = ['DINHEIRO', 'PIX', 'CARTAO'] as const;
+
+export interface PedidoVenda {
+  requisicaoId: string;
+  itens: { sku: string; quantidade: number }[];
+  formaPagamentoFicticia: string;
+  observacao?: string;
+}
+
+export interface PedidoEstorno {
+  requisicaoId: string;
+  vendaId: string;
+  motivo: string;
+}
+
+export interface RespostaVenda extends RespostaGravacao {
+  vendaId: string;
+  totalCentavos: number;
+  custoEstCentavos: number;
+  formaPagamento: string;
+  itens: { sku: string; quantidade: number; precoUnitCentavos: number; subtotalCentavos: number; saldoAtual: number }[];
+}
+
+export interface RespostaEstorno extends RespostaGravacao {
+  estornoId: string;
+  vendaId: string;
+  devolvidos: { sku: string; quantidade: number; saldoAtual: number }[];
+}
+
+export interface ResumoVenda {
+  vendaId: string;
+  requisicaoId: string;
+  registradoEm: string;
+  formaPagamento: string;
+  totalCentavos: number;
+  custoEstCentavos: number;
+  observacao: string | null;
+  operadorSimulado: string;
+  quantidadeItens: number;
+  estado: 'CONFIRMADA' | 'ESTORNADA';
+}
+
+export interface ListaVendas {
+  vendas: ResumoVenda[];
+  operacoesPendentes: number;
+}
+
+export interface DetalheVenda {
+  venda: ResumoVenda;
+  itens: { itemId: string; sku: string; quantidade: number; precoUnitCentavos: number; custoUnitEstCentavos: number; subtotalCentavos: number }[];
+  movimentos: { movimentoId: string; tipo: string; sku: string; deltaUnidades: number; registradoEm: string }[];
+  estorno: { estornoId: string; registradoEm: string; motivo: string; operadorSimulado: string } | null;
+  operacoesPendentes: number;
+}
+
 /** Ações expostas pelo despacho do núcleo (src/application/despacho.js). */
 export type AcaoPulso =
   | 'listarProdutos' | 'listarFornecedores' | 'consultarReposicao' | 'reconciliarPendencias'
   | 'consultarEstoque' | 'consultarHistoricoProduto'
   | 'cadastrarProduto' | 'alterarProduto' | 'desativarProduto' | 'reativarProduto'
-  | 'registrarEntrada' | 'registrarSaldoInicial' | 'registrarPerda' | 'ajustarPorContagem';
+  | 'registrarEntrada' | 'registrarSaldoInicial' | 'registrarPerda' | 'ajustarPorContagem'
+  | 'confirmarVenda' | 'estornarVenda' | 'listarVendas' | 'consultarVenda';

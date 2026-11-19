@@ -15,6 +15,9 @@ describe('classificação de falhas de gravação', () => {
     expect(classificarFalhaGravacao({ codigo: 'QTD_INVALIDA', mensagem: '' })).toBe('nada-gravado');
     expect(classificarFalhaGravacao({ codigo: 'SKU_INATIVO', mensagem: '' })).toBe('nada-gravado');
     expect(classificarFalhaGravacao({ codigo: 'LOCK_OCUPADO', mensagem: '' })).toBe('nada-gravado');
+    for (const codigo of ['VENDA_INEXISTENTE', 'VENDA_JA_ESTORNADA']) {
+      expect(classificarFalhaGravacao({ codigo, mensagem: '' })).toBe('nada-gravado');
+    }
     expect(classificarFalhaGravacao({ codigo: 'REQUISICAO_CONFLITANTE', mensagem: '' })).toBe('conflito');
     expect(classificarFalhaGravacao({ codigo: 'RECONCILIACAO_PENDENTE', mensagem: '' })).toBe('pendente');
     for (const codigo of ['FALHA_GRAVACAO', 'DADOS_INCONSISTENTES', 'FALHA_INESPERADA', 'CODIGO_NOVO']) {
