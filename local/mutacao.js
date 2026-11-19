@@ -15,7 +15,7 @@ const MUTACOES = [
   mutacao('MUT-03', REPO, 'if (!produtos.has(movimento.sku))', 'if (false)'),
   mutacao('MUT-04', REPO, 'evento.referencia_id !== linha[chave] ||', 'false ||'),
   mutacao('MUT-05', REPO, "['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1", 'false'),
-  mutacao('MUT-06', REPO, "['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO'].indexOf(evento.tipo) === -1", 'false'),
+  mutacao('MUT-06', REPO, "['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE'].indexOf(evento.tipo) === -1", 'false'),
   mutacao('MUT-07', 'local/armazenamento-jsonl.js', 'fs.fsyncSync(descritor);', '/* sem fsync */'),
   mutacao('MUT-08', OPS, "if (!operacao || operacao.estado !== 'CONFIRMADA')", 'if (false)'),
   mutacao('MUT-09', OPS, 'if (estadoFinal.pendentes.length)', 'if (false)'),

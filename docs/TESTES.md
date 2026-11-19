@@ -14,6 +14,9 @@ Ambiente: Node 22.23.5, npm 10.9.9, runtime temporário já conferido na Fase 00
 | 3 | Mesmos quatro comandos e regeneração da seed | 169 testes; tipos sem erro; 27 arquivos sem erro de sintaxe; demo aprovada |
 | 4 | `npm test`, `npm run check`, `npm run typecheck`, `npm run demo` | 193 testes; tipos sem erro; 29 arquivos sem erro de sintaxe; demo aprovada |
 | 5 | Mesmos quatro comandos | 195 testes; tipos sem erro; 29 arquivos sem erro de sintaxe; demo aprovada |
+| 6 | Mesmos quatro comandos | 254 testes; tipos sem erro; 30 arquivos sem erro de sintaxe; demo aprovada |
+
+Bloco 6: o teste de saldo negativo forjado agora contém uma PERDA bem formada, com assinatura, custo e categoria válidos, e exige mensagem `saldo negativo`. Ele alcança a regra pretendida. Há falhas antes, depois e silenciosas nas três etapas para saldo inicial, perda e ajuste; idempotência e conflito em cada caso; contagens para baixo, para cima e zero; produto inativo; custo histórico após mudança de cadastro. Oito processos tentaram perder duas unidades cada sobre saldo sete: somente três perdas confirmaram e o saldo final ficou em uma unidade.
 
 M-04 substituiu o teste de bloqueio até reconciliação manual por três casos: conclusão automática antes do novo lançamento, falha sem criar intenção nova e validação com o saldo atualizado. O log identifica a conclusão automática. D-017 substitui D-007; o comando manual continua disponível.
 

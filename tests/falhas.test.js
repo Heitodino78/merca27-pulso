@@ -171,18 +171,21 @@ test('saldo negativo forjado com operação aparentemente válida é detectado',
   const instante = '2026-11-18T13:00:00.000Z';
   const linha = {
     movimento_id: 'MOV-FORJADO', operacao_id: 'OPR-FORJADA', sku: 'MER-001', tipo: 'PERDA', delta_unidades: -5,
-    motivo: null, referencia_id: null, registrado_em: instante, operador_simulado: 'OPERADOR-DEMO',
+    motivo: 'Avaria fictícia', referencia_id: null, registrado_em: instante, operador_simulado: 'OPERADOR-DEMO',
+    custo_unit_centavos: 600, fornecedor_id: null, categoria_perda: 'AVARIA', saldo_anterior: null, saldo_novo: null,
   };
   const evento = {
     operacao_id: 'OPR-FORJADA', requisicao_id: 'REQ-FORJADA', tipo: 'PERDA', registrado_em: instante, resumo: 'Forjado.',
     referencia_id: 'MOV-FORJADO', erro_cod: null, tentativas: 1,
   };
   armazenamento.tabelas.OPERACOES_LOG.push(
-    { ...evento, evento_id: 'EVT-F1', estado: 'PENDENTE', assinatura: '{}', payload: JSON.stringify({ tabela: 'MOVIMENTOS_ESTOQUE', linha }) },
+    { ...evento, evento_id: 'EVT-F1', estado: 'PENDENTE', assinatura: JSON.stringify({ sku: 'MER-001', motivo: 'Avaria fictícia', operadorSimulado: 'OPERADOR-DEMO', quantidade: 5, categoriaPerda: 'AVARIA' }), payload: JSON.stringify({ tabela: 'MOVIMENTOS_ESTOQUE', linha }) },
     { ...evento, evento_id: 'EVT-F2', estado: 'CONFIRMADA', assinatura: null, payload: null },
   );
   armazenamento.tabelas.MOVIMENTOS_ESTOQUE.push(linha);
-  assert.equal(pulso.consultarEstoque({ sku: 'MER-001' }).erro.codigo, 'DADOS_INCONSISTENTES');
+  const consulta = pulso.consultarEstoque({ sku: 'MER-001' });
+  assert.equal(consulta.erro.codigo, 'DADOS_INCONSISTENTES');
+  assert.match(consulta.erro.mensagem, /saldo negativo/);
 });
 
 test('log preserva a sequência auditável da operação', () => {

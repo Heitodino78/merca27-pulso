@@ -79,6 +79,13 @@ function pulsoCriarRepositorio() {
       normalizado = PULSO.fornecedor.normalizarCadastro({ fornecedorId: linha.fornecedor_id, nomeFicticio: linha.nome_ficticio,
         categoriaPrincipal: linha.categoria_principal, prazoEstimadoDias: linha.prazo_estimado_dias, ativo: linha.ativo });
       if (normalizado.ok) reconstruida = PULSO.fornecedor.construirLinha(normalizado.dados, evento.operacao_id, linha.criado_em);
+    } else if (payload.tabela === 'MOVIMENTOS_ESTOQUE' && ['SALDO_INICIAL', 'PERDA', 'AJUSTE'].indexOf(evento.tipo) !== -1) {
+      try { normalizado = PULSO.movimento.normalizarAdministrativo(JSON.parse(evento.assinatura), evento.tipo); }
+      catch (erro) { throw inconsistente('assinatura de movimento inválida'); }
+      if (!PULSO.validacao.inteiroNaoNegativo(linha.custo_unit_centavos) || linha.delta_unidades === 0 ||
+          (evento.tipo === 'AJUSTE' && !PULSO.validacao.inteiroNaoNegativo(linha.saldo_anterior))) throw inconsistente('movimento administrativo inválido');
+      if (normalizado.ok) reconstruida = PULSO.movimento.construirAdministrativo(normalizado.dados, evento.tipo,
+        linha.movimento_id, evento.operacao_id, linha.registrado_em, linha.saldo_anterior, linha.custo_unit_centavos);
     } else if (payload.tabela === 'PRODUTOS_ALTERACOES' && evento.tipo === 'ALTERACAO_PRODUTO') {
       try {
         normalizado = PULSO.alteracao.normalizar(JSON.parse(evento.assinatura));
@@ -109,7 +116,7 @@ function pulsoCriarRepositorio() {
     const rejeitadas = new Set();
     eventos.forEach(function (evento) {
       if (['PENDENTE', 'PENDENTE_RECONCILIACAO', 'CONFIRMADA', 'REJEITADA'].indexOf(evento.estado) === -1 ||
-          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO'].indexOf(evento.tipo) === -1) {
+          evento.tentativas < 1 || ['CADASTRO_PRODUTO', 'ENTRADA', 'CADASTRO_FORNECEDOR', 'ALTERACAO_PRODUTO', 'SALDO_INICIAL', 'PERDA', 'AJUSTE'].indexOf(evento.tipo) === -1) {
         throw inconsistente('operação ' + evento.operacao_id + ' com evento inválido');
       }
       if (evento.estado === 'REJEITADA') {
@@ -204,34 +211,43 @@ function pulsoCriarRepositorio() {
       });
 
       const produtos = new Map();
-      confirmadas(linhasProdutos, dobra.operacoes).forEach(function (p) { produtos.set(p.sku, p); });
       const fornecedores = new Map();
-      confirmadas(linhasFornecedores, dobra.operacoes).forEach(function (f) { fornecedores.set(f.fornecedor_id, f); });
       const versoes = new Map();
-      produtos.forEach(function (p) { versoes.set(p.sku, [{ produto: Object.assign({}, p), operacaoId: p.operacao_id,
-        alteracaoId: null, motivo: 'Cadastro inicial', registradoEm: p.criado_em, operadorSimulado: null }]); });
-      confirmadas(linhasAlteracoes, dobra.operacoes).forEach(function (a) {
-        const produto = produtos.get(a.sku);
-        if (!produto) throw inconsistente('alteração de produto inexistente');
-        const pedido = JSON.parse(dobra.operacoes.get(a.operacao_id).assinatura);
-        const campos = PULSO.alteracao.efeito(produto, pedido.campos);
-        if (!Object.keys(campos).length || PULSO.alteracao.canonico(campos) !== a.campos_json) throw inconsistente('alteração sem efeito ou com campos divergentes');
-        const resultado = PULSO.alteracao.aplicar(produto, campos, a.registrado_em);
-        if (!resultado.ok || (resultado.produto.fornecedor_id && !fornecedores.has(resultado.produto.fornecedor_id))) throw inconsistente('versão de produto inválida');
-        produtos.set(a.sku, resultado.produto);
-        versoes.get(a.sku).push({ produto: Object.assign({}, resultado.produto), operacaoId: a.operacao_id,
-          alteracaoId: a.alteracao_id, motivo: a.motivo, registradoEm: a.registrado_em, operadorSimulado: a.operador_simulado });
-      });
-      produtos.forEach(function (p) {
-        if (p.fornecedor_id && !fornecedores.has(p.fornecedor_id)) throw inconsistente('produto vinculado a fornecedor inexistente');
-      });
-      const movimentos = confirmadas(linhasMovimentos, dobra.operacoes);
-      conferirMovimentos(movimentos, produtos);
-      movimentos.forEach(function (m) {
-        if (m.tipo === 'ENTRADA' && (!fornecedores.has(m.fornecedor_id) || !fornecedores.get(m.fornecedor_id).ativo)) {
-          throw inconsistente('entrada vinculada a fornecedor inexistente ou inativo');
+      /** @type {LinhaMovimento[]} */
+      const movimentos = [];
+      // Reproduz a ordem das operações, incluindo o cadastro vigente em cada instante.
+      dobra.operacoes.forEach(function (operacao) {
+        if (operacao.estado !== 'CONFIRMADA') return;
+        const linha = operacao.linha;
+        if (operacao.tipo === 'CADASTRO_FORNECEDOR') {
+          fornecedores.set(linha.fornecedor_id, linha);
+        } else if (operacao.tipo === 'CADASTRO_PRODUTO') {
+          if (linha.fornecedor_id && !fornecedores.has(linha.fornecedor_id)) throw inconsistente('produto vinculado a fornecedor inexistente');
+          produtos.set(linha.sku, linha);
+          versoes.set(linha.sku, [{ produto: Object.assign({}, linha), operacaoId: linha.operacao_id,
+            alteracaoId: null, motivo: 'Cadastro inicial', registradoEm: linha.criado_em, operadorSimulado: null }]);
+        } else if (operacao.tipo === 'ALTERACAO_PRODUTO') {
+          const produto = produtos.get(linha.sku);
+          if (!produto) throw inconsistente('alteração de produto inexistente');
+          const pedido = JSON.parse(operacao.assinatura);
+          const campos = PULSO.alteracao.efeito(produto, pedido.campos);
+          if (!Object.keys(campos).length || PULSO.alteracao.canonico(campos) !== linha.campos_json) throw inconsistente('alteração sem efeito ou com campos divergentes');
+          const resultado = PULSO.alteracao.aplicar(produto, campos, linha.registrado_em);
+          if (!resultado.ok || (resultado.produto.fornecedor_id && !fornecedores.has(resultado.produto.fornecedor_id))) throw inconsistente('versão de produto inválida');
+          produtos.set(linha.sku, resultado.produto);
+          versoes.get(linha.sku).push({ produto: Object.assign({}, resultado.produto), operacaoId: linha.operacao_id,
+            alteracaoId: linha.alteracao_id, motivo: linha.motivo, registradoEm: linha.registrado_em, operadorSimulado: linha.operador_simulado });
+        } else {
+          const produto = produtos.get(linha.sku);
+          const saldo = PULSO.estoque.calcularSaldo(movimentos, linha.sku);
+          if (operacao.tipo === 'ENTRADA' && (!fornecedores.has(linha.fornecedor_id) || !fornecedores.get(linha.fornecedor_id).ativo)) throw inconsistente('entrada vinculada a fornecedor inexistente ou inativo');
+          if (operacao.tipo === 'SALDO_INICIAL' && movimentos.some(function (m) { return m.sku === linha.sku; })) throw inconsistente('saldo inicial após movimentação');
+          if (['PERDA', 'AJUSTE'].indexOf(operacao.tipo) !== -1 && (!produto || linha.custo_unit_centavos !== produto.custo_ref_centavos)) throw inconsistente('custo histórico divergente do cadastro vigente');
+          if (operacao.tipo === 'AJUSTE' && (linha.saldo_anterior !== saldo || linha.saldo_novo !== saldo + linha.delta_unidades)) throw inconsistente('ajuste com saldos divergentes');
+          movimentos.push(linha);
         }
       });
+      conferirMovimentos(movimentos, produtos);
 
       return {
         produtos: produtos,

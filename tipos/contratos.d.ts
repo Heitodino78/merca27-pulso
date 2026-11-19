@@ -9,6 +9,10 @@ interface PedidoEntrada {
   custoUnitCentavos: number; fornecedorId: string;
   referenciaFornecedor?: string | null; motivo?: string | null; operadorSimulado?: string;
 }
+interface DadosMovimentoAdministrativo {
+  sku: string; motivo: string; operadorSimulado: string; quantidade?: number;
+  quantidadeContada?: number; custoUnitCentavos?: number; categoriaPerda?: string;
+}
 interface LinhaProduto {
   sku: string; nome: string; categoria_id: string; unidade: string;
   preco_venda_centavos: number; custo_ref_centavos: number;

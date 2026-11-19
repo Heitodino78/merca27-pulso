@@ -141,6 +141,32 @@ function pulsoCriarCasosDeUso() {
     }, request);
   }
 
+  function registrarAdministrativo(ctx, request, tipo) {
+    return PULSO.operacoes.executar(ctx, {
+      tipo: tipo, normalizar: function (r) { return PULSO.movimento.normalizarAdministrativo(r, tipo); },
+      assinatura: function (dados) { return dados; },
+      verificar: function (estado, dados) {
+        const produto = estado.produtos.get(dados.sku);
+        if (!produto) return PULSO.erros.falha('SKU_INEXISTENTE', 'Produto não cadastrado.');
+        const saldo = PULSO.estoque.calcularSaldo(estado.movimentos, dados.sku);
+        if (tipo === 'SALDO_INICIAL' && estado.movimentos.some(function (m) { return m.sku === dados.sku; })) return PULSO.erros.falha('SALDO_INICIAL_INDEVIDO', 'O produto já tem movimentos confirmados.');
+        if (tipo === 'PERDA' && dados.quantidade > saldo) return PULSO.erros.falha('SALDO_INSUFICIENTE', 'A perda supera o saldo disponível: ' + saldo + '.');
+        if (tipo === 'AJUSTE' && dados.quantidadeContada === saldo) return PULSO.erros.falha('AJUSTE_SEM_DIFERENCA', 'A contagem é igual ao saldo; nenhum ajuste é necessário.');
+        return null;
+      },
+      construir: function (dados, operacaoId, agora, estado) {
+        return { tabela: 'MOVIMENTOS_ESTOQUE', linha: PULSO.movimento.construirAdministrativo(dados, tipo, 'MOV-' + operacaoId, operacaoId, agora,
+          PULSO.estoque.calcularSaldo(estado.movimentos, dados.sku), estado.produtos.get(dados.sku).custo_ref_centavos) };
+      },
+      responder: function (estado, operacao, situacao) {
+        return { ok: true, duplicada: situacao.duplicada, recuperada: situacao.recuperada,
+          operacaoId: operacao.operacaoId, movimentoId: operacao.linha.movimento_id, sku: operacao.linha.sku,
+          quantidade: operacao.linha.delta_unidades, saldoAtual: PULSO.estoque.calcularSaldo(estado.movimentos, operacao.linha.sku),
+          mensagem: situacao.duplicada ? 'Movimentação já confirmada; nada foi duplicado.' : 'Movimentação confirmada.' };
+      },
+    }, request);
+  }
+
   function consultarEstoque(ctx, request) {
     const consulta = PULSO.validacao.eObjeto(request) ? request : {};
     if (!PULSO.validacao.skuValido(consulta.sku)) {
@@ -195,6 +221,9 @@ function pulsoCriarCasosDeUso() {
   }
 
   return {
+    registrarSaldoInicial: function (ctx, request) { return registrarAdministrativo(ctx, request, 'SALDO_INICIAL'); },
+    registrarPerda: function (ctx, request) { return registrarAdministrativo(ctx, request, 'PERDA'); },
+    ajustarPorContagem: function (ctx, request) { return registrarAdministrativo(ctx, request, 'AJUSTE'); },
     alterarProduto: alterarProduto, consultarHistoricoProduto: consultarHistoricoProduto,
     desativarProduto: function (ctx, request) { return mudarStatus(ctx, request, false); },
     reativarProduto: function (ctx, request) { return mudarStatus(ctx, request, true); },

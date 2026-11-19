@@ -67,6 +67,40 @@ function pulsoCriarMovimento() {
     };
   }
 
-  return { TIPOS: TIPOS, normalizarEntrada: normalizarEntrada, construirEntrada: construirEntrada };
+  function normalizarAdministrativo(request, tipo) {
+    const v = PULSO.validacao;
+    const permitidos = ['requisicaoId', 'sku', 'motivo', 'operadorSimulado'].concat(tipo === 'AJUSTE'
+      ? ['quantidadeContada'] : tipo === 'PERDA' ? ['quantidade', 'categoriaPerda'] : ['quantidade', 'custoUnitCentavos']);
+    if (!v.skuValido(request.sku)) return PULSO.erros.falha('SKU_INVALIDO', 'Informe o SKU no formato MER-001.');
+    if (v.camposDesconhecidos(request, permitidos).length) return PULSO.erros.falha('DADOS_INVALIDOS', 'Campo não aceito nesta movimentação.');
+    if (tipo === 'AJUSTE' ? !v.inteiroNaoNegativo(request.quantidadeContada) : !v.inteiroPositivo(request.quantidade)) {
+      return PULSO.erros.falha('QTD_INVALIDA', 'Quantidade deve ser inteira; contagem aceita zero e demais movimentos exigem valor positivo.');
+    }
+    const problema = v.problemaTexto(request.motivo, 'Motivo', 3, 200);
+    const operador = request.operadorSimulado === undefined ? OPERADOR_PADRAO : request.operadorSimulado;
+    if (problema || typeof operador !== 'string' || !PADRAO_OPERADOR.test(operador)) return PULSO.erros.falha('DADOS_INVALIDOS', problema || 'Operador simulado inválido.');
+    if (tipo === 'SALDO_INICIAL' && !v.inteiroNaoNegativo(request.custoUnitCentavos)) return PULSO.erros.falha('DADOS_INVALIDOS', 'Custo unitário inicial deve ser inteiro em centavos, zero ou maior.');
+    if (tipo === 'PERDA' && ['AVARIA', 'VENCIMENTO', 'QUEBRA'].indexOf(request.categoriaPerda) === -1) return PULSO.erros.falha('DADOS_INVALIDOS', 'Categoria da perda deve ser AVARIA, VENCIMENTO ou QUEBRA.');
+    /** @type {DadosMovimentoAdministrativo} */
+    const dados = { sku: request.sku, motivo: request.motivo, operadorSimulado: operador };
+    if (tipo === 'AJUSTE') dados.quantidadeContada = request.quantidadeContada;
+    else dados.quantidade = request.quantidade;
+    if (tipo === 'SALDO_INICIAL') dados.custoUnitCentavos = request.custoUnitCentavos;
+    if (tipo === 'PERDA') dados.categoriaPerda = request.categoriaPerda;
+    return { ok: true, dados: dados };
+  }
+
+  /** @returns {LinhaMovimento} */
+  function construirAdministrativo(dados, tipo, movimentoId, operacaoId, agora, saldoAnterior, custoReferencia) {
+    return { movimento_id: movimentoId, operacao_id: operacaoId, sku: dados.sku, tipo: tipo,
+      delta_unidades: tipo === 'AJUSTE' ? dados.quantidadeContada - saldoAnterior : tipo === 'PERDA' ? -dados.quantidade : dados.quantidade,
+      motivo: dados.motivo, referencia_id: null, registrado_em: agora, operador_simulado: dados.operadorSimulado,
+      custo_unit_centavos: tipo === 'SALDO_INICIAL' ? dados.custoUnitCentavos : custoReferencia,
+      fornecedor_id: null, categoria_perda: tipo === 'PERDA' ? dados.categoriaPerda : null,
+      saldo_anterior: tipo === 'AJUSTE' ? saldoAnterior : null, saldo_novo: tipo === 'AJUSTE' ? dados.quantidadeContada : null };
+  }
+
+  return { TIPOS: TIPOS, normalizarEntrada: normalizarEntrada, construirEntrada: construirEntrada,
+    normalizarAdministrativo: normalizarAdministrativo, construirAdministrativo: construirAdministrativo };
 }
 PULSO.movimento = pulsoCriarMovimento();
