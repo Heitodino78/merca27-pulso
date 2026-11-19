@@ -11,6 +11,7 @@
     "check": "node local/verificar-sintaxe.js",
     "fixtures": "node local/gerar-fixtures.js",
     "demo": "node local/demo.js",
-    "pulso": "node local/cli.js"
+    "pulso": "node local/cli.js",
+    "mutacao": "node local/mutacao.js"
   }
 }

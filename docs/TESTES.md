@@ -1,5 +1,22 @@
 # Evidências de testes
 
+## Fase 01 — execução por blocos (18/11/2026)
+
+Ambiente: Node 22.23.5, npm 10.9.9, runtime temporário já conferido na Fase 00. Nenhuma integração externa faz parte desta execução.
+
+| Bloco | Verificações reais | Resultado |
+|---|---|---|
+| 0 | `npm test`, `npm run check`, `npm run demo` | 130 testes aprovados, 23 arquivos sem erro de sintaxe, demo com saldo 10 e um movimento |
+| 1 | Mesmos três comandos | 141 testes aprovados, 25 arquivos sem erro de sintaxe, demo aprovada |
+| 1 | `npm run mutacao`, 42 defeitos em cópias temporárias | Primeira medição: 37 detectados, cinco sobreviventes; os dois sem justificativa motivaram mais testes |
+| 1 | `npm run mutacao -- MUT-30` e `-- MUT-40` | Detectados após adicionar rejeição com tentativas negativas e linha completa sem terminador |
+
+Mutações equivalentes nesta fundação: MUT-10 (tipo de movimento) e MUT-11 (delta zero) são barradas pela reconstrução canônica da intenção antes da soma; MUT-37 (tipo no conflito) continua barrada pela assinatura dos dados, que difere entre tipos. O executor não ignora alvos ausentes, defeitos sintaticamente inválidos ou erros de execução: esses casos retornam falha. Uma sobrevivente sem justificativa também retorna falha.
+
+O teste antigo de saldo negativo forjado ainda é alcançado pelo tipo PERDA não suportado: será corrigido com a operação PERDA bem formada no Bloco 6. Os dois controles finais do executor receberam testes próprios com repositório de teste que devolve uma operação ainda pendente.
+
+## Registro histórico da Fase 00
+
 **Revisão executada:** 18/11/2026, Linux x86_64, Node.js 22.23.5, npm 10.9.9. **Ambiente exclusivamente local.** Nenhum teste foi executado em Google Sheets, Apps Script ou navegador.
 
 Node/npm não estão no PATH padrão. Foi baixado o arquivo oficial `node-v22.23.5-linux-x64.tar.xz` de `https://nodejs.org/dist/latest-v22.x/`, com SHA-256 comparado ao `SHASUMS256.txt` do mesmo diretório antes de extrair:
