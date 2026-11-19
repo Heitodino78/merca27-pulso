@@ -67,6 +67,8 @@ T-01 (sidebar ou formulário), T-03 (método de custo), T-04 (tipo de lock no Ap
 
 ## Fase 01
 
+- **D-032 — Reposição:** `ativo && saldo <= estoque_minimo`; sugestão `max(0, estoque_alvo - saldo)`. A consulta retorna só os alertas e identifica a regra, o fornecedor quando cadastrado e a necessidade de revisão humana. Não cria compras, movimentos ou eventos de log.
+
 - **D-031 — Movimentos administrativos:** saldo inicial só é aceito sem movimentos anteriores; repetir a mesma chave continua idempotente, enquanto uma nova chave após movimentação retorna `SALDO_INICIAL_INDEVIDO`. Perdas e ajustes aceitam produto inativo, pois representam o estoque físico. Custo da perda/ajuste é o custo de referência vigente, preservado no movimento. A reprodução das operações segue a ordem do log para validar cada custo e versão, sem comparar o histórico com o cadastro final. Ajuste registra saldos anterior e novo, calculados dentro da trava. Reversões compensatórias de perdas e ajustes ficam explicitamente adiadas para a Fase 2, junto do estorno; não há edição nem exclusão para corrigir histórico nesta fase.
 
 - **D-030 — M-04:** D-017 passa a substituir D-007. Pendências são concluídas automaticamente, em ordem, dentro da mesma trava, antes de verificar um lançamento novo. O estado é recarregado após concluir; falha retorna `RECONCILIACAO_PENDENTE` e não inicia a nova intenção. Conflito de uma requisição já existente continua sendo rejeitado sem recuperar dados conflitantes. A reconciliação manual permanece disponível.

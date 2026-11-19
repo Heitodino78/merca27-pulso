@@ -220,7 +220,26 @@ function pulsoCriarCasosDeUso() {
     });
   }
 
+  function consultarReposicao(ctx) {
+    return PULSO.operacoes.consultar(ctx, function (estado) {
+      const itens = [];
+      estado.produtos.forEach(function (produto) {
+        const saldo = PULSO.estoque.calcularSaldo(estado.movimentos, produto.sku);
+        if (!produto.ativo || saldo > produto.estoque_minimo) return;
+        itens.push({ sku: produto.sku, nome: produto.nome, saldoAtual: saldo,
+          estoqueMinimo: produto.estoque_minimo, estoqueAlvo: produto.estoque_alvo,
+          sugestaoUnidades: Math.max(0, produto.estoque_alvo - saldo),
+          fornecedor: produto.fornecedor_id ? estado.fornecedores.get(produto.fornecedor_id) : null,
+          regra: 'produto ativo e saldo <= mínimo; sugestão = max(0, alvo - saldo)' });
+      });
+      itens.sort(function (a, b) { return a.sku.localeCompare(b.sku); });
+      return { ok: true, itens: itens, operacoesPendentes: estado.pendentes.length,
+        aviso: 'Sugestão para revisão humana. Nenhuma compra foi realizada.' };
+    });
+  }
+
   return {
+    consultarReposicao: consultarReposicao,
     registrarSaldoInicial: function (ctx, request) { return registrarAdministrativo(ctx, request, 'SALDO_INICIAL'); },
     registrarPerda: function (ctx, request) { return registrarAdministrativo(ctx, request, 'PERDA'); },
     ajustarPorContagem: function (ctx, request) { return registrarAdministrativo(ctx, request, 'AJUSTE'); },

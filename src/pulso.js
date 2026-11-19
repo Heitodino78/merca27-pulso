@@ -17,6 +17,7 @@ function pulsoCriar(portas) {
     gerarId: portas.gerarId,
   };
   return {
+    consultarReposicao: function () { return PULSO.casosDeUso.consultarReposicao(ctx); },
     registrarSaldoInicial: function (request) { return PULSO.casosDeUso.registrarSaldoInicial(ctx, request); },
     registrarPerda: function (request) { return PULSO.casosDeUso.registrarPerda(ctx, request); },
     ajustarPorContagem: function (request) { return PULSO.casosDeUso.ajustarPorContagem(ctx, request); },
