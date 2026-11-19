@@ -1,5 +1,43 @@
 # Evidências de testes
 
+## M-06 — interface Angular + Tailwind (19/11/2026)
+
+Esta seção traz o estado atual. Ambiente local, Node 22.23.5 e npm 10.9.9 em `/tmp/merca27-runtime` (SHA-256 conferido). **Nada foi executado em navegador real, Google Sheets ou Apps Script** (D-047, D-048).
+
+| Verificação | Resultado |
+|---|---|
+| Linha de base antes de alterar | 343 testes, 35 arquivos, tipos e demo aprovados |
+| `npm test` | 359 testes, 359 aprovados, 0 falhas |
+| `npm run check` | 42 arquivos, 0 erros de sintaxe |
+| `npm run typecheck` | Duas configurações aprovadas |
+| `npm run demo` | Saldo final 10, recálculo independente 10 e um movimento |
+| `npm run interface:typecheck` | Aprovado com TypeScript strict e `strictTemplates` |
+| `npm run interface:test` | 39 testes em 5 arquivos, todos aprovados (Vitest 5.1.1 + jsdom) |
+| `npm run interface:build` | HTML único com 404.363 bytes, sem chunks nem referências externas |
+| `npm run interface:mutacao` | 13 defeitos, 13 detectados por falha de teste. Evidência em [evidencias/mutacao-interface.txt](evidencias/mutacao-interface.txt) |
+| `npm run mutacao` | 113 defeitos (108 anteriores e 5 do despacho): 110 detectados e 3 equivalentes justificados (MUT-10, MUT-11 e MUT-37), saída 0. Evidência em [evidencias/mutacao-m06.txt](evidencias/mutacao-m06.txt). Uma primeira rodada, descartada, marcou 113/113 por causa do teste de contraste sem `interface/src` na cópia |
+| Fumaça HTTP da pré-visualização (build real, seed, pasta temporária) | `GET /` 200 com shim e CSP; 40 produtos; entrada 10; repetição `OPERACAO_DUPLICADA` com saldo 10 |
+
+### Testes novos
+
+- `tests/interface-local.test.js` (13): ações expostas e recusadas pelo despacho (inclusive `constructor` e `__proto__`), pedido obrigatório ou proibido, idempotência e conflito repassados, exceção virando falha incerta; servidor só em `127.0.0.1`, shim no início do `<head>`, CSP, Host e Origin recusados, 415, 400, 413, falhas simuladas antes e depois de executar e repetição sem duplicar; empacotamento e suas recusas.
+- `tests/contraste.test.js` (3): paleta preservada, 17 pares de texto e fundo com contraste AA (mínimo medido 6,36:1) e âmbar nunca usado como cor de texto.
+- `interface/src/app/**/*.spec.ts` (39): conversão de reais para centavos (inclusive formatos ambíguos recusados), chave por tentativa lógica, clique duplo, sucesso só após confirmação, repetição com a mesma chave e os mesmos dados, conflito, recusa depois de falha incerta, classificação dos códigos, transporte `google.script.run`, rótulos e mensagens associadas, foco, estados vazio, carregando e falha, histórico, versões, produto inativo e reconciliação pendente.
+
+### Defeitos encontrados durante a execução
+
+| Defeito | Correção |
+|---|---|
+| Uma recusa de validação depois de uma falha incerta descartava a chave; o próximo envio ganharia chave nova e poderia duplicar o lançamento incerto | Chave e dados incertos mantidos; repetir reenvia os dados incertos (D-045). Cobertos por teste e por MUI-03 e MUI-04 |
+| O teste de contraste falhava em toda cópia de mutação, mascarando sobreviventes | `local/mutacao.js` copia `interface/src` (D-048, correção do executor) |
+
+### Não testado
+
+- Navegador real nas larguras 360, 390, 768 e 1440 px, capturas, foco visível e teclado de ponta a ponta (D-047).
+- HTML Service real: módulo ES embutido, `crypto.randomUUID` no iframe e limites de tamanho.
+- Qualquer operação em Google Sheets ou Apps Script.
+
+
 ## Revisão independente da Fase 01 (18/11/2026)
 
 Esta seção traz o estado atual. As seções seguintes registram o histórico de cada entrega. Ambiente exclusivamente local: nada foi executado em Google Sheets, Apps Script ou interface visual.

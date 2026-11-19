@@ -2,13 +2,15 @@
 
 > **Demonstração educacional.** A MERCA 27 é um mercado fictício e todos os dados são sintéticos. O PULSO não é sistema fiscal, contábil nem produto pronto para uso empresarial real.
 
-**Estado atual: Fase 01 concluída localmente.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI, com 343 testes aprovados. Interface visual e integração Google continuam pendentes.
+**Estado atual: Fase 01 concluída e interface M-06 implementada localmente.** Produtos, fornecedores, entradas, perdas, contagens, histórico de versões e reposição funcionam pela CLI e por uma interface Angular + Tailwind, com 359 testes no núcleo e 39 na interface. A interface ainda não foi verificada em navegador real, e a integração Google continua pendente ([relatório](docs/RELATORIO_INTERFACE.md)).
 
 ## Requisitos
 
 - Node.js 22 ou superior (testado nas versões 22.23.5 e 24.22.3).
 - Dependências somente de desenvolvimento: `typescript@5.9.3` e `@types/node@22.20.5`. Execute `npm ci` para instalá-las e `npm run typecheck` para conferir `src/` e `local/`, sem build. A operação por CLI não exige essas dependências.
 - `.npmrc` define `bin-links=false` para o volume vfat; o compilador é chamado diretamente por Node. Nenhuma instalação global é necessária.
+
+- Interface: dependências próprias em `interface/` (Angular 22.3.0, TypeScript 6.0.3, Tailwind CSS 4.3.5), instaladas com `npm run interface:instalar`. O volume é montado com `showexec` e não executa binários; `local/interface.js` roda o esbuild a partir de uma cópia na pasta temporária (D-042).
 
 Nesta máquina, Node/npm não estão no PATH padrão. A revisão usou um runtime oficial temporário em `/tmp/merca27-runtime/node-v22.23.5-linux-x64`, com SHA-256 conferido. Enquanto essa pasta existir, execute `export PATH=/tmp/merca27-runtime/node-v22.23.5-linux-x64/bin:$PATH` antes dos comandos abaixo. Isso não é uma instalação permanente.
 
@@ -21,6 +23,13 @@ npm run typecheck   # contratos JSDoc; exige npm ci
 npm run mutacao     # 108 defeitos em cópias temporárias; leva cerca de 15 minutos
 npm run medir       # cenário temporário de 90 dias; tempos e volume em JSON
 npm run demo        # demonstração do primeiro marco, em pasta temporária
+
+npm run interface:instalar   # dependências da interface (uma vez)
+npm run interface:build      # HTML único: interface/dist/html-service/Interface.html
+npm run interface:test       # 39 testes da interface
+npm run interface:typecheck  # TypeScript strict da interface
+npm run interface:mutacao    # 13 defeitos na interface, em cópias temporárias
+PULSO_DADOS=/tmp/pulso-demo npm run interface:preview -- --seed   # http://127.0.0.1:4827/
 
 npm run -s pulso -- seed
 npm run -s pulso -- produtos
@@ -42,6 +51,8 @@ npm run -s pulso -- reconciliar
 
 Preço, custo de referência e custo unitário de entrada são informados em centavos. Entrada exige `--custo` (zero para bonificação) e `--fornecedor`. Os dados ficam em `data/`, que não é versionada; use `PULSO_DADOS` para escolher outra pasta. Para repetir uma entrada, use o mesmo `--requisicao ID` e os mesmos dados. Uma entrada nova usa outra chave. O custo da entrada não altera automaticamente o custo de referência.
 
+A pré-visualização serve o HTML único e simula `google.script.run` chamando os mesmos casos de uso. Ouve só em `127.0.0.1`. Use `--falhas-simuladas` para testar repetição após falha e `PULSO_PREVIEW_ATRASO_MS` para ver o estado de carregamento. **Ela não é integração com o Google.**
+
 `npm run demo` valida os próprios resultados e termina com erro se alguma expectativa falhar. Usa uma pasta temporária, sem alterar `data/`. A seed e os resultados esperados estão em [fixtures/SEED_README.md](fixtures/SEED_README.md).
 
 ## Estrutura
@@ -52,7 +63,10 @@ src/                 Núcleo portável, sem APIs do Node (destino: Apps Script)
   application/       Casos de uso e protocolo de gravação
   infra/             Esquema das tabelas e repositório
   pulso.js           Montagem do núcleo a partir das portas do ambiente
-local/               Somente para esta máquina: JSONL, trava, CLI, demo, gerador
+  application/despacho.js  Ações expostas à interface (HTML Service e pré-visualização)
+local/               Somente para esta máquina: JSONL, trava, CLI, demo, gerador,
+                     pré-visualização, empacotamento e execução do Angular
+interface/           Angular + Tailwind; vira um único HTML para o HTML Service
 fixtures/            Catálogo sintético reproduzível (semente 27)
 tests/               Testes automatizados
 docs/                Documentos-base, decisões, progresso, testes e relatório
@@ -74,13 +88,15 @@ docs/                Documentos-base, decisões, progresso, testes e relatório
 
 Na revisão de 18/11/2026, o conector Google Drive respondeu às buscas `MERCA` e `PULSO`, sem resultados. Isso comprova acesso ao conector, mas não execução do núcleo em Apps Script. Não há ferramenta de execução de Apps Script, `clasp` instalado nem configuração local dele nos caminhos verificados. Nenhum recurso Google foi criado ou alterado. O núcleo mantém portas para um futuro adaptador; a validação real no Google continua pendente.
 
+Em 19/11/2026 (M-06), o conector Drive exigia autorização nesta sessão e continuava sem `clasp` ou outra forma de executar Apps Script. A interface já chama o servidor por `google.script.run.pulsoChamar(acao, pedido)`, e `PULSO.despacho.despachar` está pronto para essa função; o adaptador de Sheets não foi implementado.
+
 ## Limitações
 
-- Sem Google Sheets, Apps Script, sidebar ou menu nesta fase; a interface é a CLI.
+- Sem Google Sheets, Apps Script, sidebar ou menu. A interface roda só na pré-visualização local e ainda não foi verificada em navegador real nem no HTML Service.
 - Sem vendas, estornos, dashboard, lotes, validade, automações periódicas ou compra automática. Reversão de perdas e ajustes foi adiada para a Fase 2.
 - Bases da Fase 00 não são migradas nem apagadas automaticamente. Preserve o histórico antigo e escolha uma pasta nova com `PULSO_DADOS` para o esquema da Fase 01.
 - Alterações coerentes de todo o histórico podem não ser detectadas: as comparações não são uma assinatura criptográfica. Não há cadeia de hashes nem cópia externa de auditoria.
 - Uma interrupção real durante a escrita pode deixar uma linha incompleta. Ela é detectada e bloqueia a operação; não há reparo automático de arquivo truncado.
 - Se um processo for encerrado à força durante uma operação, o arquivo `.pulso.lock` precisa ser removido manualmente. A mensagem de erro indica o caminho.
 
-Detalhes atuais em [docs/RELATORIO_FASE_01.md](docs/RELATORIO_FASE_01.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). A [Fase 00](docs/RELATORIO_FASE_00.md) permanece como registro histórico.
+Detalhes atuais em [docs/RELATORIO_INTERFACE.md](docs/RELATORIO_INTERFACE.md) e [docs/RELATORIO_FASE_01.md](docs/RELATORIO_FASE_01.md), comandos e evidências em [docs/TESTES.md](docs/TESTES.md). A [Fase 00](docs/RELATORIO_FASE_00.md) permanece como registro histórico.

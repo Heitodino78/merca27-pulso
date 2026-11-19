@@ -1,6 +1,6 @@
 # Melhorias planejadas — PULSO
 
-**Status: Fase 01 local concluída em 18/11/2026.** M-01, M-02, M-04, M-05 e M-07 têm evidência em `docs/TESTES.md`. M-06 e M-03 permanecem pendentes.
+**Status em 19/11/2026:** M-01, M-02, M-04, M-05 e M-07 concluídas, com evidência em `docs/TESTES.md`. M-06 implementada e testada localmente, mas sem os critérios de navegador e capturas (ver `docs/RELATORIO_INTERFACE.md`). M-03 pendente.
 
 ## Ordem de execução
 
@@ -11,7 +11,7 @@
 | 3 | M-02 | Alteração e desativação de produto | Bloco 4 da Fase 01 | [x] Concluída |
 | 4 | M-04 | Reconciliação automática | Bloco 5 da Fase 01 | [x] Concluída |
 | 5 | M-05 | Desempenho e leituras sem trava | Bloco 9 da Fase 01, antes do Sheets | [x] Concluída |
-| 6 | M-06 | Interface compatível com Apps Script | Depois de M-01 e M-02 | [ ] Pendente |
+| 6 | M-06 | Interface compatível com Apps Script | Depois de M-01 e M-02 | [ ] Parcial: falta navegador real e capturas |
 | 7 | M-03 | Operações com vários registros | Antes da Fase 2 (vendas) | [ ] Pendente |
 
 Os dados de `data/` são sintéticos e descartáveis. Mudanças de esquema podem recriá-los, desde que isso fique registrado em `docs/DECISOES.md`.
@@ -120,12 +120,12 @@ Os dados de `data/` são sintéticos e descartáveis. Mudanças de esquema podem
 - Aplicar a paleta do Documento Mestre, conferindo contraste. O âmbar `#DCA44C` deve ser usado como fundo ou destaque com texto escuro, nunca como texto sobre fundo claro.
 - Gerar o `requisicaoId` por tentativa de envio e reutilizá-lo ao repetir após falha.
 
-**Critérios de aceite:**
-- Estados de vazio, carregando, sucesso, falha, conflito e operação pendente estão implementados.
-- Clique duplo não duplica lançamentos, e o sucesso só aparece após a confirmação da gravação.
-- Navegação por teclado, rótulos de formulário e `prefers-reduced-motion` são respeitados.
-- A tela foi verificada em navegador real a 360, 390, 768 e 1440 px, com capturas em `docs/capturas/`.
-- A documentação deixa claro que a pré-visualização local não é uma integração com o Google.
+**Critérios de aceite (situação em 19/11/2026):**
+- [x] Estados de vazio, carregando, sucesso, falha, conflito e operação pendente estão implementados. Cobertos por testes de componente.
+- [x] Clique duplo não duplica lançamentos, e o sucesso só aparece após a confirmação da gravação. Cobertos por testes e pelas mutações MUI-01 e MUI-12.
+- [ ] Navegação por teclado, rótulos de formulário e `prefers-reduced-motion` são respeitados. Rótulos, mensagens associadas e foco são testados em jsdom; teclado de ponta a ponta e movimento reduzido ainda dependem do navegador real.
+- [ ] A tela foi verificada em navegador real a 360, 390, 768 e 1440 px, com capturas em `docs/capturas/`. **Não executado:** navegador bloqueado nesta sessão (D-047).
+- [x] A documentação deixa claro que a pré-visualização local não é uma integração com o Google.
 
 ---
 

@@ -1,6 +1,6 @@
 # Progresso do A-002 — MERCA 27 / PULSO
 
-Última atualização: 18/11/2026, Fase 01 concluída localmente e revisada na branch `fase-01`.
+Última atualização: 19/11/2026. M-06 implementada e testada localmente na branch `interface-angular`, ainda sem verificação em navegador real.
 
 ## Implementado e testado localmente
 
@@ -36,7 +36,7 @@ Detalhes e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADA
 - [x] M-02: alteração, desativação, reativação e histórico completo de versões.
 - [x] M-04: reconciliação automática antes de novos lançamentos, com releitura e log.
 - [x] M-05: projeção em memória por SKU, leituras sem trava, repetição controlada, entrada com 8 leituras em vez de 13 e medição antes/depois.
-- [ ] M-06: interface compatível com Apps Script.
+- [ ] M-06: interface Angular + Tailwind compatível com Apps Script. **Parcial:** telas, estados, chave por tentativa, acessibilidade, HTML único, pré-visualização local, 39 testes de interface e 13 mutações prontos. **Falta:** verificação em navegador real e capturas (D-047). Detalhes em [RELATORIO_INTERFACE.md](RELATORIO_INTERFACE.md).
 - [ ] M-03: operações com vários registros, antes da Fase 2.
 
 ## Pendente no Google (nada disto foi executado)
@@ -47,13 +47,13 @@ O acesso foi verificado na revisão da Fase 00, sem execução de Apps Script. A
 - [ ] Autenticar o `clasp` em conta autorizada e enviar `src/`.
 - [ ] Implementar a porta `armazenamento` com `SpreadsheetApp`, incluindo a conversão entre célula vazia e `null` e a gravação de instantes como texto.
 - [ ] Implementar a porta `lock` com `LockService`, `relogio` e `gerarId` com `Utilities.getUuid`.
-- [ ] Publicar no Apps Script a interface criada em M-06, com menu e identidade visual do PULSO.
+- [ ] Publicar no Apps Script o HTML único de M-06 (`interface/dist/html-service/Interface.html`) com menu e uma função `pulsoChamar` que chame `PULSO.despacho.despachar`.
 - [ ] Repetir o cenário obrigatório no ambiente Google e registrar a evidência.
 
 ## Fases
 
 - [x] Fase 1: 40 SKUs, 6 fornecedores, perda, ajuste por contagem, alerta e reposição.
-- [ ] Próxima execução: M-06, interface compatível com Apps Script e pré-visualização local; Google somente com acesso efetivo.
+- [ ] Próxima execução: concluir a verificação de M-06 em navegador real; depois M-03. Google somente com acesso efetivo.
 - [ ] Fase 2: vendas com múltiplos itens e estorno.
 - [ ] Fase 3: dashboard e automações.
 - [ ] Fase 4: refino e case de portfólio.
