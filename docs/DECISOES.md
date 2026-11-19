@@ -18,6 +18,22 @@ Complementa as ADRs do Documento Mestre. Os documentos-base não foram alterados
 | D-012 | Interface da Fase 00 é uma CLI | A interface em Sheets depende de integração indisponível | Identidade visual fica para a etapa com sidebar |
 | D-013 | Tabelas locais em JSON Lines com `fsync` | Sem dependências e compatível com acréscimo | Leitura integral a cada operação, adequada ao volume atual |
 
+## Decisões aprovadas e ainda não implementadas
+
+Aprovadas pelo proprietário em 18/11/2026. Escopo e critérios de aceite em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADAS.md).
+
+| ID | Melhoria | Decisão | Efeito sobre decisões atuais |
+|---|---|---|---|
+| D-014 | M-01 | Registrar o custo unitário obrigatório em cada entrada | Prepara a decisão T-03, sem resolvê-la |
+| D-015 | M-02 | Alterar produtos por eventos em `PRODUTOS_ALTERACOES`, mantendo a criação imutável | Mantém D-003 |
+| D-016 | M-03 | Permitir vários registros por operação antes da Fase 2 | Amplia D-004 |
+| D-017 | M-04 | Concluir pendências automaticamente antes de novo lançamento | **Substituirá D-007 quando implementada** |
+| D-018 | M-05 | Medir o desempenho e fazer consultas sem trava, com nova tentativa dentro da trava em caso de inconsistência | Reduz o custo apontado em D-013 |
+| D-019 | M-06 | Criar interface HTML compatível com Apps Script e pré-visualização local | **Substituirá D-012 como interface principal**; a CLI permanece |
+| D-020 | M-07 | Checar tipos com JSDoc e TypeScript apenas em desenvolvimento | Mantém D-002 |
+
+**Stack:** Google Sheets e Apps Script continuam como decisão do MVP. Reavaliar a troca por SQLite ou PostgreSQL somente se houver cliente real, vários operadores simultâneos ou resultado insuficiente nas medições de M-05.
+
 ## Acréscimos ao esquema do documento 03
 
 - `PRODUTOS.operacao_id`: liga o cadastro à operação de origem.

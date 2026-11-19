@@ -102,3 +102,7 @@ As 13 decisões e os acréscimos ao esquema estão em [DECISOES.md](DECISOES.md)
 Instalar o Node.js 22 ou superior e, com uma conta Google autorizada, validar o núcleo no Apps Script antes de ampliar o domínio. Sem essa conta, seguir com a Fase 1 local.
 
 **Critério de aceite:** repetir o cenário obrigatório na planilha real com o mesmo resultado dos testes locais.
+
+## 12. Adendo pós-entrega
+
+Após esta entrega, o proprietário aprovou sete melhorias, descritas em [MELHORIAS_PLANEJADAS.md](MELHORIAS_PLANEJADAS.md). Elas ainda não foram implementadas e passam a definir a ordem da próxima execução, em [PROMPT_PROXIMA_EXECUCAO.md](PROMPT_PROXIMA_EXECUCAO.md).
